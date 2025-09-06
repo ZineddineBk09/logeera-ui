@@ -4,80 +4,76 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color palette for ride-sharing platform with orange primary and warm neutrals */
+  /* Updated color palette to use blue theme with Brandeis Blue primary and Azure accent */
   --background: oklch(1 0 0); /* #ffffff - Main background */
   --foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Primary text */
-  --card: oklch(0.985 0.017 83.915); /* #fffbeb - Soft card background */
+  --card: oklch(0.985 0.017 240); /* #f8faff - Soft blue-tinted card background */
   --card-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Card text */
   --popover: oklch(1 0 0); /* #ffffff - Popover background */
   --popover-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Popover text */
-  --primary: oklch(0.646 0.222 41.116); /* #ea580c - Orange primary */
+  --primary: oklch(0.525 0.246 258.64); /* #0670F8 - Brandeis Blue primary */
   --primary-foreground: oklch(1 0 0); /* #ffffff - Primary button text */
-  --secondary: oklch(0.696 0.17 162.48); /* #f97316 - Orange accent */
+  --secondary: oklch(0.565 0.246 258.64); /* #067AF9 - Azure accent */
   --secondary-foreground: oklch(1 0 0); /* #ffffff - Secondary button text */
-  --muted: oklch(0.985 0.017 83.915); /* #fffbeb - Muted background */
+  --muted: oklch(0.985 0.017 240); /* #f8faff - Muted background */
   --muted-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Muted text */
-  --accent: oklch(0.696 0.17 162.48); /* #f97316 - Accent color */
+  --accent: oklch(0.565 0.246 258.64); /* #067AF9 - Azure accent color */
   --accent-foreground: oklch(1 0 0); /* #ffffff - Accent text */
   --destructive: oklch(0.577 0.245 27.325); /* #dc2626 - Error color */
   --destructive-foreground: oklch(1 0 0); /* #ffffff - Error text */
-  --border: oklch(0.922 0.013 106.423); /* #e5e7eb - Border color */
+  --border: oklch(0.922 0.013 240); /* #e5e7eb - Border color with blue tint */
   --input: oklch(1 0 0); /* #ffffff - Input background */
-  --ring: oklch(0.646 0.222 41.116 / 0.4); /* Orange focus ring */
-  --chart-1: oklch(0.696 0.17 162.48); /* #f97316 */
-  --chart-2: oklch(0.556 0.014 258.338); /* #4b5563 */
-  --chart-3: oklch(0.646 0.222 41.116); /* #ea580c */
-  --chart-4: oklch(0.577 0.245 27.325); /* #dc2626 */
-  --chart-5: oklch(0.769 0.188 70.08); /* #f59e0b */
+  --ring: oklch(0.525 0.246 258.64 / 0.4); /* Brandeis Blue focus ring */
+  --chart-1: oklch(0.525 0.246 258.64); /* #0670F8 - Brandeis Blue */
+  --chart-2: oklch(0.565 0.246 258.64); /* #067AF9 - Azure */
+  --chart-3: oklch(0.485 0.246 258.64); /* Darker blue variant */
+  --chart-4: oklch(0.605 0.246 258.64); /* Lighter blue variant */
+  --chart-5: oklch(0.645 0.246 258.64); /* Lightest blue variant */
   --radius: 0.5rem; /* 8px corner radius */
   --sidebar: oklch(1 0 0); /* #ffffff - Sidebar background */
   --sidebar-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Sidebar text */
-  --sidebar-primary: oklch(0.646 0.222 41.116); /* #ea580c - Sidebar primary */
-  --sidebar-primary-foreground: oklch(
-    1 0 0
-  ); /* #ffffff - Sidebar primary text */
-  --sidebar-accent: oklch(0.696 0.17 162.48); /* #f97316 - Sidebar accent */
+  --sidebar-primary: oklch(0.525 0.246 258.64); /* #0670F8 - Sidebar primary */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff - Sidebar primary text */
+  --sidebar-accent: oklch(0.565 0.246 258.64); /* #067AF9 - Sidebar accent */
   --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff - Sidebar accent text */
-  --sidebar-border: oklch(0.922 0.013 106.423); /* #e5e7eb - Sidebar border */
-  --sidebar-ring: oklch(
-    0.646 0.222 41.116 / 0.4
-  ); /* Orange sidebar focus ring */
+  --sidebar-border: oklch(0.922 0.013 240); /* #e5e7eb - Sidebar border */
+  --sidebar-ring: oklch(0.525 0.246 258.64 / 0.4); /* Blue sidebar focus ring */
 }
 
 .dark {
-  /* Dark mode colors maintaining the orange theme with proper contrast */
+  /* Updated dark mode colors to use blue theme with proper contrast */
   --background: oklch(0.145 0 0); /* Dark background */
   --foreground: oklch(0.985 0 0); /* Light text */
-  --card: oklch(0.205 0 0); /* Dark card background */
+  --card: oklch(0.205 0.02 258.64); /* Dark card with blue tint */
   --card-foreground: oklch(0.985 0 0); /* Light card text */
-  --popover: oklch(0.205 0 0); /* Dark popover */
+  --popover: oklch(0.205 0.02 258.64); /* Dark popover */
   --popover-foreground: oklch(0.985 0 0); /* Light popover text */
-  --primary: oklch(0.696 0.17 162.48); /* Brighter orange for dark mode */
-  --primary-foreground: oklch(0.145 0 0); /* Dark text on orange */
-  --secondary: oklch(0.269 0 0); /* Dark secondary */
-  --secondary-foreground: oklch(0.985 0 0); /* Light secondary text */
-  --muted: oklch(0.269 0 0); /* Dark muted */
+  --primary: oklch(0.565 0.246 258.64); /* #067AF9 - Brighter Azure for dark mode */
+  --primary-foreground: oklch(0.145 0 0); /* Dark text on blue */
+  --secondary: oklch(0.525 0.246 258.64); /* #0670F8 - Brandeis Blue secondary */
+  --secondary-foreground: oklch(1 0 0); /* Light secondary text */
+  --muted: oklch(0.269 0.02 258.64); /* Dark muted with blue tint */
   --muted-foreground: oklch(0.708 0 0); /* Muted text */
-  --accent: oklch(0.696 0.17 162.48); /* Orange accent */
+  --accent: oklch(0.565 0.246 258.64); /* #067AF9 - Azure accent */
   --accent-foreground: oklch(0.145 0 0); /* Dark accent text */
   --destructive: oklch(0.577 0.245 27.325); /* Error color */
   --destructive-foreground: oklch(0.985 0 0); /* Light error text */
-  --border: oklch(0.269 0 0); /* Dark border */
-  --input: oklch(0.269 0 0); /* Dark input */
-  --ring: oklch(0.696 0.17 162.48 / 0.4); /* Orange focus ring */
-  --chart-1: oklch(0.696 0.17 162.48);
-  --chart-2: oklch(0.708 0 0);
-  --chart-3: oklch(0.646 0.222 41.116);
-  --chart-4: oklch(0.577 0.245 27.325);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.205 0 0);
+  --border: oklch(0.269 0.02 258.64); /* Dark border with blue tint */
+  --input: oklch(0.269 0.02 258.64); /* Dark input */
+  --ring: oklch(0.565 0.246 258.64 / 0.4); /* Azure focus ring */
+  --chart-1: oklch(0.565 0.246 258.64); /* #067AF9 - Azure */
+  --chart-2: oklch(0.525 0.246 258.64); /* #0670F8 - Brandeis Blue */
+  --chart-3: oklch(0.605 0.246 258.64); /* Lighter blue variant */
+  --chart-4: oklch(0.485 0.246 258.64); /* Darker blue variant */
+  --chart-5: oklch(0.645 0.246 258.64); /* Lightest blue variant */
+  --sidebar: oklch(0.205 0.02 258.64);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.696 0.17 162.48);
+  --sidebar-primary: oklch(0.565 0.246 258.64);
   --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: oklch(0.269 0.02 258.64);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.696 0.17 162.48 / 0.4);
+  --sidebar-border: oklch(0.269 0.02 258.64);
+  --sidebar-ring: oklch(0.565 0.246 258.64 / 0.4);
 }
 
 @theme inline {
