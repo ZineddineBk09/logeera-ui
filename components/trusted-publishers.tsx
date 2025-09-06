@@ -3,9 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const publishers = [
   {
+    id: "1",
     name: "Sarah Johnson",
     rating: 4.9,
     trips: 127,
@@ -15,6 +17,7 @@ const publishers = [
     trusted: true,
   },
   {
+    id: "2",
     name: "Mike Chen",
     rating: 4.8,
     trips: 89,
@@ -24,6 +27,7 @@ const publishers = [
     trusted: true,
   },
   {
+    id: "3",
     name: "Emma Davis",
     rating: 5.0,
     trips: 203,
@@ -53,8 +57,8 @@ export function TrustedPublishers() {
             key={index}
             className="group hover:shadow-lg transition-all duration-300 border-0 bg-card/50"
           >
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-start justify-between">
+            <CardContent className="flex flex-col items-center p-6 space-y-4">
+              <div className="w-full flex justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage
@@ -88,7 +92,7 @@ export function TrustedPublishers() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="w-full space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Popular Route</span>
                   <span className="font-medium">{publisher.route}</span>
@@ -102,12 +106,12 @@ export function TrustedPublishers() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors bg-transparent"
+              <Link
+                href={`/drivers/${publisher.id}`}
+                className="bg-primary text-primary-foreground rounded-md w-32 px-4 py-2 mx-auto"
               >
                 View Profile
-              </Button>
+              </Link>
             </CardContent>
           </Card>
         ))}

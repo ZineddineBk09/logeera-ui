@@ -30,6 +30,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo } from "./logo";
 
 const navigation = [
   { name: "Home", href: "/", icon: Search },
@@ -45,16 +46,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col items-center">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="w-full flex h-16 items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Car className="h-4 w-4" />
-            </div>
-            <span className="text-xl font-bold text-foreground">RideShare</span>
+            <Logo className="h-8 w-24" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -79,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Quick Search */}
-          <div className="hidden lg:flex items-center space-x-2 flex-1 max-w-sm mx-8">
+          <div className="hidden lg:flex items-center space-x-2 min-w-sm mx-8">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
