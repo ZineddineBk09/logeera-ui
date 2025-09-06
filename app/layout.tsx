@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Suspense } from "react";
 import "./globals.css";
+import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
   title: "RideShare - Your Journey Starts Here",
@@ -30,7 +31,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <AppShell>{children}</AppShell>
           </ThemeProvider>
         </Suspense>
         <Analytics />

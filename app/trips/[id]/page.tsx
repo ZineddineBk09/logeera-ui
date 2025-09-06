@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/app-shell";
 import { TripDetails } from "@/components/trip-details";
 
 export default function TripDetailsPage({
@@ -6,9 +5,5 @@ export default function TripDetailsPage({
 }: {
   params: { id: string };
 }) {
-  return (
-    <AppShell>
-      <TripDetails tripId={params.id} />
-    </AppShell>
-  );
+  return <TripDetails tripId={params.id} />;
 }
