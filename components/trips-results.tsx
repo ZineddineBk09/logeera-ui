@@ -1,12 +1,18 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Map, List } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TripCard } from "@/components/trip-card"
-import { MapView } from "@/components/map-view"
-import { FilterBar } from "@/components/filter-bar"
+import { useState } from "react";
+import { Map, List } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TripCard } from "@/components/trip-card";
+import { MapView } from "@/components/map-view";
+import { FilterBar } from "@/components/filter-bar";
 
 // Mock data for trips
 const mockTrips = [
@@ -64,12 +70,12 @@ const mockTrips = [
     duration: "4h 15m",
     distance: "210 miles",
   },
-]
+];
 
 export function TripsResults() {
-  const [activeView, setActiveView] = useState<"list" | "map">("list")
-  const [sortBy, setSortBy] = useState("departure")
-  const [selectedTrip, setSelectedTrip] = useState<string | null>(null)
+  const [activeView, setActiveView] = useState<"list" | "map">("list");
+  const [sortBy, setSortBy] = useState("departure");
+  const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +88,9 @@ export function TripsResults() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">New York City → Boston</h1>
-              <p className="text-muted-foreground">January 15, 2024 • {mockTrips.length} trips found</p>
+              <p className="text-muted-foreground">
+                January 15, 2024 • {mockTrips.length} trips found
+              </p>
             </div>
             <div className="flex items-center space-x-4">
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -119,21 +127,34 @@ export function TripsResults() {
 
         {/* Right Panel - Map */}
         <div className="w-1/2">
-          <MapView trips={mockTrips} selectedTripId={selectedTrip} onTripSelect={setSelectedTrip} />
+          <MapView
+            trips={mockTrips}
+            selectedTripId={selectedTrip}
+            onTripSelect={setSelectedTrip}
+          />
         </div>
       </div>
 
       {/* Mobile View */}
       <div className="lg:hidden">
-        <Tabs value={activeView} onValueChange={(value) => setActiveView(value as "list" | "map")}>
+        <Tabs
+          value={activeView}
+          onValueChange={(value) => setActiveView(value as "list" | "map")}
+        >
           <div className="sticky top-16 z-40 bg-background border-b">
             <div className="container mx-auto px-4">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="list" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="list"
+                  className="flex items-center space-x-2"
+                >
                   <List className="h-4 w-4" />
                   <span>List</span>
                 </TabsTrigger>
-                <TabsTrigger value="map" className="flex items-center space-x-2">
+                <TabsTrigger
+                  value="map"
+                  className="flex items-center space-x-2"
+                >
                   <Map className="h-4 w-4" />
                   <span>Map</span>
                 </TabsTrigger>
@@ -151,11 +172,15 @@ export function TripsResults() {
 
           <TabsContent value="map" className="mt-0">
             <div className="h-[calc(100vh-200px)]">
-              <MapView trips={mockTrips} selectedTripId={selectedTrip} onTripSelect={setSelectedTrip} />
+              <MapView
+                trips={mockTrips}
+                selectedTripId={selectedTrip}
+                onTripSelect={setSelectedTrip}
+              />
             </div>
           </TabsContent>
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

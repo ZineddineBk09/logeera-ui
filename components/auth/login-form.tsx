@@ -1,37 +1,37 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 export function LoginForm() {
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    setIsLoading(false)
-    router.push("/")
-  }
+    setIsLoading(false);
+    router.push("/");
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -46,7 +46,9 @@ export function LoginForm() {
               placeholder="Enter your email"
               className="pl-10"
               value={formData.email}
-              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, email: e.target.value }))
+              }
               required
             />
           </div>
@@ -62,7 +64,9 @@ export function LoginForm() {
               placeholder="Enter your password"
               className="pl-10 pr-10"
               value={formData.password}
-              onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, password: e.target.value }))
+              }
               required
             />
             <button
@@ -70,7 +74,11 @@ export function LoginForm() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -81,13 +89,21 @@ export function LoginForm() {
           <Checkbox
             id="remember"
             checked={formData.rememberMe}
-            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, rememberMe: checked as boolean }))}
+            onCheckedChange={(checked) =>
+              setFormData((prev) => ({
+                ...prev,
+                rememberMe: checked as boolean,
+              }))
+            }
           />
           <Label htmlFor="remember" className="text-sm">
             Remember me
           </Label>
         </div>
-        <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+        <Link
+          href="/auth/forgot-password"
+          className="text-sm text-primary hover:underline"
+        >
           Forgot password?
         </Link>
       </div>
@@ -101,12 +117,19 @@ export function LoginForm() {
           <Separator />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+          <span className="bg-background px-2 text-muted-foreground">
+            Or continue with
+          </span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled className="bg-transparent">
+        <Button
+          variant="outline"
+          type="button"
+          disabled
+          className="bg-transparent"
+        >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -127,7 +150,12 @@ export function LoginForm() {
           </svg>
           Google
         </Button>
-        <Button variant="outline" type="button" disabled className="bg-transparent">
+        <Button
+          variant="outline"
+          type="button"
+          disabled
+          className="bg-transparent"
+        >
           <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
           </svg>
@@ -142,5 +170,5 @@ export function LoginForm() {
         </Link>
       </p>
     </form>
-  )
+  );
 }

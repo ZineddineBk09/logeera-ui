@@ -1,22 +1,28 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Mail, Lock, User, Phone, Building } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Building } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 export function RegisterForm() {
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,18 +31,18 @@ export function RegisterForm() {
     userType: "",
     idNumber: "",
     agreeToTerms: false,
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    setIsLoading(false)
-    router.push("/auth/login?registered=true")
-  }
+    setIsLoading(false);
+    router.push("/auth/login?registered=true");
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -51,7 +57,9 @@ export function RegisterForm() {
               placeholder="Enter your full name"
               className="pl-10"
               value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               required
             />
           </div>
@@ -68,7 +76,9 @@ export function RegisterForm() {
                 placeholder="Enter your email"
                 className="pl-10"
                 value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
                 required
               />
             </div>
@@ -84,7 +94,9 @@ export function RegisterForm() {
                 placeholder="Enter your phone"
                 className="pl-10"
                 value={formData.phone}
-                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
                 required
               />
             </div>
@@ -101,7 +113,9 @@ export function RegisterForm() {
               placeholder="Create a strong password"
               className="pl-10 pr-10"
               value={formData.password}
-              onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, password: e.target.value }))
+              }
               required
             />
             <button
@@ -109,7 +123,11 @@ export function RegisterForm() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -119,7 +137,9 @@ export function RegisterForm() {
             <Label>Account type</Label>
             <Select
               value={formData.userType}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, userType: value }))}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, userType: value }))
+              }
             >
               <SelectTrigger>
                 <div className="flex items-center">
@@ -141,7 +161,9 @@ export function RegisterForm() {
               type="text"
               placeholder="Driver's license or ID"
               value={formData.idNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, idNumber: e.target.value }))
+              }
             />
           </div>
         </div>
@@ -152,7 +174,12 @@ export function RegisterForm() {
           <Checkbox
             id="terms"
             checked={formData.agreeToTerms}
-            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, agreeToTerms: checked as boolean }))}
+            onCheckedChange={(checked) =>
+              setFormData((prev) => ({
+                ...prev,
+                agreeToTerms: checked as boolean,
+              }))
+            }
             required
           />
           <Label htmlFor="terms" className="text-sm leading-relaxed">
@@ -175,7 +202,12 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" size="lg" disabled={isLoading || !formData.agreeToTerms}>
+      <Button
+        type="submit"
+        className="w-full"
+        size="lg"
+        disabled={isLoading || !formData.agreeToTerms}
+      >
         {isLoading ? "Creating account..." : "Create account"}
       </Button>
 
@@ -184,12 +216,19 @@ export function RegisterForm() {
           <Separator />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+          <span className="bg-background px-2 text-muted-foreground">
+            Or continue with
+          </span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled className="bg-transparent">
+        <Button
+          variant="outline"
+          type="button"
+          disabled
+          className="bg-transparent"
+        >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path
               fill="currentColor"
@@ -210,7 +249,12 @@ export function RegisterForm() {
           </svg>
           Google
         </Button>
-        <Button variant="outline" type="button" disabled className="bg-transparent">
+        <Button
+          variant="outline"
+          type="button"
+          disabled
+          className="bg-transparent"
+        >
           <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
           </svg>
@@ -225,5 +269,5 @@ export function RegisterForm() {
         </Link>
       </p>
     </form>
-  )
+  );
 }

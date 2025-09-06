@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Star, Shield, Calendar, Settings, Lock, User } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ProfileOverview } from "@/components/profile/profile-overview"
-import { ProfileSettings } from "@/components/profile/profile-settings"
-import { ProfileSecurity } from "@/components/profile/profile-security"
-import { ProfileRatings } from "@/components/profile/profile-ratings"
+import { useState } from "react";
+import { Star, Shield, Calendar, Settings, Lock, User } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ProfileOverview } from "@/components/profile/profile-overview";
+import { ProfileSettings } from "@/components/profile/profile-settings";
+import { ProfileSecurity } from "@/components/profile/profile-security";
+import { ProfileRatings } from "@/components/profile/profile-ratings";
 
 // Mock user data
 const mockUser = {
@@ -28,10 +28,10 @@ const mockUser = {
   verifiedEmail: true,
   languages: ["English", "Spanish"],
   bio: "Experienced driver who loves meeting new people and sharing travel stories. I prioritize safety and punctuality.",
-}
+};
 
 export function UserProfile() {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +41,10 @@ export function UserProfile() {
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row items-start md:items-center space-y-6 md:space-y-0 md:space-x-8">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={mockUser.avatar || "/placeholder.svg"} alt={mockUser.name} />
+                <AvatarImage
+                  src={mockUser.avatar || "/placeholder.svg"}
+                  alt={mockUser.name}
+                />
                 <AvatarFallback className="text-2xl">
                   {mockUser.name
                     .split(" ")
@@ -71,23 +74,36 @@ export function UserProfile() {
                     <span>•</span>
                     <div className="flex items-center space-x-1">
                       <Calendar className="w-4 h-4" />
-                      <span>Member since {new Date(mockUser.memberSince).getFullYear()}</span>
+                      <span>
+                        Member since{" "}
+                        {new Date(mockUser.memberSince).getFullYear()}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{mockUser.tripCount}</div>
-                    <div className="text-sm text-muted-foreground">Total Trips</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {mockUser.tripCount}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Trips
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{mockUser.rating}</div>
-                    <div className="text-sm text-muted-foreground">Average Rating</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {mockUser.rating}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Average Rating
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary">98%</div>
-                    <div className="text-sm text-muted-foreground">Response Rate</div>
+                    <div className="text-sm text-muted-foreground">
+                      Response Rate
+                    </div>
                   </div>
                 </div>
               </div>
@@ -102,19 +118,31 @@ export function UserProfile() {
         {/* Profile Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="overview"
+              className="flex items-center space-x-2"
+            >
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="settings"
+              className="flex items-center space-x-2"
+            >
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="security"
+              className="flex items-center space-x-2"
+            >
               <Lock className="h-4 w-4" />
               <span className="hidden sm:inline">Security</span>
             </TabsTrigger>
-            <TabsTrigger value="ratings" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="ratings"
+              className="flex items-center space-x-2"
+            >
               <Star className="h-4 w-4" />
               <span className="hidden sm:inline">Ratings</span>
             </TabsTrigger>
@@ -140,5 +168,5 @@ export function UserProfile() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

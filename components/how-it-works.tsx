@@ -1,42 +1,49 @@
-import { Search, Users, MapPin, Star } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Search, Users, MapPin, Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 const steps = [
   {
     icon: Search,
     title: "Search & Discover",
-    description: "Find rides that match your route, schedule, and preferences from trusted drivers.",
+    description:
+      "Find rides that match your route, schedule, and preferences from trusted drivers.",
   },
   {
     icon: Users,
     title: "Connect & Request",
-    description: "Send requests to join rides and chat with drivers to coordinate pickup details.",
+    description:
+      "Send requests to join rides and chat with drivers to coordinate pickup details.",
   },
   {
     icon: MapPin,
     title: "Travel Together",
-    description: "Meet at the agreed location and enjoy a safe, comfortable journey to your destination.",
+    description:
+      "Meet at the agreed location and enjoy a safe, comfortable journey to your destination.",
   },
   {
     icon: Star,
     title: "Rate & Review",
-    description: "Share your experience and help build a trusted community of travelers.",
+    description:
+      "Share your experience and help build a trusted community of travelers.",
   },
-]
+];
 
 export function HowItWorks() {
   return (
     <section className="space-y-12">
       <div className="text-center space-y-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-balance">How It Works</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-balance">
+          How It Works
+        </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-          Getting started is simple. Follow these easy steps to find your perfect ride.
+          Getting started is simple. Follow these easy steps to find your
+          perfect ride.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {steps.map((step, index) => {
-          const Icon = step.icon
+          const Icon = step.icon;
           return (
             <Card
               key={index}
@@ -52,12 +59,14 @@ export function HowItWorks() {
                   </div>
                 </div>
                 <h3 className="text-xl font-semibold">{step.title}</h3>
-                <p className="text-muted-foreground text-balance">{step.description}</p>
+                <p className="text-muted-foreground text-balance">
+                  {step.description}
+                </p>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }

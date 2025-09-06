@@ -1,43 +1,43 @@
 declare global {
   interface Window {
-    google: typeof google
+    google: typeof google;
   }
 }
 
 declare namespace google {
   namespace maps {
     class Map {
-      constructor(mapDiv: Element, opts?: MapOptions)
-      panTo(latLng: LatLng | LatLngLiteral): void
+      constructor(mapDiv: Element, opts?: MapOptions);
+      panTo(latLng: LatLng | LatLngLiteral): void;
     }
 
     interface MapOptions {
-      center?: LatLng | LatLngLiteral
-      zoom?: number
-      mapTypeId?: MapTypeId
-      styles?: MapTypeStyle[]
-      disableDefaultUI?: boolean
-      zoomControl?: boolean
-      mapTypeControl?: boolean
-      streetViewControl?: boolean
-      fullscreenControl?: boolean
-      gestureHandling?: string
+      center?: LatLng | LatLngLiteral;
+      zoom?: number;
+      mapTypeId?: MapTypeId;
+      styles?: MapTypeStyle[];
+      disableDefaultUI?: boolean;
+      zoomControl?: boolean;
+      mapTypeControl?: boolean;
+      streetViewControl?: boolean;
+      fullscreenControl?: boolean;
+      gestureHandling?: string;
     }
 
     interface LatLng {
-      lat(): number
-      lng(): number
+      lat(): number;
+      lng(): number;
     }
 
     interface LatLngLiteral {
-      lat: number
-      lng: number
+      lat: number;
+      lng: number;
     }
 
     interface MapTypeStyle {
-      featureType?: string
-      elementType?: string
-      stylers?: Array<{ [key: string]: any }>
+      featureType?: string;
+      elementType?: string;
+      stylers?: Array<{ [key: string]: any }>;
     }
 
     enum MapTypeId {
@@ -76,59 +76,62 @@ declare namespace google {
     class DirectionsService {
       route(
         request: DirectionsRequest,
-        callback: (result: DirectionsResult | null, status: DirectionsStatus) => void,
-      ): void
+        callback: (
+          result: DirectionsResult | null,
+          status: DirectionsStatus,
+        ) => void,
+      ): void;
     }
 
     interface DirectionsRequest {
-      origin: string | LatLng | LatLngLiteral
-      destination: string | LatLng | LatLngLiteral
-      travelMode: TravelMode
-      waypoints?: DirectionsWaypoint[]
+      origin: string | LatLng | LatLngLiteral;
+      destination: string | LatLng | LatLngLiteral;
+      travelMode: TravelMode;
+      waypoints?: DirectionsWaypoint[];
     }
 
     interface DirectionsWaypoint {
-      location: string | LatLng | LatLngLiteral
-      stopover?: boolean
+      location: string | LatLng | LatLngLiteral;
+      stopover?: boolean;
     }
 
     interface DirectionsResult {
-      routes: DirectionsRoute[]
+      routes: DirectionsRoute[];
     }
 
     interface DirectionsRoute {
-      legs: DirectionsLeg[]
-      overview_path: LatLng[]
-      overview_polyline: DirectionsPolyline
+      legs: DirectionsLeg[];
+      overview_path: LatLng[];
+      overview_polyline: DirectionsPolyline;
     }
 
     interface DirectionsLeg {
-      distance: Distance
-      duration: Duration
-      end_address: string
-      end_location: LatLng
-      start_address: string
-      start_location: LatLng
+      distance: Distance;
+      duration: Duration;
+      end_address: string;
+      end_location: LatLng;
+      start_address: string;
+      start_location: LatLng;
     }
 
     interface DirectionsPolyline {
-      points: string
+      points: string;
     }
 
     interface Distance {
-      text: string
-      value: number
+      text: string;
+      value: number;
     }
 
     interface Duration {
-      text: string
-      value: number
+      text: string;
+      value: number;
     }
 
     interface MapMouseEvent {
-      latLng: LatLng
+      latLng: LatLng;
     }
   }
 }
 
-export {}
+export {};

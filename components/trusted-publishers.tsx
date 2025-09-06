@@ -1,8 +1,8 @@
-import { Star, Shield, Car } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Star, Shield, Car } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const publishers = [
   {
@@ -32,26 +32,35 @@ const publishers = [
     vehicle: "Tesla Model 3",
     trusted: true,
   },
-]
+];
 
 export function TrustedPublishers() {
   return (
     <section className="space-y-12">
       <div className="text-center space-y-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-balance">Trusted by Thousands</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-balance">
+          Trusted by Thousands
+        </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-          Join our community of verified drivers and passengers who prioritize safety and reliability.
+          Join our community of verified drivers and passengers who prioritize
+          safety and reliability.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {publishers.map((publisher, index) => (
-          <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-0 bg-card/50">
+          <Card
+            key={index}
+            className="group hover:shadow-lg transition-all duration-300 border-0 bg-card/50"
+          >
             <CardContent className="p-6 space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={publisher.image || "/placeholder.svg"} alt={publisher.name} />
+                    <AvatarImage
+                      src={publisher.image || "/placeholder.svg"}
+                      alt={publisher.name}
+                    />
                     <AvatarFallback>
                       {publisher.name
                         .split(" ")
@@ -110,5 +119,5 @@ export function TrustedPublishers() {
         </Button>
       </div>
     </section>
-  )
+  );
 }

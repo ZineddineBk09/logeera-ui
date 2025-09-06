@@ -1,55 +1,62 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { MapPin, Navigation, Star } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { GoogleMap, MarkerF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api"
-import { mapStyles } from "@/lib/map-styles"
+import { useState } from "react";
+import { MapPin, Navigation, Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  GoogleMap,
+  MarkerF,
+  InfoWindowF,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+import { mapStyles } from "@/lib/map-styles";
 
 interface MapViewProps {
   trips: Array<{
-    id: string
-    originName: string
-    destinationName: string
-    dateTime: string
-    price: number
+    id: string;
+    originName: string;
+    destinationName: string;
+    dateTime: string;
+    price: number;
     publisher: {
-      name: string
-      rating: number
-      trusted: boolean
-    }
-  }>
-  selectedTripId?: string | null
-  onTripSelect?: (tripId: string) => void
+      name: string;
+      rating: number;
+      trusted: boolean;
+    };
+  }>;
+  selectedTripId?: string | null;
+  onTripSelect?: (tripId: string) => void;
 }
 
 const containerStyle = {
   width: "100%",
   height: "100%",
-}
+};
 
 const defaultCenter = {
   lat: 40.7128,
   lng: -74.006,
-}
+};
 
 const tripLocations = [
   { lat: 40.7589, lng: -73.9851 }, // Times Square area
   { lat: 40.7505, lng: -73.9934 }, // Herald Square area
   { lat: 40.7282, lng: -73.7949 }, // Queens area
-]
+];
 
 export function MapView({ trips, selectedTripId, onTripSelect }: MapViewProps) {
-  const [hoveredPin, setHoveredPin] = useState<string | null>(null)
-  const [map, setMap] = useState<any | null>(null)
+  const [hoveredPin, setHoveredPin] = useState<string | null>(null);
+  const [map, setMap] = useState<any | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "AIzaSyADEv_BhmFoht8_TwlG0jJD53KIPu7blaI",
+    googleMapsApiKey:
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
+      "AIzaSyADEv_BhmFoht8_TwlG0jJD53KIPu7blaI",
     libraries: ["geometry", "geocoding"],
-  })
+  });
 
   if (!isLoaded) {
     return (
@@ -68,7 +75,7 @@ export function MapView({ trips, selectedTripId, onTripSelect }: MapViewProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -130,25 +137,32 @@ export function MapView({ trips, selectedTripId, onTripSelect }: MapViewProps) {
               icon: {
                 path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
                 scale: 15,
-                fillColor: selectedTripId === trip.id ? "hsl(24 95% 53%)" : "#ffffff",
+                fillColor:
+                  selectedTripId === trip.id ? "hsl(24 95% 53%)" : "#ffffff",
                 fillOpacity: 1,
                 strokeColor: "hsl(24 95% 53%)",
                 strokeWeight: 2,
               },
               label: {
                 text: `$${trip.price}`,
-                color: selectedTripId === trip.id ? "#ffffff" : "hsl(24 95% 53%)",
+                color:
+                  selectedTripId === trip.id ? "#ffffff" : "hsl(24 95% 53%)",
                 fontSize: "12px",
                 fontWeight: "bold",
               },
             }}
           >
             {(hoveredPin === trip.id || selectedTripId === trip.id) && (
-              <InfoWindowF position={tripLocations[index] || defaultCenter} onCloseClick={() => setHoveredPin(null)}>
+              <InfoWindowF
+                position={tripLocations[index] || defaultCenter}
+                onCloseClick={() => setHoveredPin(null)}
+              >
                 <Card className="border-0 shadow-none">
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">{trip.publisher.name}</div>
+                      <div className="text-sm font-medium">
+                        {trip.publisher.name}
+                      </div>
                       <div className="flex items-center space-x-1">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                         <span className="text-xs">{trip.publisher.rating}</span>
@@ -161,7 +175,9 @@ export function MapView({ trips, selectedTripId, onTripSelect }: MapViewProps) {
                         hour12: true,
                       })}
                     </div>
-                    <div className="text-lg font-bold text-primary">${trip.price}</div>
+                    <div className="text-lg font-bold text-primary">
+                      ${trip.price}
+                    </div>
                     {trip.publisher.trusted && (
                       <Badge variant="secondary" className="text-xs">
                         Trusted
@@ -185,5 +201,5 @@ export function MapView({ trips, selectedTripId, onTripSelect }: MapViewProps) {
         </Button>
       </div>
     </div>
-  )
+  );
 }

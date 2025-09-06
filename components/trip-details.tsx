@@ -1,13 +1,23 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowLeft, Clock, Car, Users, Star, Shield, MessageCircle, Phone, Share2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
+import { useState } from "react";
+import {
+  ArrowLeft,
+  Clock,
+  Car,
+  Users,
+  Star,
+  Shield,
+  MessageCircle,
+  Phone,
+  Share2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,11 +25,11 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { ReviewsPreview } from "@/components/reviews-preview"
-import { RelatedTrips } from "@/components/related-trips"
-import { RequestJoinDialog } from "@/components/request-join-dialog"
-import { DetailedMapView } from "@/components/detailed-map-view"
+} from "@/components/ui/breadcrumb";
+import { ReviewsPreview } from "@/components/reviews-preview";
+import { RelatedTrips } from "@/components/related-trips";
+import { RequestJoinDialog } from "@/components/request-join-dialog";
+import { DetailedMapView } from "@/components/detailed-map-view";
 
 // Mock trip data
 const mockTrip = {
@@ -49,21 +59,32 @@ const mockTrip = {
   },
   description:
     "Comfortable ride in a clean, well-maintained Honda Accord. I'm a safe driver with over 5 years of rideshare experience. Non-smoking vehicle, air conditioning, and phone chargers available.",
-  rules: ["No smoking", "No pets (allergies)", "Maximum 1 bag per person", "Please be on time"],
-  amenities: ["Air conditioning", "Phone chargers", "Water bottles", "Music requests welcome"],
-  pickupNotes: "I'll wait up to 10 minutes at the pickup location. Please be ready!",
+  rules: [
+    "No smoking",
+    "No pets (allergies)",
+    "Maximum 1 bag per person",
+    "Please be on time",
+  ],
+  amenities: [
+    "Air conditioning",
+    "Phone chargers",
+    "Water bottles",
+    "Music requests welcome",
+  ],
+  pickupNotes:
+    "I'll wait up to 10 minutes at the pickup location. Please be ready!",
   route: [
     { lat: 40.7589, lng: -73.9851, name: "Times Square" },
     { lat: 42.3601, lng: -71.0589, name: "Boston Common" },
   ],
-}
+};
 
 interface TripDetailsProps {
-  tripId: string
+  tripId: string;
 }
 
 export function TripDetails({ tripId }: TripDetailsProps) {
-  const [showRequestDialog, setShowRequestDialog] = useState(false)
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
 
   const departureTime = new Date(mockTrip.dateTime).toLocaleString("en-US", {
     weekday: "long",
@@ -73,9 +94,10 @@ export function TripDetails({ tripId }: TripDetailsProps) {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-  })
+  });
 
-  const seatsProgress = ((mockTrip.capacity - mockTrip.availableSeats) / mockTrip.capacity) * 100
+  const seatsProgress =
+    ((mockTrip.capacity - mockTrip.availableSeats) / mockTrip.capacity) * 100;
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,7 +140,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                 <Share2 className="h-4 w-4" />
               </Button>
               <div className="text-right">
-                <div className="text-3xl font-bold text-primary">${mockTrip.price}</div>
+                <div className="text-3xl font-bold text-primary">
+                  ${mockTrip.price}
+                </div>
                 <div className="text-sm text-muted-foreground">per person</div>
               </div>
             </div>
@@ -145,7 +169,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
               <CardContent className="space-y-6">
                 <div>
                   <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-muted-foreground">{mockTrip.description}</p>
+                  <p className="text-muted-foreground">
+                    {mockTrip.description}
+                  </p>
                 </div>
 
                 <Separator />
@@ -159,7 +185,10 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                         <span>{mockTrip.vehicleMake}</span>
                       </div>
                       {mockTrip.amenities.map((amenity, index) => (
-                        <div key={index} className="flex items-center space-x-2">
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
                           <div className="w-2 h-2 bg-primary rounded-full" />
                           <span className="text-sm">{amenity}</span>
                         </div>
@@ -171,7 +200,10 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                     <h4 className="font-semibold mb-3">Rules & Requirements</h4>
                     <div className="space-y-2">
                       {mockTrip.rules.map((rule, index) => (
-                        <div key={index} className="flex items-center space-x-2">
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
                           <div className="w-2 h-2 bg-muted-foreground rounded-full" />
                           <span className="text-sm">{rule}</span>
                         </div>
@@ -184,7 +216,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
                 <div>
                   <h4 className="font-semibold mb-2">Pickup Instructions</h4>
-                  <p className="text-muted-foreground text-sm">{mockTrip.pickupNotes}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {mockTrip.pickupNotes}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -203,7 +237,10 @@ export function TripDetails({ tripId }: TripDetailsProps) {
               <CardContent className="space-y-4">
                 <div className="flex items-start space-x-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={mockTrip.publisher.avatar || "/placeholder.svg"} alt={mockTrip.publisher.name} />
+                    <AvatarImage
+                      src={mockTrip.publisher.avatar || "/placeholder.svg"}
+                      alt={mockTrip.publisher.name}
+                    />
                     <AvatarFallback>
                       {mockTrip.publisher.name
                         .split(" ")
@@ -213,7 +250,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-semibold">{mockTrip.publisher.name}</h3>
+                      <h3 className="font-semibold">
+                        {mockTrip.publisher.name}
+                      </h3>
                       {mockTrip.publisher.trusted && (
                         <Badge variant="secondary" className="text-xs">
                           <Shield className="w-3 h-3 mr-1" />
@@ -227,27 +266,41 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                       <span>•</span>
                       <span>{mockTrip.publisher.reviewCount} reviews</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">Member since {mockTrip.publisher.memberSince}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Member since {mockTrip.publisher.memberSince}
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-muted-foreground">Response rate</div>
-                    <div className="font-medium">{mockTrip.publisher.responseRate}%</div>
+                    <div className="font-medium">
+                      {mockTrip.publisher.responseRate}%
+                    </div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Languages</div>
-                    <div className="font-medium">{mockTrip.publisher.languages.join(", ")}</div>
+                    <div className="font-medium">
+                      {mockTrip.publisher.languages.join(", ")}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-transparent"
+                  >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Message
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-transparent"
+                  >
                     <Phone className="h-4 w-4 mr-2" />
                     Call
                   </Button>
@@ -262,7 +315,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Available seats</span>
+                  <span className="text-sm text-muted-foreground">
+                    Available seats
+                  </span>
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">
@@ -275,7 +330,8 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   <div className="flex justify-between text-sm">
                     <span>Seats taken</span>
                     <span>
-                      {mockTrip.capacity - mockTrip.availableSeats}/{mockTrip.capacity}
+                      {mockTrip.capacity - mockTrip.availableSeats}/
+                      {mockTrip.capacity}
                     </span>
                   </div>
                   <Progress value={seatsProgress} className="h-2" />
@@ -305,7 +361,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   disabled={mockTrip.availableSeats === 0}
                   onClick={() => setShowRequestDialog(true)}
                 >
-                  {mockTrip.availableSeats === 0 ? "Trip Full" : "Request to Join"}
+                  {mockTrip.availableSeats === 0
+                    ? "Trip Full"
+                    : "Request to Join"}
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">
@@ -322,7 +380,11 @@ export function TripDetails({ tripId }: TripDetailsProps) {
         </div>
       </div>
 
-      <RequestJoinDialog open={showRequestDialog} onOpenChange={setShowRequestDialog} trip={mockTrip} />
+      <RequestJoinDialog
+        open={showRequestDialog}
+        onOpenChange={setShowRequestDialog}
+        trip={mockTrip}
+      />
     </div>
-  )
+  );
 }

@@ -1,40 +1,53 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowLeft, ArrowRight, MapPin, Calendar, Car, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  MapPin,
+  Calendar,
+  Car,
+  Check,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 
 interface TripData {
-  origin: string
-  destination: string
-  originAddress: string
-  destinationAddress: string
-  date: string
-  time: string
-  vehicleType: string
-  vehicleMake: string
-  capacity: string
-  price: string
-  description: string
-  rules: string[]
-  amenities: string[]
+  origin: string;
+  destination: string;
+  originAddress: string;
+  destinationAddress: string;
+  date: string;
+  time: string;
+  vehicleType: string;
+  vehicleMake: string;
+  capacity: string;
+  price: string;
+  description: string;
+  rules: string[];
+  amenities: string[];
 }
 
 const steps = [
   { id: 1, title: "Route", description: "Where are you going?" },
   { id: 2, title: "Details", description: "Trip specifics" },
   { id: 3, title: "Review", description: "Confirm and publish" },
-]
+];
 
 export function PublishWizard() {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(1);
   const [tripData, setTripData] = useState<TripData>({
     origin: "",
     destination: "",
@@ -49,39 +62,45 @@ export function PublishWizard() {
     description: "",
     rules: [],
     amenities: [],
-  })
+  });
 
-  const progress = (currentStep / steps.length) * 100
+  const progress = (currentStep / steps.length) * 100;
 
   const handleNext = () => {
     if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const handlePublish = () => {
     // Handle trip publication
-    console.log("Publishing trip:", tripData)
-  }
+    console.log("Publishing trip:", tripData);
+  };
 
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return tripData.origin && tripData.destination
+        return tripData.origin && tripData.destination;
       case 2:
-        return tripData.date && tripData.time && tripData.vehicleType && tripData.capacity && tripData.price
+        return (
+          tripData.date &&
+          tripData.time &&
+          tripData.vehicleType &&
+          tripData.capacity &&
+          tripData.price
+        );
       case 3:
-        return true
+        return true;
       default:
-        return false
+        return false;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,7 +108,9 @@ export function PublishWizard() {
         {/* Header */}
         <div className="text-center space-y-4 mb-8">
           <h1 className="text-3xl font-bold">Publish Your Trip</h1>
-          <p className="text-muted-foreground">Share your journey and help others travel sustainably</p>
+          <p className="text-muted-foreground">
+            Share your journey and help others travel sustainably
+          </p>
         </div>
 
         {/* Progress */}
@@ -99,16 +120,26 @@ export function PublishWizard() {
               <div key={step.id} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= step.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    currentStep >= step.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
+                  {currentStep > step.id ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    step.id
+                  )}
                 </div>
                 <div className="ml-3 hidden sm:block">
                   <div className="text-sm font-medium">{step.title}</div>
-                  <div className="text-xs text-muted-foreground">{step.description}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {step.description}
+                  </div>
                 </div>
-                {index < steps.length - 1 && <div className="w-12 h-px bg-border mx-4 hidden sm:block" />}
+                {index < steps.length - 1 && (
+                  <div className="w-12 h-px bg-border mx-4 hidden sm:block" />
+                )}
               </div>
             ))}
           </div>
@@ -132,7 +163,12 @@ export function PublishWizard() {
                         placeholder="Origin city"
                         className="pl-10"
                         value={tripData.origin}
-                        onChange={(e) => setTripData((prev) => ({ ...prev, origin: e.target.value }))}
+                        onChange={(e) =>
+                          setTripData((prev) => ({
+                            ...prev,
+                            origin: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                   </div>
@@ -144,7 +180,12 @@ export function PublishWizard() {
                         placeholder="Destination city"
                         className="pl-10"
                         value={tripData.destination}
-                        onChange={(e) => setTripData((prev) => ({ ...prev, destination: e.target.value }))}
+                        onChange={(e) =>
+                          setTripData((prev) => ({
+                            ...prev,
+                            destination: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                   </div>
@@ -156,7 +197,12 @@ export function PublishWizard() {
                     <Input
                       placeholder="Specific pickup location"
                       value={tripData.originAddress}
-                      onChange={(e) => setTripData((prev) => ({ ...prev, originAddress: e.target.value }))}
+                      onChange={(e) =>
+                        setTripData((prev) => ({
+                          ...prev,
+                          originAddress: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -164,7 +210,12 @@ export function PublishWizard() {
                     <Input
                       placeholder="Specific drop-off location"
                       value={tripData.destinationAddress}
-                      onChange={(e) => setTripData((prev) => ({ ...prev, destinationAddress: e.target.value }))}
+                      onChange={(e) =>
+                        setTripData((prev) => ({
+                          ...prev,
+                          destinationAddress: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -182,7 +233,12 @@ export function PublishWizard() {
                         type="date"
                         className="pl-10"
                         value={tripData.date}
-                        onChange={(e) => setTripData((prev) => ({ ...prev, date: e.target.value }))}
+                        onChange={(e) =>
+                          setTripData((prev) => ({
+                            ...prev,
+                            date: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                   </div>
@@ -191,7 +247,12 @@ export function PublishWizard() {
                     <Input
                       type="time"
                       value={tripData.time}
-                      onChange={(e) => setTripData((prev) => ({ ...prev, time: e.target.value }))}
+                      onChange={(e) =>
+                        setTripData((prev) => ({
+                          ...prev,
+                          time: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -201,7 +262,9 @@ export function PublishWizard() {
                     <Label>Vehicle type</Label>
                     <Select
                       value={tripData.vehicleType}
-                      onValueChange={(value) => setTripData((prev) => ({ ...prev, vehicleType: value }))}
+                      onValueChange={(value) =>
+                        setTripData((prev) => ({ ...prev, vehicleType: value }))
+                      }
                     >
                       <SelectTrigger>
                         <div className="flex items-center">
@@ -221,7 +284,9 @@ export function PublishWizard() {
                     <Label>Available seats</Label>
                     <Select
                       value={tripData.capacity}
-                      onValueChange={(value) => setTripData((prev) => ({ ...prev, capacity: value }))}
+                      onValueChange={(value) =>
+                        setTripData((prev) => ({ ...prev, capacity: value }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seats" />
@@ -239,13 +304,20 @@ export function PublishWizard() {
                   <div className="space-y-2">
                     <Label>Price per seat</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        $
+                      </span>
                       <Input
                         type="number"
                         placeholder="0"
                         className="pl-8"
                         value={tripData.price}
-                        onChange={(e) => setTripData((prev) => ({ ...prev, price: e.target.value }))}
+                        onChange={(e) =>
+                          setTripData((prev) => ({
+                            ...prev,
+                            price: e.target.value,
+                          }))
+                        }
                       />
                     </div>
                   </div>
@@ -256,7 +328,12 @@ export function PublishWizard() {
                   <Input
                     placeholder="e.g., Honda Accord, Toyota Camry"
                     value={tripData.vehicleMake}
-                    onChange={(e) => setTripData((prev) => ({ ...prev, vehicleMake: e.target.value }))}
+                    onChange={(e) =>
+                      setTripData((prev) => ({
+                        ...prev,
+                        vehicleMake: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
@@ -266,7 +343,12 @@ export function PublishWizard() {
                     placeholder="Tell passengers about your trip, vehicle amenities, rules, etc."
                     className="min-h-24"
                     value={tripData.description}
-                    onChange={(e) => setTripData((prev) => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setTripData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -280,33 +362,49 @@ export function PublishWizard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <div>
-                        <div className="text-sm text-muted-foreground">Route</div>
+                        <div className="text-sm text-muted-foreground">
+                          Route
+                        </div>
                         <div className="font-medium">
                           {tripData.origin} → {tripData.destination}
                         </div>
                       </div>
                       <div>
-                        <div className="text-sm text-muted-foreground">Date & Time</div>
+                        <div className="text-sm text-muted-foreground">
+                          Date & Time
+                        </div>
                         <div className="font-medium">
-                          {new Date(tripData.date).toLocaleDateString()} at {tripData.time}
+                          {new Date(tripData.date).toLocaleDateString()} at{" "}
+                          {tripData.time}
                         </div>
                       </div>
                       <div>
-                        <div className="text-sm text-muted-foreground">Vehicle</div>
+                        <div className="text-sm text-muted-foreground">
+                          Vehicle
+                        </div>
                         <div className="font-medium capitalize">
-                          {tripData.vehicleType} {tripData.vehicleMake && `(${tripData.vehicleMake})`}
+                          {tripData.vehicleType}{" "}
+                          {tripData.vehicleMake && `(${tripData.vehicleMake})`}
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-3">
                       <div>
-                        <div className="text-sm text-muted-foreground">Available Seats</div>
-                        <div className="font-medium">{tripData.capacity} seats</div>
+                        <div className="text-sm text-muted-foreground">
+                          Available Seats
+                        </div>
+                        <div className="font-medium">
+                          {tripData.capacity} seats
+                        </div>
                       </div>
                       <div>
-                        <div className="text-sm text-muted-foreground">Price per Seat</div>
-                        <div className="font-medium text-primary text-xl">${tripData.price}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Price per Seat
+                        </div>
+                        <div className="font-medium text-primary text-xl">
+                          ${tripData.price}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -315,7 +413,9 @@ export function PublishWizard() {
                     <>
                       <Separator />
                       <div>
-                        <div className="text-sm text-muted-foreground mb-2">Description</div>
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Description
+                        </div>
                         <p className="text-sm">{tripData.description}</p>
                       </div>
                     </>
@@ -328,7 +428,10 @@ export function PublishWizard() {
                     <li>• Make sure your trip details are accurate</li>
                     <li>• Be responsive to passenger requests</li>
                     <li>• Follow safety guidelines and local regulations</li>
-                    <li>• You can edit or cancel your trip anytime before departure</li>
+                    <li>
+                      • You can edit or cancel your trip anytime before
+                      departure
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -349,12 +452,20 @@ export function PublishWizard() {
           </Button>
 
           {currentStep < steps.length ? (
-            <Button onClick={handleNext} disabled={!isStepValid()} className="flex items-center space-x-2">
+            <Button
+              onClick={handleNext}
+              disabled={!isStepValid()}
+              className="flex items-center space-x-2"
+            >
               <span>Next</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button onClick={handlePublish} disabled={!isStepValid()} className="flex items-center space-x-2">
+            <Button
+              onClick={handlePublish}
+              disabled={!isStepValid()}
+              className="flex items-center space-x-2"
+            >
               <span>Publish Trip</span>
               <Check className="h-4 w-4" />
             </Button>
@@ -362,5 +473,5 @@ export function PublishWizard() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,43 +1,50 @@
-"use client"
+"use client";
 
-import { MapPin, Navigation } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { GoogleMap, MarkerF, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api"
-import { mapStyles } from "@/lib/map-styles"
-import { useState, useEffect } from "react"
-import type { DirectionsResult, Map } from "@react-google-maps/api"
+import { MapPin, Navigation } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  GoogleMap,
+  MarkerF,
+  DirectionsRenderer,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+import { mapStyles } from "@/lib/map-styles";
+import { useState, useEffect } from "react";
+import type { DirectionsResult, Map } from "@react-google-maps/api";
 
 interface DetailedMapViewProps {
   trip: {
-    originName: string
-    destinationName: string
-    originAddress: string
-    destinationAddress: string
-    route: Array<{ lat: number; lng: number; name: string }>
-  }
+    originName: string;
+    destinationName: string;
+    originAddress: string;
+    destinationAddress: string;
+    route: Array<{ lat: number; lng: number; name: string }>;
+  };
 }
 
 const containerStyle = {
   width: "100%",
   height: "100%",
-}
+};
 
-const defaultOrigin = { lat: 40.7128, lng: -74.006 } // NYC
-const defaultDestination = { lat: 42.3601, lng: -71.0589 } // Boston
+const defaultOrigin = { lat: 40.7128, lng: -74.006 }; // NYC
+const defaultDestination = { lat: 42.3601, lng: -71.0589 }; // Boston
 
 export function DetailedMapView({ trip }: DetailedMapViewProps) {
-  const [directions, setDirections] = useState<DirectionsResult | null>(null)
-  const [map, setMap] = useState<Map | null>(null)
+  const [directions, setDirections] = useState<DirectionsResult | null>(null);
+  const [map, setMap] = useState<Map | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "AIzaSyADEv_BhmFoht8_TwlG0jJD53KIPu7blaI",
+    googleMapsApiKey:
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
+      "AIzaSyADEv_BhmFoht8_TwlG0jJD53KIPu7blaI",
     libraries: ["geometry", "geocoding"],
-  })
+  });
 
   useEffect(() => {
     if (isLoaded && map && window.google) {
-      const directionsService = new window.google.maps.DirectionsService()
+      const directionsService = new window.google.maps.DirectionsService();
 
       directionsService.route(
         {
@@ -47,12 +54,12 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
         },
         (result, status) => {
           if (status === window.google.maps.DirectionsStatus.OK && result) {
-            setDirections(result)
+            setDirections(result);
           }
         },
-      )
+      );
     }
-  }, [isLoaded, map])
+  }, [isLoaded, map]);
 
   if (!isLoaded) {
     return (
@@ -69,7 +76,7 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -163,18 +170,24 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
                 <div className="w-3 h-3 bg-primary rounded-full" />
                 <span className="text-sm font-medium">{trip.originName}</span>
               </div>
-              <div className="text-xs text-muted-foreground pl-5">{trip.originAddress}</div>
+              <div className="text-xs text-muted-foreground pl-5">
+                {trip.originAddress}
+              </div>
             </div>
             <div className="space-y-1 text-right">
               <div className="flex items-center justify-end space-x-2">
-                <span className="text-sm font-medium">{trip.destinationName}</span>
+                <span className="text-sm font-medium">
+                  {trip.destinationName}
+                </span>
                 <div className="w-3 h-3 bg-accent rounded-full" />
               </div>
-              <div className="text-xs text-muted-foreground pr-5">{trip.destinationAddress}</div>
+              <div className="text-xs text-muted-foreground pr-5">
+                {trip.destinationAddress}
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

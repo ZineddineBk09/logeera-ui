@@ -1,44 +1,59 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Users, MessageCircle } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+import { useState } from "react";
+import { Users, MessageCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 interface RequestJoinDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   trip: {
-    id: string
-    originName: string
-    destinationName: string
-    price: number
-    availableSeats: number
+    id: string;
+    originName: string;
+    destinationName: string;
+    price: number;
+    availableSeats: number;
     publisher: {
-      name: string
-    }
-  }
+      name: string;
+    };
+  };
 }
 
-export function RequestJoinDialog({ open, onOpenChange, trip }: RequestJoinDialogProps) {
-  const [seats, setSeats] = useState("1")
-  const [message, setMessage] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function RequestJoinDialog({
+  open,
+  onOpenChange,
+  trip,
+}: RequestJoinDialogProps) {
+  const [seats, setSeats] = useState("1");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsSubmitting(false)
-    onOpenChange(false)
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    onOpenChange(false);
     // Show success toast or redirect
-  }
+  };
 
-  const totalPrice = Number.parseInt(seats) * trip.price + 2 // Including service fee
+  const totalPrice = Number.parseInt(seats) * trip.price + 2; // Including service fee
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -53,7 +68,9 @@ export function RequestJoinDialog({ open, onOpenChange, trip }: RequestJoinDialo
             <div className="font-semibold">
               {trip.originName} → {trip.destinationName}
             </div>
-            <div className="text-sm text-muted-foreground">with {trip.publisher.name}</div>
+            <div className="text-sm text-muted-foreground">
+              with {trip.publisher.name}
+            </div>
           </div>
 
           {/* Number of Seats */}
@@ -67,11 +84,14 @@ export function RequestJoinDialog({ open, onOpenChange, trip }: RequestJoinDialo
                 </div>
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: Math.min(trip.availableSeats, 4) }, (_, i) => (
-                  <SelectItem key={i + 1} value={(i + 1).toString()}>
-                    {i + 1} seat{i > 0 ? "s" : ""}
-                  </SelectItem>
-                ))}
+                {Array.from(
+                  { length: Math.min(trip.availableSeats, 4) },
+                  (_, i) => (
+                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                      {i + 1} seat{i > 0 ? "s" : ""}
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -97,7 +117,8 @@ export function RequestJoinDialog({ open, onOpenChange, trip }: RequestJoinDialo
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>
-                  {seats} seat{Number.parseInt(seats) > 1 ? "s" : ""} × ${trip.price}
+                  {seats} seat{Number.parseInt(seats) > 1 ? "s" : ""} × $
+                  {trip.price}
                 </span>
                 <span>${Number.parseInt(seats) * trip.price}</span>
               </div>
@@ -111,20 +132,30 @@ export function RequestJoinDialog({ open, onOpenChange, trip }: RequestJoinDialo
                 <span>${totalPrice}</span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">You won't be charged until your request is accepted</p>
+            <p className="text-xs text-muted-foreground">
+              You won't be charged until your request is accepted
+            </p>
           </div>
 
           {/* Actions */}
           <div className="flex space-x-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="flex-1"
+            >
               {isSubmitting ? "Sending..." : "Send Request"}
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

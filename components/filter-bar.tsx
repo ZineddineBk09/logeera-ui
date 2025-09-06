@@ -1,21 +1,37 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { X, SlidersHorizontal, Calendar, Car, Users, Shield } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import {
+  X,
+  SlidersHorizontal,
+  Calendar,
+  Car,
+  Users,
+  Shield,
+  MapPin,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface FilterState {
-  date: string
-  vehicleType: string
-  capacity: string
-  trustedOnly: boolean
-  maxPrice: string
+  date: string;
+  vehicleType: string;
+  capacity: string;
+  trustedOnly: boolean;
+  maxPrice: string;
+  startLocation: string;
+  endLocation: string;
 }
 
 export function FilterBar() {
@@ -25,15 +41,41 @@ export function FilterBar() {
     capacity: "any",
     trustedOnly: false,
     maxPrice: "",
-  })
+    startLocation: "",
+    endLocation: "",
+  });
 
   const activeFilters = [
     { key: "date", label: "Jan 15, 2024", removable: false },
     { key: "route", label: "NYC → Boston", removable: false },
-    ...(filters.vehicleType !== "any" ? [{ key: "vehicleType", label: filters.vehicleType, removable: true }] : []),
-    ...(filters.trustedOnly ? [{ key: "trusted", label: "Trusted only", removable: true }] : []),
-    ...(filters.maxPrice ? [{ key: "price", label: `Under $${filters.maxPrice}`, removable: true }] : []),
-  ]
+    ...(filters.vehicleType !== "any"
+      ? [{ key: "vehicleType", label: filters.vehicleType, removable: true }]
+      : []),
+    ...(filters.trustedOnly
+      ? [{ key: "trusted", label: "Trusted only", removable: true }]
+      : []),
+    ...(filters.maxPrice
+      ? [{ key: "price", label: `Under $${filters.maxPrice}`, removable: true }]
+      : []),
+    ...(filters.startLocation
+      ? [
+          {
+            key: "startLocation",
+            label: `From: ${filters.startLocation}`,
+            removable: true,
+          },
+        ]
+      : []),
+    ...(filters.endLocation
+      ? [
+          {
+            key: "endLocation",
+            label: `To: ${filters.endLocation}`,
+            removable: true,
+          },
+        ]
+      : []),
+  ];
 
   const removeFilter = (key: string) => {
     setFilters((prev) => ({
@@ -41,8 +83,10 @@ export function FilterBar() {
       ...(key === "vehicleType" && { vehicleType: "any" }),
       ...(key === "trusted" && { trustedOnly: false }),
       ...(key === "price" && { maxPrice: "" }),
-    }))
-  }
+      ...(key === "startLocation" && { startLocation: "" }),
+      ...(key === "endLocation" && { endLocation: "" }),
+    }));
+  };
 
   return (
     <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
@@ -51,7 +95,11 @@ export function FilterBar() {
           {/* Active Filters */}
           <div className="flex items-center space-x-2 flex-1 overflow-x-auto">
             {activeFilters.map((filter) => (
-              <Badge key={filter.key} variant="secondary" className="flex items-center space-x-1 whitespace-nowrap">
+              <Badge
+                key={filter.key}
+                variant="secondary"
+                className="flex items-center space-x-1 whitespace-nowrap"
+              >
                 <span>{filter.label}</span>
                 {filter.removable && (
                   <button
@@ -68,7 +116,11 @@ export function FilterBar() {
           {/* Filter Button */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-4 bg-transparent">
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-4 bg-transparent"
+              >
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
                 Filters
               </Button>
@@ -77,6 +129,42 @@ export function FilterBar() {
               <div className="space-y-6 mt-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Filter Results</h3>
+                </div>
+
+                {/* Start Location Filter */}
+                <div className="space-y-2">
+                  <Label className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>Start Location</span>
+                  </Label>
+                  <Input
+                    placeholder="Enter start location"
+                    value={filters.startLocation}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        startLocation: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Destination Filter */}
+                <div className="space-y-2">
+                  <Label className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>Destination</span>
+                  </Label>
+                  <Input
+                    placeholder="Enter destination"
+                    value={filters.endLocation}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        endLocation: e.target.value,
+                      }))
+                    }
+                  />
                 </div>
 
                 {/* Date Filter */}
@@ -88,7 +176,9 @@ export function FilterBar() {
                   <Input
                     type="date"
                     value={filters.date}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, date: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({ ...prev, date: e.target.value }))
+                    }
                   />
                 </div>
 
@@ -100,7 +190,9 @@ export function FilterBar() {
                   </Label>
                   <Select
                     value={filters.vehicleType}
-                    onValueChange={(value) => setFilters((prev) => ({ ...prev, vehicleType: value }))}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, vehicleType: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -123,7 +215,9 @@ export function FilterBar() {
                   </Label>
                   <Select
                     value={filters.capacity}
-                    onValueChange={(value) => setFilters((prev) => ({ ...prev, capacity: value }))}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, capacity: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -145,7 +239,12 @@ export function FilterBar() {
                     type="number"
                     placeholder="Enter max price"
                     value={filters.maxPrice}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        maxPrice: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
@@ -157,7 +256,9 @@ export function FilterBar() {
                   </Label>
                   <Switch
                     checked={filters.trustedOnly}
-                    onCheckedChange={(checked) => setFilters((prev) => ({ ...prev, trustedOnly: checked }))}
+                    onCheckedChange={(checked) =>
+                      setFilters((prev) => ({ ...prev, trustedOnly: checked }))
+                    }
                   />
                 </div>
 
@@ -171,5 +272,5 @@ export function FilterBar() {
         </div>
       </div>
     </div>
-  )
+  );
 }

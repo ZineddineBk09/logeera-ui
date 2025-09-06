@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Star, ThumbsUp } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+import { Star, ThumbsUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 const mockReviews = [
   {
@@ -31,7 +31,7 @@ const mockReviews = [
     date: "2024-01-05",
     helpful: 5,
   },
-]
+];
 
 const ratingDistribution = [
   { stars: 5, count: 98, percentage: 77 },
@@ -39,10 +39,10 @@ const ratingDistribution = [
   { stars: 3, count: 4, percentage: 3 },
   { stars: 2, count: 2, percentage: 2 },
   { stars: 1, count: 0, percentage: 0 },
-]
+];
 
 interface ReviewsPreviewProps {
-  publisherId: string
+  publisherId: string;
 }
 
 export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
@@ -63,7 +63,10 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
             <div className="text-4xl font-bold">4.9</div>
             <div className="flex items-center justify-center space-x-1">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                <Star
+                  key={star}
+                  className="w-5 h-5 fill-yellow-400 text-yellow-400"
+                />
               ))}
             </div>
             <div className="text-sm text-muted-foreground">127 reviews</div>
@@ -71,7 +74,10 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
 
           <div className="space-y-2">
             {ratingDistribution.map((item) => (
-              <div key={item.stars} className="flex items-center space-x-3 text-sm">
+              <div
+                key={item.stars}
+                className="flex items-center space-x-3 text-sm"
+              >
                 <span className="w-8">{item.stars}★</span>
                 <Progress value={item.percentage} className="flex-1 h-2" />
                 <span className="w-8 text-muted-foreground">{item.count}</span>
@@ -84,7 +90,10 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
         <div className="space-y-4">
           <h4 className="font-semibold">Recent Reviews</h4>
           {mockReviews.map((review) => (
-            <div key={review.id} className="space-y-3 pb-4 border-b last:border-b-0">
+            <div
+              key={review.id}
+              className="space-y-3 pb-4 border-b last:border-b-0"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-8 w-8">
@@ -103,7 +112,9 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
                           <Star
                             key={star}
                             className={`w-3 h-3 ${
-                              star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                              star <= review.rating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
                             }`}
                           />
                         ))}
@@ -129,5 +140,5 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

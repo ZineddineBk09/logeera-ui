@@ -1,12 +1,18 @@
-"use client"
+"use client";
 
-import { Star, ThumbsUp, Filter } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
+import { Star, ThumbsUp, Filter } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 const mockRatings = [
   {
@@ -49,7 +55,7 @@ const mockRatings = [
     role: "as Passenger",
     helpful: 3,
   },
-]
+];
 
 const ratingDistribution = [
   { stars: 5, count: 67, percentage: 75 },
@@ -57,10 +63,10 @@ const ratingDistribution = [
   { stars: 3, count: 3, percentage: 3 },
   { stars: 2, count: 1, percentage: 1 },
   { stars: 1, count: 0, percentage: 0 },
-]
+];
 
 interface ProfileRatingsProps {
-  userId: string
+  userId: string;
 }
 
 export function ProfileRatings({ userId }: ProfileRatingsProps) {
@@ -77,7 +83,10 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
               <div className="text-5xl font-bold">4.8</div>
               <div className="flex items-center justify-center space-x-1">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                  <Star
+                    key={star}
+                    className="w-6 h-6 fill-yellow-400 text-yellow-400"
+                  />
                 ))}
               </div>
               <div className="text-muted-foreground">89 total reviews</div>
@@ -88,7 +97,9 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
                 <div key={item.stars} className="flex items-center space-x-3">
                   <span className="w-12 text-sm">{item.stars} star</span>
                   <Progress value={item.percentage} className="flex-1 h-2" />
-                  <span className="w-12 text-sm text-muted-foreground">{item.count}</span>
+                  <span className="w-12 text-sm text-muted-foreground">
+                    {item.count}
+                  </span>
                 </div>
               ))}
             </div>
@@ -122,7 +133,10 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
         <CardContent>
           <div className="space-y-6">
             {mockRatings.map((review) => (
-              <div key={review.id} className="space-y-4 pb-6 border-b last:border-b-0">
+              <div
+                key={review.id}
+                className="space-y-4 pb-6 border-b last:border-b-0"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
@@ -146,13 +160,17 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
                             <Star
                               key={star}
                               className={`w-3 h-3 ${
-                                star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                                star <= review.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted-foreground"
                               }`}
                             />
                           ))}
                         </div>
                         <span>•</span>
-                        <span>{new Date(review.date).toLocaleDateString()}</span>
+                        <span>
+                          {new Date(review.date).toLocaleDateString()}
+                        </span>
                         <span>•</span>
                         <span>{review.tripRoute}</span>
                       </div>
@@ -163,7 +181,11 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
                 <p className="text-sm leading-relaxed pl-13">{review.text}</p>
 
                 <div className="flex items-center space-x-2 pl-13">
-                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs"
+                  >
                     <ThumbsUp className="w-3 h-3 mr-1" />
                     Helpful ({review.helpful})
                   </Button>
@@ -178,5 +200,5 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

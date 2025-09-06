@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { Phone, Mail, Globe, Calendar, Car } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Phone, Mail, Globe, Calendar, Car } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface ProfileOverviewProps {
   user: {
-    name: string
-    email: string
-    phone: string
-    memberSince: string
-    languages: string[]
-    bio: string
-    verifiedPhone: boolean
-    verifiedEmail: boolean
-    tripCount: number
-  }
+    name: string;
+    email: string;
+    phone: string;
+    memberSince: string;
+    languages: string[];
+    bio: string;
+    verifiedPhone: boolean;
+    verifiedEmail: boolean;
+    tripCount: number;
+  };
 }
 
 const recentTrips = [
@@ -41,7 +41,7 @@ const recentTrips = [
     role: "Driver",
     status: "Completed",
   },
-]
+];
 
 export function ProfileOverview({ user }: ProfileOverviewProps) {
   return (
@@ -87,7 +87,9 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
               <div className="flex items-center space-x-3">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div className="flex-1">
-                  <div className="text-sm text-muted-foreground">Member since</div>
+                  <div className="text-sm text-muted-foreground">
+                    Member since
+                  </div>
                   <span>{new Date(user.memberSince).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -118,7 +120,10 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
           <CardContent>
             <div className="space-y-4">
               {recentTrips.map((trip) => (
-                <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={trip.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                       <Car className="h-4 w-4 text-primary" />
@@ -146,7 +151,9 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{user.tripCount}</div>
+              <div className="text-3xl font-bold text-primary">
+                {user.tripCount}
+              </div>
               <div className="text-sm text-muted-foreground">Total Trips</div>
             </div>
 
@@ -159,7 +166,9 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
               </div>
               <div>
                 <div className="text-xl font-bold">60</div>
-                <div className="text-xs text-muted-foreground">As Passenger</div>
+                <div className="text-xs text-muted-foreground">
+                  As Passenger
+                </div>
               </div>
             </div>
 
@@ -189,7 +198,9 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
               </div>
               <div>
                 <div className="text-sm font-medium">Top Rated Driver</div>
-                <div className="text-xs text-muted-foreground">Maintained 4.8+ rating</div>
+                <div className="text-xs text-muted-foreground">
+                  Maintained 4.8+ rating
+                </div>
               </div>
             </div>
 
@@ -199,7 +210,9 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
               </div>
               <div>
                 <div className="text-sm font-medium">Reliable Member</div>
-                <div className="text-xs text-muted-foreground">100+ completed trips</div>
+                <div className="text-xs text-muted-foreground">
+                  100+ completed trips
+                </div>
               </div>
             </div>
 
@@ -209,12 +222,14 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
               </div>
               <div>
                 <div className="text-sm font-medium">Early Adopter</div>
-                <div className="text-xs text-muted-foreground">Member since 2022</div>
+                <div className="text-xs text-muted-foreground">
+                  Member since 2022
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-import { AppShell } from "@/components/app-shell"
-import { SearchHero } from "@/components/search-hero"
-import { HowItWorks } from "@/components/how-it-works"
-import { TrustedPublishers } from "@/components/trusted-publishers"
+import { AppShell } from "@/components/app-shell";
+import { SearchHero } from "@/components/search-hero";
+import { HowItWorks } from "@/components/how-it-works";
+import { TrustedPublishers } from "@/components/trusted-publishers";
 
 export default function HomePage() {
   return (
@@ -12,5 +12,5 @@ export default function HomePage() {
         <TrustedPublishers />
       </div>
     </AppShell>
-  )
+  );
 }

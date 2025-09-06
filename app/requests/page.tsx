@@ -1,5 +1,5 @@
-import { RequestsManagement } from "@/components/requests-management"
+import { RequestsManagement } from "@/components/requests-management";
 
 export default function RequestsPage() {
-  return <RequestsManagement />
+  return <RequestsManagement />;
 }
