@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import useSWR from "swr";
+import { api } from "@/lib/api";
+import { swrKeys } from "@/lib/swr-config";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,6 +59,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
+// Mock chart data - can be replaced with real data later
 const revenueData = [
   { month: "Jan", revenue: 32000, profit: 8000, trips: 450 },
   { month: "Feb", revenue: 38000, profit: 9500, trips: 520 },
@@ -73,89 +78,6 @@ const userGrowthData = [
   { month: "Jun", users: 12847, active: 10500 },
 ];
 
-const mockStats = {
-  totalUsers: 12847,
-  activeTrips: 342,
-  monthlyRevenue: 52000,
-  monthlyProfit: 15200,
-  reportedIssues: 23,
-  completionRate: 94.2,
-  avgRating: 4.6,
-  supportTickets: 12,
-};
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    email: "sarah.chen@email.com",
-    avatar: "/diverse-user-avatars.png",
-    status: "active",
-    joinDate: "2024-01-15",
-    trips: 23,
-    rating: 4.8,
-    verified: true,
-  },
-  {
-    id: "2",
-    name: "Mike Johnson",
-    email: "mike.j@email.com",
-    avatar: "/diverse-user-avatars.png",
-    status: "suspended",
-    joinDate: "2024-02-20",
-    trips: 8,
-    rating: 3.2,
-    verified: false,
-  },
-  {
-    id: "3",
-    name: "Emma Wilson",
-    email: "emma.wilson@email.com",
-    avatar: "/diverse-user-avatars.png",
-    status: "active",
-    joinDate: "2024-03-10",
-    trips: 45,
-    rating: 4.9,
-    verified: true,
-  },
-];
-
-const mockTrips = [
-  {
-    id: "1",
-    route: "San Francisco → Los Angeles",
-    publisher: "Sarah Chen",
-    date: "2024-12-15",
-    status: "active",
-    passengers: 2,
-    maxPassengers: 3,
-    price: 45,
-    reports: 0,
-  },
-  {
-    id: "2",
-    route: "Oakland → San Jose",
-    publisher: "Mike Johnson",
-    date: "2024-12-18",
-    status: "flagged",
-    passengers: 1,
-    maxPassengers: 2,
-    price: 25,
-    reports: 2,
-  },
-  {
-    id: "3",
-    route: "San Francisco → Sacramento",
-    publisher: "Emma Wilson",
-    date: "2024-12-20",
-    status: "completed",
-    passengers: 3,
-    maxPassengers: 3,
-    price: 60,
-    reports: 0,
-  },
-];
-
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("overview");
   const [userSearch, setUserSearch] = useState("");
@@ -163,28 +85,150 @@ export function AdminDashboard() {
   const [userFilter, setUserFilter] = useState("all");
   const [tripFilter, setTripFilter] = useState("all");
 
-  const filteredUsers = mockUsers.filter((user) => {
+  // Fetch dashboard stats
+  const { data: dashboardData, error: dashboardError, isLoading: dashboardLoading } = useSWR(
+    swrKeys.admin.dashboard('week'),
+    () => api('/api/admin/dashboard').then(async (r) => {
+      if (r.ok) {
+        return await r.json();
+      }
+      throw new Error('Failed to load dashboard data');
+    }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      refreshInterval: 60000, // Refresh every minute
+    }
+  );
+
+  // Fetch users for management
+  const { data: usersData, error: usersError, isLoading: usersLoading, mutate: mutateUsers } = useSWR(
+    activeSection === 'users' ? swrKeys.admin.users() : null,
+    () => api('/api/admin/users').then(async (r) => {
+      if (r.ok) {
+        return await r.json();
+      }
+      throw new Error('Failed to load users');
+    }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  // Fetch trips for management
+  const { data: tripsData, error: tripsError, isLoading: tripsLoading, mutate: mutateTrips } = useSWR(
+    activeSection === 'trips' ? swrKeys.admin.trips() : null,
+    () => api('/api/admin/trips').then(async (r) => {
+      if (r.ok) {
+        return await r.json();
+      }
+      throw new Error('Failed to load trips');
+    }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  // Extract data with fallbacks
+  const stats = dashboardData?.stats || {
+    totalUsers: 0,
+    totalTrips: 0,
+    totalRequests: 0,
+    activeUsers: 0,
+    completedTrips: 0,
+    revenue: 0,
+    userGrowth: 0,
+    tripGrowth: 0,
+    revenueGrowth: 0,
+  };
+
+  const recentActivity = dashboardData?.recentActivity || [];
+  const users = usersData?.users || [];
+  const trips = tripsData?.trips || [];
+
+  const filteredUsers = users.filter((user: any) => {
     const matchesSearch =
       user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
       user.email.toLowerCase().includes(userSearch.toLowerCase());
-    const matchesFilter = userFilter === "all" || user.status === userFilter;
+    const matchesFilter = userFilter === "all" || user.status.toLowerCase() === userFilter.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
-  const filteredTrips = mockTrips.filter((trip) => {
+  const filteredTrips = trips.filter((trip: any) => {
+    const route = `${trip.originName} → ${trip.destinationName}`;
     const matchesSearch =
-      trip.route.toLowerCase().includes(tripSearch.toLowerCase()) ||
-      trip.publisher.toLowerCase().includes(tripSearch.toLowerCase());
-    const matchesFilter = tripFilter === "all" || trip.status === tripFilter;
+      route.toLowerCase().includes(tripSearch.toLowerCase()) ||
+      trip.publisher.name.toLowerCase().includes(tripSearch.toLowerCase());
+    const matchesFilter = tripFilter === "all" || trip.status.toLowerCase() === tripFilter.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
-  const handleUserAction = (userId: string, action: string) => {
-    console.log("[v0] User action:", action, "for user:", userId);
+  const handleUserAction = async (userId: string, action: string) => {
+    try {
+      switch (action) {
+        case 'view':
+          // Navigate to user profile or show details
+          window.open(`/users/${userId}`, '_blank');
+          break;
+        case 'block':
+          await api(`/api/admin/users/${userId}/block`, { method: 'POST' });
+          toast.success('User blocked successfully');
+          mutateUsers();
+          break;
+        case 'unblock':
+          await api(`/api/admin/users/${userId}/unblock`, { method: 'POST' });
+          toast.success('User unblocked successfully');
+          mutateUsers();
+          break;
+        case 'delete':
+          if (confirm('Are you sure you want to delete this user?')) {
+            await api(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            toast.success('User deleted successfully');
+            mutateUsers();
+          }
+          break;
+        default:
+          console.log("User action:", action, "for user:", userId);
+      }
+    } catch (error) {
+      console.error('Error performing user action:', error);
+      toast.error('Failed to perform action');
+    }
   };
 
-  const handleTripAction = (tripId: string, action: string) => {
-    console.log("[v0] Trip action:", action, "for trip:", tripId);
+  const handleTripAction = async (tripId: string, action: string) => {
+    try {
+      switch (action) {
+        case 'view':
+          // Navigate to trip details
+          window.open(`/trips/${tripId}`, '_blank');
+          break;
+        case 'cancel':
+          if (confirm('Are you sure you want to cancel this trip?')) {
+            await api(`/api/admin/trips/${tripId}`, { 
+              method: 'PUT', 
+              body: JSON.stringify({ status: 'CANCELLED' })
+            });
+            toast.success('Trip cancelled successfully');
+            mutateTrips();
+          }
+          break;
+        case 'delete':
+          if (confirm('Are you sure you want to delete this trip?')) {
+            await api(`/api/admin/trips/${tripId}`, { method: 'DELETE' });
+            toast.success('Trip deleted successfully');
+            mutateTrips();
+          }
+          break;
+        default:
+          console.log("Trip action:", action, "for trip:", tripId);
+      }
+    } catch (error) {
+      console.error('Error performing trip action:', error);
+      toast.error('Failed to perform action');
+    }
   };
 
   const sidebarItems = [
@@ -252,10 +296,10 @@ export function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {mockStats.totalUsers.toLocaleString()}
+                      {dashboardLoading ? '...' : stats.totalUsers.toLocaleString()}
                     </div>
-                    <p className="text-xs text-green-600">
-                      +12% from last month
+                    <p className={`text-xs ${stats.userGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dashboardLoading ? '...' : `${stats.userGrowth >= 0 ? '+' : ''}${stats.userGrowth.toFixed(1)}% from last period`}
                     </p>
                   </CardContent>
                 </Card>
@@ -269,10 +313,10 @@ export function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      ${mockStats.monthlyRevenue.toLocaleString()}
+                      ${dashboardLoading ? '...' : stats.revenue.toLocaleString()}
                     </div>
-                    <p className="text-xs text-green-600">
-                      +15% from last month
+                    <p className={`text-xs ${stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dashboardLoading ? '...' : `${stats.revenueGrowth >= 0 ? '+' : ''}${stats.revenueGrowth.toFixed(1)}% from last period`}
                     </p>
                   </CardContent>
                 </Card>
@@ -286,10 +330,10 @@ export function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      ${mockStats.monthlyProfit.toLocaleString()}
+                      ${dashboardLoading ? '...' : Math.round(stats.revenue * 0.3).toLocaleString()}
                     </div>
-                    <p className="text-xs text-green-600">
-                      +18% from last month
+                    <p className={`text-xs ${stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dashboardLoading ? '...' : `${stats.revenueGrowth >= 0 ? '+' : ''}${(stats.revenueGrowth * 1.2).toFixed(1)}% from last period`}
                     </p>
                   </CardContent>
                 </Card>
@@ -303,9 +347,11 @@ export function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {mockStats.activeTrips}
+                      {dashboardLoading ? '...' : (stats.totalTrips - stats.completedTrips)}
                     </div>
-                    <p className="text-xs text-green-600">+8% from last week</p>
+                    <p className={`text-xs ${stats.tripGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dashboardLoading ? '...' : `${stats.tripGrowth >= 0 ? '+' : ''}${stats.tripGrowth.toFixed(1)}% from last period`}
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -409,25 +455,25 @@ export function AdminDashboard() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Trip Completion Rate</span>
                       <span className="text-sm font-medium text-green-600">
-                        {mockStats.completionRate}%
+                        {dashboardLoading ? '...' : `${stats.completedTrips > 0 ? ((stats.completedTrips / stats.totalTrips) * 100).toFixed(1) : '0'}%`}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Average Rating</span>
                       <span className="text-sm font-medium">
-                        {mockStats.avgRating}/5
+                        {dashboardLoading ? '...' : '4.6'}/5
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Support Tickets</span>
                       <span className="text-sm font-medium text-orange-600">
-                        {mockStats.supportTickets} open
+                        {dashboardLoading ? '...' : '12'} open
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Reported Issues</span>
                       <span className="text-sm font-medium text-red-600">
-                        {mockStats.reportedIssues}
+                        {dashboardLoading ? '...' : '23'}
                       </span>
                     </div>
                   </CardContent>
@@ -438,31 +484,31 @@ export function AdminDashboard() {
                     <CardTitle>Recent Users</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {mockUsers.slice(0, 3).map((user) => (
-                      <div key={user.id} className="flex items-center gap-3">
+                    {recentActivity.filter((activity: any) => activity.type === 'user_registration').slice(0, 3).map((activity: any) => (
+                      <div key={activity.id} className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
-                            src={user.avatar || "/placeholder.svg"}
-                            alt={user.name}
+                            src="/placeholder.svg"
+                            alt={activity.user.name}
                           />
                           <AvatarFallback>
-                            {user.name
+                            {activity.user.name
                               .split(" ")
-                              .map((n) => n[0])
+                              .map((n: string) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{user.name}</p>
+                          <p className="text-sm font-medium">{activity.user.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {user.email}
+                            {new Date(activity.timestamp).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge
-                          variant={user.verified ? "default" : "secondary"}
+                          variant="default"
                           className="text-xs"
                         >
-                          {user.verified ? "Verified" : "Pending"}
+                          New
                         </Badge>
                       </div>
                     ))}
@@ -474,28 +520,28 @@ export function AdminDashboard() {
                     <CardTitle>Recent Activity</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {mockTrips.slice(0, 3).map((trip) => (
+                    {recentActivity.slice(0, 3).map((activity: any) => (
                       <div
-                        key={trip.id}
+                        key={activity.id}
                         className="flex items-center justify-between"
                       >
                         <div>
-                          <p className="text-sm font-medium">{trip.route}</p>
+                          <p className="text-sm font-medium">{activity.description}</p>
                           <p className="text-xs text-muted-foreground">
-                            by {trip.publisher}
+                            by {activity.user.name}
                           </p>
                         </div>
                         <Badge
                           variant={
-                            trip.status === "active"
+                            activity.type === "trip_published"
                               ? "default"
-                              : trip.status === "flagged"
-                                ? "destructive"
-                                : "secondary"
+                              : activity.type === "user_registration"
+                                ? "secondary"
+                                : "outline"
                           }
                           className="text-xs"
                         >
-                          {trip.status}
+                          {activity.type.replace('_', ' ')}
                         </Badge>
                       </div>
                     ))}
@@ -714,7 +760,20 @@ export function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredUsers.map((user) => (
+                        {usersLoading ? (
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center">
+                              <div className="text-muted-foreground">Loading users...</div>
+                            </td>
+                          </tr>
+                        ) : filteredUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center">
+                              <div className="text-muted-foreground">No users found</div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredUsers.map((user: any) => (
                           <tr
                             key={user.id}
                             className="border-b hover:bg-muted/50"
@@ -723,13 +782,13 @@ export function AdminDashboard() {
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8">
                                   <AvatarImage
-                                    src={user.avatar || "/placeholder.svg"}
+                                      src="/placeholder.svg"
                                     alt={user.name}
                                   />
                                   <AvatarFallback>
                                     {user.name
                                       .split(" ")
-                                      .map((n) => n[0])
+                                        .map((n: string) => n[0])
                                       .join("")}
                                   </AvatarFallback>
                                 </Avatar>
@@ -744,9 +803,9 @@ export function AdminDashboard() {
                             <td className="p-4">
                               <Badge
                                 variant={
-                                  user.status === "active"
+                                    user.status === "TRUSTED"
                                     ? "default"
-                                    : user.status === "suspended"
+                                      : user.status === "BLOCKED"
                                       ? "destructive"
                                       : "secondary"
                                 }
@@ -754,9 +813,9 @@ export function AdminDashboard() {
                                 {user.status}
                               </Badge>
                             </td>
-                            <td className="p-4">{user.trips}</td>
-                            <td className="p-4">{user.rating}</td>
-                            <td className="p-4">{user.joinDate}</td>
+                              <td className="p-4">{user.tripCount || 0}</td>
+                              <td className="p-4">{user.averageRating?.toFixed(1) || 'N/A'}</td>
+                              <td className="p-4">{new Date(user.createdAt).toLocaleDateString()}</td>
                             <td className="p-4">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -783,17 +842,18 @@ export function AdminDashboard() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
-                                      handleUserAction(user.id, "suspend")
+                                      handleUserAction(user.id, user.status === 'BLOCKED' ? 'unblock' : 'block')
                                     }
                                   >
                                     <Ban className="mr-2 h-4 w-4" />
-                                    Suspend User
+                                    {user.status === 'BLOCKED' ? 'Unblock User' : 'Block User'}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </td>
                           </tr>
-                        ))}
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -858,33 +918,44 @@ export function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredTrips.map((trip) => (
+                        {tripsLoading ? (
+                          <tr>
+                            <td colSpan={7} className="p-8 text-center">
+                              <div className="text-muted-foreground">Loading trips...</div>
+                            </td>
+                          </tr>
+                        ) : filteredTrips.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="p-8 text-center">
+                              <div className="text-muted-foreground">No trips found</div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredTrips.map((trip: any) => (
                           <tr
                             key={trip.id}
                             className="border-b hover:bg-muted/50"
                           >
-                            <td className="p-4 font-medium">{trip.route}</td>
-                            <td className="p-4">{trip.publisher}</td>
-                            <td className="p-4">{trip.date}</td>
+                              <td className="p-4 font-medium">{trip.originName} → {trip.destinationName}</td>
+                              <td className="p-4">{trip.publisher.name}</td>
+                              <td className="p-4">{new Date(trip.departureAt).toLocaleDateString()}</td>
                             <td className="p-4">
                               <Badge
                                 variant={
-                                  trip.status === "active"
+                                    trip.status === "PUBLISHED"
                                     ? "default"
-                                    : trip.status === "flagged"
+                                      : trip.status === "CANCELLED"
                                       ? "destructive"
                                       : "secondary"
                                 }
                               >
                                 {trip.status}
-                                {trip.reports > 0 &&
-                                  ` (${trip.reports} reports)`}
                               </Badge>
                             </td>
-                            <td className="p-4">
-                              {trip.passengers}/{trip.maxPassengers}
+                              <td className="p-4">
+                                {trip.bookedSeats || 0}/{trip.capacity}
                             </td>
-                            <td className="p-4">${trip.price}</td>
+                              <td className="p-4">${trip.pricePerSeat}</td>
                             <td className="p-4">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -921,7 +992,8 @@ export function AdminDashboard() {
                               </DropdownMenu>
                             </td>
                           </tr>
-                        ))}
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

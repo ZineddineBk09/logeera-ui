@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  MapPin,
   Calendar,
   Car,
   Check,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,10 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
+import { TripsService } from "@/lib/services";
+import { GooglePlacesService, PlacePrediction } from "@/lib/services/google-places";
+import { toast } from "sonner";
 
 interface TripData {
   origin: string;
@@ -40,6 +45,11 @@ interface TripData {
   amenities: string[];
 }
 
+interface PlaceData {
+  originPlace: PlacePrediction | null;
+  destinationPlace: PlacePrediction | null;
+}
+
 const steps = [
   { id: 1, title: "Route", description: "Where are you going?" },
   { id: 2, title: "Details", description: "Trip specifics" },
@@ -47,7 +57,9 @@ const steps = [
 ];
 
 export function PublishWizard() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [tripData, setTripData] = useState<TripData>({
     origin: "",
     destination: "",
@@ -64,6 +76,11 @@ export function PublishWizard() {
     amenities: [],
   });
 
+  const [placeData, setPlaceData] = useState<PlaceData>({
+    originPlace: null,
+    destinationPlace: null,
+  });
+
   const progress = (currentStep / steps.length) * 100;
 
   const handleNext = () => {
@@ -78,15 +95,71 @@ export function PublishWizard() {
     }
   };
 
-  const handlePublish = () => {
-    // Handle trip publication
-    console.log("Publishing trip:", tripData);
+  const handlePublish = async () => {
+    if (!placeData.originPlace || !placeData.destinationPlace) {
+      toast.error("Please select valid origin and destination locations");
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+      // Get coordinates for both places
+      const [originCoords, destinationCoords] = await Promise.all([
+        GooglePlacesService.getPlaceDetails(placeData.originPlace.place_id),
+        GooglePlacesService.getPlaceDetails(placeData.destinationPlace.place_id),
+      ]);
+
+      if (!originCoords || !destinationCoords) {
+        toast.error("Failed to get location coordinates. Please try again.");
+        return;
+      }
+
+      // Create WKT POINT strings (longitude first, then latitude)
+      const originWKT = `POINT(${originCoords.lng} ${originCoords.lat})`;
+      const destinationWKT = `POINT(${destinationCoords.lng} ${destinationCoords.lat})`;
+
+      const payload = {
+        origin: originWKT,
+        destination: destinationWKT,
+        originName: tripData.origin,
+        destinationName: tripData.destination,
+        departureAt: new Date(`${tripData.date}T${tripData.time}:00`).toISOString(),
+        vehicleType: tripData.vehicleType.toUpperCase() as 'CAR' | 'VAN' | 'TRUCK' | 'BIKE',
+        capacity: Number(tripData.capacity || 0),
+        pricePerSeat: Number(tripData.price || 0),
+      };
+
+      const response = await TripsService.create(payload);
+      
+      if (response.ok) {
+        const newTrip = await response.json();
+        toast.success("Trip published successfully!");
+        router.push(`/trips/${newTrip.id}`);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to publish trip");
+      }
+    } catch (error) {
+      console.error('Publish error:', error);
+      toast.error("Network error. Please try again.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleOriginPlaceSelect = (place: PlacePrediction) => {
+    setPlaceData(prev => ({ ...prev, originPlace: place }));
+  };
+
+  const handleDestinationPlaceSelect = (place: PlacePrediction) => {
+    setPlaceData(prev => ({ ...prev, destinationPlace: place }));
   };
 
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return tripData.origin && tripData.destination;
+        return tripData.origin && tripData.destination && placeData.originPlace && placeData.destinationPlace;
       case 2:
         return (
           tripData.date &&
@@ -157,37 +230,31 @@ export function PublishWizard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>From</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
+                    <AutocompleteInput
                         placeholder="Origin city"
-                        className="pl-10"
                         value={tripData.origin}
-                        onChange={(e) =>
+                      onChange={(value) =>
                           setTripData((prev) => ({
                             ...prev,
-                            origin: e.target.value,
+                          origin: value,
                           }))
                         }
+                      onPlaceSelect={handleOriginPlaceSelect}
                       />
-                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>To</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
+                    <AutocompleteInput
                         placeholder="Destination city"
-                        className="pl-10"
                         value={tripData.destination}
-                        onChange={(e) =>
+                      onChange={(value) =>
                           setTripData((prev) => ({
                             ...prev,
-                            destination: e.target.value,
+                          destination: value,
                           }))
                         }
+                      onPlaceSelect={handleDestinationPlaceSelect}
                       />
-                    </div>
                   </div>
                 </div>
 
@@ -273,10 +340,10 @@ export function PublishWizard() {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="car">Car</SelectItem>
-                        <SelectItem value="van">Van</SelectItem>
-                        <SelectItem value="truck">Truck</SelectItem>
-                        <SelectItem value="bike">Motorcycle</SelectItem>
+                        <SelectItem value="CAR">Car</SelectItem>
+                        <SelectItem value="VAN">Van</SelectItem>
+                        <SelectItem value="TRUCK">Truck</SelectItem>
+                        <SelectItem value="BIKE">Motorcycle</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -366,8 +433,13 @@ export function PublishWizard() {
                           Route
                         </div>
                         <div className="font-medium">
-                          {tripData.origin} → {tripData.destination}
+                          {placeData.originPlace?.structured_formatting.main_text || tripData.origin} → {placeData.destinationPlace?.structured_formatting.main_text || tripData.destination}
                         </div>
+                        {(placeData.originPlace?.structured_formatting.secondary_text || placeData.destinationPlace?.structured_formatting.secondary_text) && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {placeData.originPlace?.structured_formatting.secondary_text} → {placeData.destinationPlace?.structured_formatting.secondary_text}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">
@@ -382,8 +454,8 @@ export function PublishWizard() {
                         <div className="text-sm text-muted-foreground">
                           Vehicle
                         </div>
-                        <div className="font-medium capitalize">
-                          {tripData.vehicleType}{" "}
+                        <div className="font-medium">
+                          {tripData.vehicleType.charAt(0) + tripData.vehicleType.slice(1).toLowerCase()}{" "}
                           {tripData.vehicleMake && `(${tripData.vehicleMake})`}
                         </div>
                       </div>
@@ -463,11 +535,20 @@ export function PublishWizard() {
           ) : (
             <Button
               onClick={handlePublish}
-              disabled={!isStepValid()}
+              disabled={!isStepValid() || isPublishing}
               className="flex items-center space-x-2"
             >
-              <span>Publish Trip</span>
-              <Check className="h-4 w-4" />
+              {isPublishing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Publishing...</span>
+                </>
+              ) : (
+                <>
+                  <span>Publish Trip</span>
+                  <Check className="h-4 w-4" />
+                </>
+              )}
             </Button>
           )}
         </div>

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."trips" ADD COLUMN     "bookedSeats" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "pricePerSeat" DOUBLE PRECISION NOT NULL DEFAULT 45.0;

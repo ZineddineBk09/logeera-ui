@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  INDIVIDUAL
+  COMPANY
+}
+
+enum UserStatus {
+  PENDING
+  TRUSTED
+  BLOCKED
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum VehicleType {
+  CAR
+  VAN
+  TRUCK
+  BIKE
+}
+
+enum TripStatus {
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  phoneNumber     String
+  passwordHash    String
+  type            UserType   @default(INDIVIDUAL)
+  officialIdNumber String?
+  status          UserStatus @default(PENDING)
+  role            UserRole   @default(USER)
+  averageRating   Float      @default(0)
+  ratingCount     Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  publishedTrips  Trip[]
+  requests        Request[]
+  receivedRatings Rating[] @relation("RatedUser")
+  givenRatings    Rating[] @relation("ReviewerUser")
+  chatsAsUserA    Chat[]   @relation("ChatUserA")
+  chatsAsUserB    Chat[]   @relation("ChatUserB")
+  sentMessages    Message[]
+
+  @@map("users")
+}
+
+model Trip {
+  id              String     @id @default(uuid())
+  publisherId     String
+  originGeom      String     // WKT format
+  destinationGeom String     // WKT format
+  originName      String
+  destinationName String
+  departureAt     DateTime
+  vehicleType     VehicleType
+  capacity        Int
+  bookedSeats     Int        @default(0)
+  pricePerSeat    Float      @default(45.0)
+  status          TripStatus @default(PUBLISHED)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  publisher       User       @relation(fields: [publisherId], references: [id])
+  requests        Request[]
+
+  @@map("trips")
+}
+
+model Request {
+  id          String        @id @default(uuid())
+  tripId      String
+  applicantId String
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  trip        Trip          @relation(fields: [tripId], references: [id])
+  applicant   User          @relation(fields: [applicantId], references: [id])
+
+  @@map("requests")
+}
+
+model Chat {
+  id        String    @id @default(uuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  userA     User      @relation("ChatUserA", fields: [userAId], references: [id])
+  userB     User      @relation("ChatUserB", fields: [userBId], references: [id])
+  messages  Message[]
+
+  @@unique([userAId, userBId])
+  @@map("chats")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  sender    User     @relation(fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Rating {
+  id              String   @id @default(uuid())
+  ratedUserId     String
+  reviewerUserId  String
+  value           Int      // 1-5
+  comment         String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  ratedUser       User     @relation("RatedUser", fields: [ratedUserId], references: [id])
+  reviewerUser    User     @relation("ReviewerUser", fields: [reviewerUserId], references: [id])
+
+  @@map("ratings")
+}

@@ -19,6 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { RequestsService } from "@/lib/services";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { useRouter } from "next/navigation";
 
 interface RequestJoinDialogProps {
   open: boolean;
@@ -43,14 +47,37 @@ export function RequestJoinDialog({
   const [seats, setSeats] = useState("1");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async () => {
+    // Double-check authentication before submitting
+    if (!isAuthenticated) {
+      const currentUrl = window.location.pathname;
+      router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+      onOpenChange(false);
+      return;
+    }
+
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    onOpenChange(false);
-    // Show success toast or redirect
+    try {
+      const response = await RequestsService.create(trip.id);
+      if (response.ok) {
+        toast.success('Request sent successfully!');
+        onOpenChange(false);
+        // Reset form
+        setSeats("1");
+        setMessage("");
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to send request');
+      }
+    } catch (error) {
+      console.error('Request submission error:', error);
+      toast.error('Failed to send request');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalPrice = Number.parseInt(seats) * trip.price + 2; // Including service fee

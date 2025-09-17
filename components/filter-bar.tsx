@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   X,
   SlidersHorizontal,
@@ -9,6 +10,7 @@ import {
   Users,
   Shield,
   MapPin,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-interface FilterState {
+export interface FilterState {
   date: string;
   vehicleType: string;
   capacity: string;
@@ -34,20 +36,89 @@ interface FilterState {
   endLocation: string;
 }
 
-export function FilterBar() {
-  const [filters, setFilters] = useState<FilterState>({
-    date: "2024-01-15",
-    vehicleType: "any",
-    capacity: "any",
-    trustedOnly: false,
-    maxPrice: "",
-    startLocation: "",
-    endLocation: "",
-  });
+export function FilterBar({
+  value,
+  onChange,
+  onApply,
+  onClearAll,
+}: {
+  value?: FilterState;
+  onChange?: (v: FilterState) => void;
+  onApply?: (v: FilterState) => void;
+  onClearAll?: () => void;
+}) {
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<FilterState>(
+    value || {
+      date: "",
+      vehicleType: "any",
+      capacity: "any",
+      trustedOnly: false,
+      maxPrice: "",
+      startLocation: "",
+      endLocation: "",
+    },
+  );
+
+  // Initialize filters from URL search params
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const origin = searchParams.get('origin') || '';
+    const destination = searchParams.get('destination') || '';
+    const date = searchParams.get('date') || '';
+    const vehicleType = searchParams.get('vehicleType') || 'any';
+    const capacity = searchParams.get('capacity') || 'any';
+
+    setFilters({
+      date,
+      vehicleType,
+      capacity,
+      trustedOnly: false,
+      maxPrice: "",
+      startLocation: origin,
+      endLocation: destination,
+    });
+  }, [searchParams]);
+
+  const set = (updater: (prev: FilterState) => FilterState) => {
+    setFilters((prev) => {
+      const next = updater(prev);
+      onChange?.(next);
+      return next;
+    });
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Helper function to format route
+  const formatRoute = (start: string, end: string) => {
+    if (!start && !end) return '';
+    if (!start) return end;
+    if (!end) return start;
+    return `${start} → ${end}`;
+  };
 
   const activeFilters = [
-    { key: "date", label: "Jan 15, 2024", removable: false },
-    { key: "route", label: "NYC → Boston", removable: false },
+    ...(filters.date
+      ? [{ key: "date", label: formatDate(filters.date), removable: false }]
+      : []),
+    ...(formatRoute(filters.startLocation, filters.endLocation)
+      ? [{ key: "route", label: formatRoute(filters.startLocation, filters.endLocation), removable: false }]
+      : []),
     ...(filters.vehicleType !== "any"
       ? [{ key: "vehicleType", label: filters.vehicleType, removable: true }]
       : []),
@@ -57,7 +128,7 @@ export function FilterBar() {
     ...(filters.maxPrice
       ? [{ key: "price", label: `Under $${filters.maxPrice}`, removable: true }]
       : []),
-    ...(filters.startLocation
+    ...(filters.startLocation && !filters.endLocation
       ? [
           {
             key: "startLocation",
@@ -66,7 +137,7 @@ export function FilterBar() {
           },
         ]
       : []),
-    ...(filters.endLocation
+    ...(filters.endLocation && !filters.startLocation
       ? [
           {
             key: "endLocation",
@@ -78,14 +149,30 @@ export function FilterBar() {
   ];
 
   const removeFilter = (key: string) => {
-    setFilters((prev) => ({
+    set((prev) => ({
       ...prev,
       ...(key === "vehicleType" && { vehicleType: "any" }),
       ...(key === "trusted" && { trustedOnly: false }),
       ...(key === "price" && { maxPrice: "" }),
       ...(key === "startLocation" && { startLocation: "" }),
       ...(key === "endLocation" && { endLocation: "" }),
+      ...(key === "date" && { date: "" }),
     }));
+  };
+
+  const clearAllFilters = () => {
+    const clearedFilters: FilterState = {
+      date: "",
+      vehicleType: "any",
+      capacity: "any",
+      trustedOnly: false,
+      maxPrice: "",
+      startLocation: "",
+      endLocation: "",
+    };
+    setFilters(clearedFilters);
+    onChange?.(clearedFilters);
+    onClearAll?.();
   };
 
   return (
@@ -94,38 +181,54 @@ export function FilterBar() {
         <div className="flex items-center justify-between">
           {/* Active Filters */}
           <div className="flex items-center space-x-2 flex-1 overflow-x-auto">
-            {activeFilters.map((filter) => (
-              <Badge
-                key={filter.key}
-                variant="secondary"
-                className="flex items-center space-x-1 whitespace-nowrap"
-              >
-                <span>{filter.label}</span>
-                {filter.removable && (
-                  <button
-                    onClick={() => removeFilter(filter.key)}
-                    className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </Badge>
-            ))}
+            {activeFilters.length > 0 ? (
+              activeFilters.map((filter) => (
+                <Badge
+                  key={filter.key}
+                  variant="secondary"
+                  className="flex items-center space-x-1 whitespace-nowrap"
+                >
+                  <span>{filter.label}</span>
+                  {filter.removable && (
+                    <button
+                      onClick={() => removeFilter(filter.key)}
+                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">No filters applied</span>
+            )}
           </div>
 
-          {/* Filter Button */}
-          <Sheet>
-            <SheetTrigger asChild>
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2 ml-4">
+            {activeFilters.length > 0 && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="ml-4 bg-transparent"
+                onClick={clearAllFilters}
+                className="text-muted-foreground hover:text-foreground"
               >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filters
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Clear All
               </Button>
-            </SheetTrigger>
-            <SheetContent>
+            )}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-transparent"
+                >
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+            <SheetContent className="p-3">
               <div className="space-y-6 mt-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Filter Results</h3>
@@ -141,7 +244,7 @@ export function FilterBar() {
                     placeholder="Enter start location"
                     value={filters.startLocation}
                     onChange={(e) =>
-                      setFilters((prev) => ({
+                      set((prev) => ({
                         ...prev,
                         startLocation: e.target.value,
                       }))
@@ -159,7 +262,7 @@ export function FilterBar() {
                     placeholder="Enter destination"
                     value={filters.endLocation}
                     onChange={(e) =>
-                      setFilters((prev) => ({
+                      set((prev) => ({
                         ...prev,
                         endLocation: e.target.value,
                       }))
@@ -177,7 +280,7 @@ export function FilterBar() {
                     type="date"
                     value={filters.date}
                     onChange={(e) =>
-                      setFilters((prev) => ({ ...prev, date: e.target.value }))
+                      set((prev) => ({ ...prev, date: e.target.value }))
                     }
                   />
                 </div>
@@ -191,7 +294,7 @@ export function FilterBar() {
                   <Select
                     value={filters.vehicleType}
                     onValueChange={(value) =>
-                      setFilters((prev) => ({ ...prev, vehicleType: value }))
+                      set((prev) => ({ ...prev, vehicleType: value }))
                     }
                   >
                     <SelectTrigger>
@@ -199,16 +302,16 @@ export function FilterBar() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any vehicle</SelectItem>
-                      <SelectItem value="car">Car</SelectItem>
-                      <SelectItem value="van">Van</SelectItem>
-                      <SelectItem value="truck">Truck</SelectItem>
-                      <SelectItem value="bike">Motorcycle</SelectItem>
+                      <SelectItem value="CAR">Car</SelectItem>
+                      <SelectItem value="VAN">Van</SelectItem>
+                      <SelectItem value="TRUCK">Truck</SelectItem>
+                      <SelectItem value="BIKE">Motorcycle</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Capacity */}
-                <div className="space-y-2">
+                <div className="space-y-2 w-full flex-1">
                   <Label className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
                     <span>Minimum Seats</span>
@@ -216,13 +319,13 @@ export function FilterBar() {
                   <Select
                     value={filters.capacity}
                     onValueChange={(value) =>
-                      setFilters((prev) => ({ ...prev, capacity: value }))
+                      set((prev) => ({ ...prev, capacity: value }))
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="flex-1 w-full">
                       <SelectItem value="any">Any capacity</SelectItem>
                       <SelectItem value="1">1+ seats</SelectItem>
                       <SelectItem value="2">2+ seats</SelectItem>
@@ -240,7 +343,7 @@ export function FilterBar() {
                     placeholder="Enter max price"
                     value={filters.maxPrice}
                     onChange={(e) =>
-                      setFilters((prev) => ({
+                      set((prev) => ({
                         ...prev,
                         maxPrice: e.target.value,
                       }))
@@ -257,18 +360,25 @@ export function FilterBar() {
                   <Switch
                     checked={filters.trustedOnly}
                     onCheckedChange={(checked) =>
-                      setFilters((prev) => ({ ...prev, trustedOnly: checked }))
+                      set((prev) => ({ ...prev, trustedOnly: checked }))
                     }
+                    // gray bg when disabled
+                    className="bg-gray-300 cursor-pointer"
                   />
                 </div>
 
                 {/* Apply Button */}
-                <Button className="w-full" size="lg">
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => onApply?.(filters)}
+                >
                   Apply Filters
                 </Button>
               </div>
             </SheetContent>
-          </Sheet>
+            </Sheet>
+          </div>
         </div>
       </div>
     </div>

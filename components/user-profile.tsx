@@ -11,28 +11,88 @@ import { ProfileOverview } from "@/components/profile/profile-overview";
 import { ProfileSettings } from "@/components/profile/profile-settings";
 import { ProfileSecurity } from "@/components/profile/profile-security";
 import { ProfileRatings } from "@/components/profile/profile-ratings";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { TripsService, RatingsService } from "@/lib/services";
+import { swrKeys } from "@/lib/swr-config";
+import useSWR from "swr";
 
-// Mock user data
-const mockUser = {
-  id: "user1",
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "+1 (555) 123-4567",
-  avatar: "/diverse-user-avatars.png",
-  memberSince: "2022-03-15",
-  rating: 4.8,
-  reviewCount: 89,
-  tripCount: 127,
-  trusted: true,
-  verifiedPhone: true,
-  verifiedEmail: true,
-  languages: ["English", "Spanish"],
-  bio: "Experienced driver who loves meeting new people and sharing travel stories. I prioritize safety and punctuality.",
-};
 
 export function UserProfile() {
   const [activeTab, setActiveTab] = useState("overview");
+  const { user, isLoading: authLoading } = useAuth();
 
+  // Fetch user's trips
+  const { data: userTrips = [], isLoading: tripsLoading } = useSWR(
+    user ? swrKeys.trips.list({}) : null,
+    () => TripsService.list({}).then(async (r) => {
+      if (r.ok) {
+        const trips = await r.json();
+        // Filter trips published by current user
+        return trips.filter((trip: any) => trip.publisherId === user?.id);
+      }
+      throw new Error('Failed to load user trips');
+    }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 300000, // 5 minutes
+    }
+  );
+
+  // Fetch user's ratings
+  const { data: userRatings = [], isLoading: ratingsLoading } = useSWR(
+    user ? swrKeys.ratings.list(user.id) : null,
+    () => RatingsService.list(user?.id).then(async (r) => {
+      if (r.ok) {
+        return await r.json();
+      }
+      throw new Error('Failed to load user ratings');
+    }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 300000, // 5 minutes
+    }
+  );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+            <User className="h-8 w-8 text-primary animate-spin" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Loading Profile</h3>
+            <p className="text-sm text-muted-foreground">Please wait...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-full flex items-center justify-center">
+            <User className="h-8 w-8 text-destructive" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Profile Not Found</h3>
+            <p className="text-sm text-muted-foreground">Please log in to view your profile.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate stats
+  const tripCount = userTrips.length;
+  const averageRating = user.averageRating || 0;
+  const ratingCount = user.ratingCount || 0;
+  const memberSince = new Date().getFullYear();
+console.log('user', user);
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -42,13 +102,13 @@ export function UserProfile() {
             <div className="flex flex-col md:flex-row items-start md:items-center space-y-6 md:space-y-0 md:space-x-8">
               <Avatar className="h-24 w-24">
                 <AvatarImage
-                  src={mockUser.avatar || "/placeholder.svg"}
-                  alt={mockUser.name}
+                  src="/placeholder.svg"
+                  alt={user.name}
                 />
                 <AvatarFallback className="text-2xl">
-                  {mockUser.name
+                  {user.name
                     .split(" ")
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
@@ -56,27 +116,24 @@ export function UserProfile() {
               <div className="flex-1 space-y-4">
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
-                    <h1 className="text-3xl font-bold">{mockUser.name}</h1>
-                    {mockUser.trusted && (
-                      <Badge variant="secondary" className="text-sm">
-                        <Shield className="w-4 h-4 mr-1" />
-                        Trusted Member
-                      </Badge>
-                    )}
+                    <h1 className="text-3xl font-bold">{user.name}</h1>
+                    <Badge variant="secondary" className="text-sm">
+                      <Shield className="w-4 h-4 mr-1" />
+                      {user.role}
+                    </Badge>
                   </div>
                   <div className="flex items-center space-x-4 text-muted-foreground">
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span>{mockUser.rating}</span>
+                      <span>{averageRating.toFixed(1)}</span>
                       <span>•</span>
-                      <span>{mockUser.reviewCount} reviews</span>
+                      <span>{ratingCount} reviews</span>
                     </div>
                     <span>•</span>
                     <div className="flex items-center space-x-1">
                       <Calendar className="w-4 h-4" />
                       <span>
-                        Member since{" "}
-                        {new Date(mockUser.memberSince).getFullYear()}
+                        Member since {memberSince}
                       </span>
                     </div>
                   </div>
@@ -85,32 +142,30 @@ export function UserProfile() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary">
-                      {mockUser.tripCount}
+                      {tripCount}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Total Trips
+                      Published Trips
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-primary">
-                      {mockUser.rating}
+                      {averageRating.toFixed(1)}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Average Rating
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">98%</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {user.status || 'ACTIVE'}
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                      Response Rate
+                      Account Status
                     </div>
                   </div>
                 </div>
               </div>
-
-              <Button size="lg" className="self-start">
-                Edit Profile
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -150,19 +205,19 @@ export function UserProfile() {
 
           <div className="mt-8">
             <TabsContent value="overview">
-              <ProfileOverview user={mockUser} />
+              <ProfileOverview user={user} userTrips={userTrips} />
             </TabsContent>
 
             <TabsContent value="settings">
-              <ProfileSettings user={mockUser} />
+              <ProfileSettings user={user} />
             </TabsContent>
 
             <TabsContent value="security">
-              <ProfileSecurity user={mockUser} />
+              <ProfileSecurity user={user} />
             </TabsContent>
 
             <TabsContent value="ratings">
-              <ProfileRatings userId={mockUser.id} />
+              <ProfileRatings userId={user.id} ratings={userRatings} />
             </TabsContent>
           </div>
         </Tabs>

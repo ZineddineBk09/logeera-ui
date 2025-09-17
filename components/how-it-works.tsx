@@ -47,7 +47,7 @@ export function HowItWorks() {
           return (
             <Card
               key={index}
-              className="relative group hover:shadow-lg transition-all duration-300 border-0 bg-card/50"
+              className="rounded-3xl border-1 border-gray-200 dark:border-gray-700 relative group hover:shadow-lg transition-all duration-300 bg-card/50"
             >
               <CardContent className="p-6 text-center space-y-4">
                 <div className="relative">

@@ -5,47 +5,76 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { RatingsService } from "@/lib/services";
+import { swrKeys } from "@/lib/swr-config";
+import useSWR from "swr";
 
-const mockReviews = [
-  {
-    id: "1",
-    rating: 5,
-    text: "Sarah was an excellent driver! Very punctual, friendly, and the car was spotless. Great conversation during the trip. Highly recommend!",
-    author: "Mike R.",
-    date: "2024-01-10",
-    helpful: 12,
-  },
-  {
-    id: "2",
-    rating: 5,
-    text: "Safe driver, comfortable ride, and exactly on time. Sarah made the long journey enjoyable with good music and interesting conversation.",
-    author: "Emma L.",
-    date: "2024-01-08",
-    helpful: 8,
-  },
-  {
-    id: "3",
-    rating: 4,
-    text: "Good trip overall. Car was clean and Sarah was professional. Only minor issue was we left 15 minutes late due to traffic.",
-    author: "David K.",
-    date: "2024-01-05",
-    helpful: 5,
-  },
-];
-
-const ratingDistribution = [
-  { stars: 5, count: 98, percentage: 77 },
-  { stars: 4, count: 23, percentage: 18 },
-  { stars: 3, count: 4, percentage: 3 },
-  { stars: 2, count: 2, percentage: 2 },
-  { stars: 1, count: 0, percentage: 0 },
-];
 
 interface ReviewsPreviewProps {
   publisherId: string;
 }
 
 export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
+  // Fetch ratings for the publisher
+  const { data: ratings = [], isLoading } = useSWR(
+    swrKeys.ratings.list(publisherId),
+    () => RatingsService.list(publisherId).then(async (r) => {
+      if (r.ok) {
+        return await r.json();
+      }
+      throw new Error('Failed to load ratings');
+    }),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 300000, // 5 minutes
+    }
+  );
+
+  // Calculate average rating and distribution
+  const averageRating = ratings.length > 0 
+    ? ratings.reduce((sum: number, rating: any) => sum + rating.value, 0) / ratings.length 
+    : 0;
+
+  const ratingDistribution = [5, 4, 3, 2, 1].map(stars => {
+    const count = ratings.filter((rating: any) => rating.value === stars).length;
+    const percentage = ratings.length > 0 ? (count / ratings.length) * 100 : 0;
+    return { stars, count, percentage };
+  });
+
+  // Get recent reviews (limit to 3)
+  const recentReviews = ratings.slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Reviews & Ratings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            Loading reviews...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (ratings.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Reviews & Ratings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            No reviews yet. Be the first to rate this driver!
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -60,16 +89,20 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
         {/* Rating Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="text-center space-y-2">
-            <div className="text-4xl font-bold">4.9</div>
+            <div className="text-4xl font-bold">{Number(averageRating).toFixed(1)}</div>
             <div className="flex items-center justify-center space-x-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className="w-5 h-5 fill-yellow-400 text-yellow-400"
+                  className={`w-5 h-5 ${
+                    star <= Math.round(averageRating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground"
+                  }`}
                 />
               ))}
             </div>
-            <div className="text-sm text-muted-foreground">127 reviews</div>
+            <div className="text-sm text-muted-foreground">{ratings.length} reviews</div>
           </div>
 
           <div className="space-y-2">
@@ -87,57 +120,51 @@ export function ReviewsPreview({ publisherId }: ReviewsPreviewProps) {
         </div>
 
         {/* Recent Reviews */}
-        <div className="space-y-4">
-          <h4 className="font-semibold">Recent Reviews</h4>
-          {mockReviews.map((review) => (
-            <div
-              key={review.id}
-              className="space-y-3 pb-4 border-b last:border-b-0"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs">
-                      {review.author
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-sm">{review.author}</div>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-3 h-3 ${
-                              star <= review.rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-muted-foreground"
-                            }`}
-                          />
-                        ))}
+        {recentReviews.length > 0 && (
+          <div className="space-y-4">
+            <h4 className="font-semibold">Recent Reviews</h4>
+            {recentReviews.map((review: any) => (
+              <div
+                key={review.id}
+                className="space-y-3 pb-4 border-b last:border-b-0"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs">
+                        {review.reviewer?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium text-sm">{review.reviewerUser?.name || "Anonymous"}</div>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-3 h-3 ${
+                                star <= review.value
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(review.date).toLocaleDateString()}
-                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <p className="text-sm text-muted-foreground">{review.text}</p>
-
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                  <ThumbsUp className="w-3 h-3 mr-1" />
-                  Helpful ({review.helpful})
-                </Button>
+                {review.comment && (
+                  <p className="text-sm text-muted-foreground">{review.comment}</p>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -14,62 +14,23 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
-const mockRatings = [
-  {
-    id: "1",
-    rating: 5,
-    text: "John was an excellent driver! Very punctual, friendly, and the car was spotless. Great conversation during the trip. Highly recommend!",
-    author: "Sarah M.",
-    date: "2024-01-10",
-    tripRoute: "New York → Boston",
-    role: "as Driver",
-    helpful: 12,
-  },
-  {
-    id: "2",
-    rating: 5,
-    text: "Safe driver, comfortable ride, and exactly on time. John made the long journey enjoyable with good music and interesting conversation.",
-    author: "Mike R.",
-    date: "2024-01-08",
-    tripRoute: "Boston → New York",
-    role: "as Driver",
-    helpful: 8,
-  },
-  {
-    id: "3",
-    rating: 4,
-    text: "Good trip overall. John was professional and the car was clean. Only minor issue was we left 15 minutes late due to traffic.",
-    author: "Emma L.",
-    date: "2024-01-05",
-    tripRoute: "New York → Philadelphia",
-    role: "as Driver",
-    helpful: 5,
-  },
-  {
-    id: "4",
-    rating: 5,
-    text: "Great passenger! John was on time, respectful, and easy to talk to. Would definitely give him a ride again.",
-    author: "David K.",
-    date: "2024-01-03",
-    tripRoute: "Philadelphia → New York",
-    role: "as Passenger",
-    helpful: 3,
-  },
-];
-
-const ratingDistribution = [
-  { stars: 5, count: 67, percentage: 75 },
-  { stars: 4, count: 18, percentage: 20 },
-  { stars: 3, count: 3, percentage: 3 },
-  { stars: 2, count: 1, percentage: 1 },
-  { stars: 1, count: 0, percentage: 0 },
-];
 
 interface ProfileRatingsProps {
   userId: string;
+  ratings: any[];
 }
 
-export function ProfileRatings({ userId }: ProfileRatingsProps) {
+export function ProfileRatings({ userId, ratings }: ProfileRatingsProps) {
+  // Calculate average rating and distribution
+  const averageRating = ratings.length > 0 
+    ? ratings.reduce((sum: number, rating: any) => sum + rating.value, 0) / ratings.length 
+    : 0;
+
+  const ratingDistribution = [5, 4, 3, 2, 1].map(stars => {
+    const count = ratings.filter((rating: any) => rating.value === stars).length;
+    const percentage = ratings.length > 0 ? (count / ratings.length) * 100 : 0;
+    return { stars, count, percentage };
+  });
   return (
     <div className="space-y-6">
       {/* Rating Summary */}
@@ -80,16 +41,20 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="text-center space-y-4">
-              <div className="text-5xl font-bold">4.8</div>
+              <div className="text-5xl font-bold">{averageRating.toFixed(1)}</div>
               <div className="flex items-center justify-center space-x-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    className="w-6 h-6 fill-yellow-400 text-yellow-400"
+                    className={`w-6 h-6 ${
+                      star <= Math.round(averageRating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-muted-foreground"
+                    }`}
                   />
                 ))}
               </div>
-              <div className="text-muted-foreground">89 total reviews</div>
+              <div className="text-muted-foreground">{ratings.length} total reviews</div>
             </div>
 
             <div className="space-y-3">
@@ -131,72 +96,57 @@ export function ProfileRatings({ userId }: ProfileRatingsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {mockRatings.map((review) => (
-              <div
-                key={review.id}
-                className="space-y-4 pb-6 border-b last:border-b-0"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="text-sm">
-                        {review.author
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium">{review.author}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {review.role}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <div className="flex items-center">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-3 h-3 ${
-                                star <= review.rating
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-muted-foreground"
-                              }`}
-                            />
-                          ))}
+          {ratings.length > 0 ? (
+            <div className="space-y-6">
+              {ratings.map((review: any) => (
+                <div
+                  key={review.id}
+                  className="space-y-4 pb-6 border-b last:border-b-0"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="text-sm">
+                          {review.reviewerUser?.name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{review.reviewerUser?.name || "Anonymous"}</span>
                         </div>
-                        <span>•</span>
-                        <span>
-                          {new Date(review.date).toLocaleDateString()}
-                        </span>
-                        <span>•</span>
-                        <span>{review.tripRoute}</span>
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <div className="flex items-center">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-3 h-3 ${
+                                  star <= review.value
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span>•</span>
+                          <span>
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  {review.comment && (
+                    <p className="text-sm leading-relaxed pl-13">{review.comment}</p>
+                  )}
                 </div>
-
-                <p className="text-sm leading-relaxed pl-13">{review.text}</p>
-
-                <div className="flex items-center space-x-2 pl-13">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 text-xs"
-                  >
-                    <ThumbsUp className="w-3 h-3 mr-1" />
-                    Helpful ({review.helpful})
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
-            <Button variant="outline">Load More Reviews</Button>
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No reviews received yet
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

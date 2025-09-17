@@ -1,39 +1,39 @@
-import { Star, Shield, Car } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Star, Shield, Car } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const publishers = [
   {
-    id: "1",
-    name: "Sarah Johnson",
+    id: '1',
+    name: 'Sarah Johnson',
     rating: 4.9,
     trips: 127,
-    image: "/woman-driver.png",
-    route: "NYC → Boston",
-    vehicle: "Honda Accord",
+    image: '/woman-driver.png',
+    route: 'NYC → Boston',
+    vehicle: 'Honda Accord',
     trusted: true,
   },
   {
-    id: "2",
-    name: "Mike Chen",
+    id: '2',
+    name: 'Mike Chen',
     rating: 4.8,
     trips: 89,
-    image: "/man-driver.jpg",
-    route: "LA → San Diego",
-    vehicle: "Toyota Camry",
+    image: '/man-driver.jpg',
+    route: 'LA → San Diego',
+    vehicle: 'Toyota Camry',
     trusted: true,
   },
   {
-    id: "3",
-    name: "Emma Davis",
+    id: '3',
+    name: 'Emma Davis',
     rating: 5.0,
     trips: 203,
-    image: "/woman-driver-professional.jpg",
-    route: "Chicago → Milwaukee",
-    vehicle: "Tesla Model 3",
+    image: '/woman-driver-professional.jpg',
+    route: 'Chicago → Milwaukee',
+    vehicle: 'Tesla Model 3',
     trusted: true,
   },
 ];
@@ -41,49 +41,52 @@ const publishers = [
 export function TrustedPublishers() {
   return (
     <section className="space-y-12">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-balance">
+      <div className="space-y-4 text-center">
+        <h2 className="text-3xl font-bold text-balance md:text-4xl">
           Trusted by Thousands
         </h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-lg text-balance">
           Join our community of verified drivers and passengers who prioritize
           safety and reliability.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {publishers.map((publisher, index) => (
           <Card
             key={index}
-            className="group hover:shadow-lg transition-all duration-300 border-0 bg-card/50"
+            className="group bg-card/50 rounded-3xl border-1 border-gray-200 transition-all duration-300 hover:shadow-lg dark:border-gray-700"
           >
-            <CardContent className="flex flex-col items-center p-6 space-y-4">
-              <div className="w-full flex justify-between">
+            <CardContent className="flex flex-col items-center space-y-4 p-6">
+              <div className="flex w-full justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage
-                      src={publisher.image || "/placeholder.svg"}
+                      src={publisher.image || '/placeholder.svg'}
                       alt={publisher.name}
                     />
                     <AvatarFallback>
                       {publisher.name
-                        .split(" ")
+                        .split(' ')
                         .map((n) => n[0])
-                        .join("")}
+                        .join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center space-x-2">
                       <h3 className="font-semibold">{publisher.name}</h3>
                       {publisher.trusted && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Shield className="w-3 h-3 mr-1" />
+                        <Badge
+                          variant="secondary"
+                          className="bg-opacity-50 rounded-full text-xs"
+                        >
+                          <Shield className="mr-1 h-3 w-3" />
                           Trusted
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <div className="text-muted-foreground flex items-center space-x-1 text-sm">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       <span>{publisher.rating}</span>
                       <span>•</span>
                       <span>{publisher.trips} trips</span>
@@ -100,7 +103,7 @@ export function TrustedPublishers() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Vehicle</span>
                   <div className="flex items-center space-x-1">
-                    <Car className="w-4 h-4 text-muted-foreground" />
+                    <Car className="text-muted-foreground h-4 w-4" />
                     <span className="font-medium">{publisher.vehicle}</span>
                   </div>
                 </div>
@@ -108,7 +111,7 @@ export function TrustedPublishers() {
 
               <Link
                 href={`/drivers/${publisher.id}`}
-                className="bg-primary text-primary-foreground rounded-md w-32 px-4 py-2 mx-auto"
+                className="bg-primary text-primary-foreground mx-auto w-32 rounded-full px-4 py-2"
               >
                 View Profile
               </Link>

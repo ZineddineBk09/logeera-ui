@@ -7,43 +7,29 @@ import { Separator } from "@/components/ui/separator";
 
 interface ProfileOverviewProps {
   user: {
+    id: string;
     name: string;
     email: string;
-    phone: string;
-    memberSince: string;
-    languages: string[];
-    bio: string;
-    verifiedPhone: boolean;
-    verifiedEmail: boolean;
-    tripCount: number;
+    phoneNumber?: string;
+    type?: string;
+    status?: string;
+    role?: string;
+    averageRating?: number;
+    ratingCount?: number;
+    createdAt?: string;
   };
+  userTrips: any[];
 }
 
-const recentTrips = [
-  {
-    id: "1",
-    route: "New York → Boston",
-    date: "2024-01-10",
-    role: "Driver",
-    status: "Completed",
-  },
-  {
-    id: "2",
-    route: "Boston → New York",
-    date: "2024-01-08",
-    role: "Passenger",
-    status: "Completed",
-  },
-  {
-    id: "3",
-    route: "New York → Philadelphia",
-    date: "2024-01-05",
-    role: "Driver",
-    status: "Completed",
-  },
-];
 
-export function ProfileOverview({ user }: ProfileOverviewProps) {
+export function ProfileOverview({ user, userTrips }: ProfileOverviewProps) {
+  // Get recent trips (limit to 5)
+  const recentTrips = userTrips.slice(0, 5);
+  
+  // Calculate trip statistics
+  const totalTrips = userTrips.length;
+  const completedTrips = userTrips.filter(trip => trip.status === 'COMPLETED').length;
+  const activeTrips = userTrips.filter(trip => trip.status === 'ACTIVE').length;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Personal Information */}
@@ -60,7 +46,7 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
                   <div className="text-sm text-muted-foreground">Email</div>
                   <div className="flex items-center space-x-2">
                     <span>{user.email}</span>
-                    {user.verifiedEmail && (
+                    {user.email && (
                       <Badge variant="secondary" className="text-xs">
                         Verified
                       </Badge>
@@ -74,10 +60,10 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
                 <div className="flex-1">
                   <div className="text-sm text-muted-foreground">Phone</div>
                   <div className="flex items-center space-x-2">
-                    <span>{user.phone}</span>
-                    {user.verifiedPhone && (
+                    <span>{user.phoneNumber || 'Not provided'}</span>
+                    {user.phoneNumber && (
                       <Badge variant="secondary" className="text-xs">
-                        Verified
+                        Provided
                       </Badge>
                     )}
                   </div>
@@ -90,15 +76,15 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
                   <div className="text-sm text-muted-foreground">
                     Member since
                   </div>
-                  <span>{new Date(user.memberSince).toLocaleDateString()}</span>
+                  <span>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}</span>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3">
                 <Globe className="h-4 w-4 text-muted-foreground" />
                 <div className="flex-1">
-                  <div className="text-sm text-muted-foreground">Languages</div>
-                  <span>{user.languages.join(", ")}</span>
+                  <div className="text-sm text-muted-foreground">Account Type</div>
+                  <span>{user.type || 'Individual'}</span>
                 </div>
               </div>
             </div>
@@ -106,8 +92,10 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
             <Separator />
 
             <div>
-              <div className="text-sm text-muted-foreground mb-2">Bio</div>
-              <p className="text-sm leading-relaxed">{user.bio}</p>
+              <div className="text-sm text-muted-foreground mb-2">Account Status</div>
+              <Badge variant={user.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                {user.status || 'ACTIVE'}
+              </Badge>
             </div>
           </CardContent>
         </Card>
@@ -118,27 +106,33 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
             <CardTitle>Recent Trips</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentTrips.map((trip) => (
-                <div
-                  key={trip.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Car className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{trip.route}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(trip.date).toLocaleDateString()} • {trip.role}
+            {recentTrips.length > 0 ? (
+              <div className="space-y-4">
+                {recentTrips.map((trip) => (
+                  <div
+                    key={trip.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Car className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{trip.originName} → {trip.destinationName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(trip.departureAt).toLocaleDateString()} • {trip.vehicleType}
+                        </div>
                       </div>
                     </div>
+                    <Badge variant="secondary">{trip.status}</Badge>
                   </div>
-                  <Badge variant="secondary">{trip.status}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No trips published yet
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -152,22 +146,22 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
           <CardContent className="space-y-4">
             <div className="text-center">
               <div className="text-3xl font-bold text-primary">
-                {user.tripCount}
+                {totalTrips}
               </div>
-              <div className="text-sm text-muted-foreground">Total Trips</div>
+              <div className="text-sm text-muted-foreground">Published Trips</div>
             </div>
 
             <Separator />
 
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-xl font-bold">67</div>
-                <div className="text-xs text-muted-foreground">As Driver</div>
+                <div className="text-xl font-bold">{completedTrips}</div>
+                <div className="text-xs text-muted-foreground">Completed</div>
               </div>
               <div>
-                <div className="text-xl font-bold">60</div>
+                <div className="text-xl font-bold">{activeTrips}</div>
                 <div className="text-xs text-muted-foreground">
-                  As Passenger
+                  Active
                 </div>
               </div>
             </div>
@@ -176,12 +170,12 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>This month</span>
-                <span className="font-medium">8 trips</span>
+                <span>Average Rating</span>
+                <span className="font-medium">{user.averageRating?.toFixed(1) || 'N/A'}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>This year</span>
-                <span className="font-medium">45 trips</span>
+                <span>Total Reviews</span>
+                <span className="font-medium">{user.ratingCount || 0}</span>
               </div>
             </div>
           </CardContent>
@@ -192,41 +186,53 @@ export function ProfileOverview({ user }: ProfileOverviewProps) {
             <CardTitle>Achievements</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
-                <span className="text-yellow-600 dark:text-yellow-400">🏆</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Top Rated Driver</div>
-                <div className="text-xs text-muted-foreground">
-                  Maintained 4.8+ rating
+            {user.averageRating && user.averageRating >= 4.5 && (
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
+                  <span className="text-yellow-600 dark:text-yellow-400">🏆</span>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Top Rated Driver</div>
+                  <div className="text-xs text-muted-foreground">
+                    Maintained {user.averageRating.toFixed(1)}+ rating
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Reliable Member</div>
-                <div className="text-xs text-muted-foreground">
-                  100+ completed trips
+            {completedTrips >= 10 && (
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 dark:text-green-400">✅</span>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Reliable Member</div>
+                  <div className="text-xs text-muted-foreground">
+                    {completedTrips}+ completed trips
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 dark:text-blue-400">🌟</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Early Adopter</div>
-                <div className="text-xs text-muted-foreground">
-                  Member since 2022
+            {user.createdAt && new Date(user.createdAt).getFullYear() <= 2023 && (
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 dark:text-blue-400">🌟</span>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Early Adopter</div>
+                  <div className="text-xs text-muted-foreground">
+                    Member since {new Date(user.createdAt).getFullYear()}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {totalTrips === 0 && (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                Start publishing trips to earn achievements!
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

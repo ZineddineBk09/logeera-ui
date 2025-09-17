@@ -18,34 +18,71 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { ROUTES } from "@/constants";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export function RegisterForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    userType: "",
-    idNumber: "",
-    agreeToTerms: false,
+  const schema = z.object({
+    name: z.string().min(2, "Enter your full name"),
+    email: z.string().email("Enter a valid email"),
+    phone: z
+      .string()
+      .regex(/^\+?[0-9]{7,15}$/, "Enter a valid phone"),
+    password: z.string().min(8, "At least 8 characters").max(128),
+    userType: z.enum(["individual", "company"], {
+      message: "Select an account type",
+    }),
+    idNumber: z.string().min(1, "Required").optional().or(z.literal("")),
+    agreeToTerms: z.literal(true, {
+      message: "You must accept the terms",
+    }),
+  });
+  type FormValues = z.infer<typeof schema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      userType: undefined as unknown as any,
+      idNumber: "",
+      agreeToTerms: true,
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const { register: registerUser } = useAuth();
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsLoading(false);
-    router.push("/auth/login?registered=true");
+  const onSubmit = async (formData: FormValues) => {
+    const ok = await registerUser({
+      name: formData.name,
+      email: formData.email,
+      phoneNumber: formData.phone,
+      password: formData.password,
+      type: formData.userType.toUpperCase() as 'INDIVIDUAL' | 'COMPANY',
+      officialIdNumber: formData.idNumber || "ID-UNKNOWN",
+    });
+    
+    if (ok) {
+      router.push(ROUTES.DASHBOARD);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Full name</Label>
@@ -56,12 +93,13 @@ export function RegisterForm() {
               type="text"
               placeholder="Enter your full name"
               className="pl-10"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
+              aria-invalid={!!errors.name}
+              {...register("name")}
               required
             />
+            {errors.name && (
+              <p className="text-xs text-destructive mt-1">{errors.name.message}</p>
+            )}
           </div>
         </div>
 
@@ -75,12 +113,13 @@ export function RegisterForm() {
                 type="email"
                 placeholder="Enter your email"
                 className="pl-10"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
+                aria-invalid={!!errors.email}
+                {...register("email")}
                 required
               />
+              {errors.email && (
+                <p className="text-xs text-destructive mt-1">{errors.email.message}</p>
+              )}
             </div>
           </div>
 
@@ -93,12 +132,13 @@ export function RegisterForm() {
                 type="tel"
                 placeholder="Enter your phone"
                 className="pl-10"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                }
+                aria-invalid={!!errors.phone}
+                {...register("phone")}
                 required
               />
+              {errors.phone && (
+                <p className="text-xs text-destructive mt-1">{errors.phone.message}</p>
+              )}
             </div>
           </div>
         </div>
@@ -112,10 +152,8 @@ export function RegisterForm() {
               type={showPassword ? "text" : "password"}
               placeholder="Create a strong password"
               className="pl-10 pr-10"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, password: e.target.value }))
-              }
+              aria-invalid={!!errors.password}
+              {...register("password")}
               required
             />
             <button
@@ -135,12 +173,7 @@ export function RegisterForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Account type</Label>
-            <Select
-              value={formData.userType}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, userType: value }))
-              }
-            >
+            <Select value={watch("userType") || ""} onValueChange={(v) => setValue("userType", v as any)}>
               <SelectTrigger>
                 <div className="flex items-center">
                   <Building className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -152,6 +185,9 @@ export function RegisterForm() {
                 <SelectItem value="company">Company</SelectItem>
               </SelectContent>
             </Select>
+            {errors.userType && (
+              <p className="text-xs text-destructive mt-1">{errors.userType.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -160,28 +196,18 @@ export function RegisterForm() {
               id="idNumber"
               type="text"
               placeholder="Driver's license or ID"
-              value={formData.idNumber}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, idNumber: e.target.value }))
-              }
+              {...register("idNumber")}
             />
+            {errors.idNumber && (
+              <p className="text-xs text-destructive mt-1">{errors.idNumber.message}</p>
+            )}
           </div>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-start space-x-2">
-          <Checkbox
-            id="terms"
-            checked={formData.agreeToTerms}
-            onCheckedChange={(checked) =>
-              setFormData((prev) => ({
-                ...prev,
-                agreeToTerms: checked as boolean,
-              }))
-            }
-            required
-          />
+          <Checkbox id="terms" {...register("agreeToTerms")} onCheckedChange={(c) => setValue("agreeToTerms", c as true)} required />
           <Label htmlFor="terms" className="text-sm leading-relaxed">
             I agree to the{" "}
             <Link href="/terms" className="text-primary hover:underline">
@@ -192,6 +218,9 @@ export function RegisterForm() {
               Privacy Policy
             </Link>
           </Label>
+          {errors.agreeToTerms && (
+            <p className="text-xs text-destructive mt-1">{errors.agreeToTerms.message}</p>
+          )}
         </div>
 
         <div className="bg-muted/50 rounded-lg p-3">
@@ -202,13 +231,8 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        className="w-full"
-        size="lg"
-        disabled={isLoading || !formData.agreeToTerms}
-      >
-        {isLoading ? "Creating account..." : "Create account"}
+      <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+        {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
       <div className="relative">

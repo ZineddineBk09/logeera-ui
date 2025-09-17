@@ -1,78 +1,106 @@
-"use client";
+'use client';
 
-import type React from "react";
+import type React from 'react';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { ROUTES } from '@/constants';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
+  const schema = z.object({
+    email: z.string().email('Enter a valid email'),
+    password: z.string().min(8, 'At least 8 characters').max(128),
+    rememberMe: z.boolean().optional().default(false),
   });
+  type FormValues = z.infer<typeof schema>;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '', rememberMe: false },
+  });
+  const { login } = useAuth();
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    setIsLoading(false);
-    router.push("/");
+  const onSubmit = async (values: FormValues) => {
+    console.log(values);
+    const ok = await login({ email: values.email, password: values.password });
+    if (ok) {
+      // Get redirect URL from query params or default to dashboard
+      const redirectUrl =
+        new URLSearchParams(window.location.search).get('redirect') ||
+        ROUTES.DASHBOARD;
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push(ROUTES.DASHBOARD);
+      }
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="email"
               type="email"
               placeholder="Enter your email"
               className="pl-10"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
+              aria-invalid={!!errors.email}
+              {...register('email')}
+              value={watch('email')}
+              onChange={(e) => setValue('email', e.target.value)}
               required
             />
+            {errors.email && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.email.message}
+              </p>
+            )}
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="password"
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               placeholder="Enter your password"
-              className="pl-10 pr-10"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, password: e.target.value }))
-              }
+              className="pr-10 pl-10"
+              aria-invalid={!!errors.password}
+              {...register('password')}
+              value={watch('password')}
+              onChange={(e) => setValue('password', e.target.value)}
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -80,6 +108,11 @@ export function LoginForm() {
                 <Eye className="h-4 w-4" />
               )}
             </button>
+            {errors.password && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.password.message}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -88,12 +121,9 @@ export function LoginForm() {
         <div className="flex items-center space-x-2">
           <Checkbox
             id="remember"
-            checked={formData.rememberMe}
+            {...register('rememberMe')}
             onCheckedChange={(checked) =>
-              setFormData((prev) => ({
-                ...prev,
-                rememberMe: checked as boolean,
-              }))
+              setValue('rememberMe', Boolean(checked))
             }
           />
           <Label htmlFor="remember" className="text-sm">
@@ -102,14 +132,19 @@ export function LoginForm() {
         </div>
         <Link
           href="/auth/forgot-password"
-          className="text-sm text-primary hover:underline"
+          className="text-primary text-sm hover:underline"
         >
           Forgot password?
         </Link>
       </div>
 
-      <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-        {isLoading ? "Signing in..." : "Sign in"}
+      <Button
+        type="submit"
+        className="w-full"
+        size="lg"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Signing in...' : 'Sign in'}
       </Button>
 
       <div className="relative">
@@ -117,7 +152,7 @@ export function LoginForm() {
           <Separator />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
+          <span className="bg-background text-muted-foreground px-2">
             Or continue with
           </span>
         </div>
@@ -163,8 +198,8 @@ export function LoginForm() {
         </Button>
       </div>
 
-      <p className="text-center text-sm text-muted-foreground">
-        Don't have an account?{" "}
+      <p className="text-muted-foreground text-center text-sm">
+        Don't have an account?{' '}
         <Link href="/auth/register" className="text-primary hover:underline">
           Sign up
         </Link>

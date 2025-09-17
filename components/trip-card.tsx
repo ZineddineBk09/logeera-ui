@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MapPin, Clock, Car, Users, Star, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,49 +14,53 @@ interface TripCardProps {
     id: string;
     originName: string;
     destinationName: string;
-    dateTime: string;
-    vehicleType: string;
+    departureAt: string;
+    vehicleType: 'CAR' | 'VAN' | 'TRUCK' | 'BIKE';
     capacity: number;
-    availableSeats: number;
-    price: number;
+    bookedSeats?: number;
+    pricePerSeat?: number;
+    status: string;
     publisher: {
+      id: string;
       name: string;
-      rating: number;
-      avatar: string;
-      trusted: boolean;
+      email: string;
+      averageRating?: number;
+      ratingCount?: number;
     };
-    duration: string;
-    distance: string;
   };
   isSelected?: boolean;
   onSelect?: () => void;
 }
 
 const vehicleIcons = {
-  car: Car,
-  van: Car,
-  truck: Car,
-  bike: Car,
+  CAR: Car,
+  VAN: Car,
+  TRUCK: Car,
+  BIKE: Car,
 };
 
 export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
   const VehicleIcon =
     vehicleIcons[trip.vehicleType as keyof typeof vehicleIcons] || Car;
-  const departureTime = new Date(trip.dateTime).toLocaleTimeString("en-US", {
+  const departureTime = new Date(trip.departureAt).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   });
 
   return (
-    <Card
-      className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-md border-0 bg-card/80",
-        isSelected && "ring-2 ring-primary shadow-lg",
-      )}
-      onClick={onSelect}
+    <motion.div
+      whileHover={{ y: -2, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
     >
-      <CardContent className="p-6">
+      <Card
+        className={cn(
+          "cursor-pointer transition-all duration-200 hover:shadow-md border-0 bg-card/80",
+          isSelected && "ring-2 ring-primary shadow-lg",
+        )}
+        onClick={onSelect}
+      >
+        <CardContent className="p-6">
         <div className="space-y-4">
           {/* Route and Time */}
           <div className="flex items-start justify-between">
@@ -71,16 +76,17 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
                   <span>{departureTime}</span>
                 </div>
                 <span>•</span>
-                <span>{trip.duration}</span>
+                <Badge variant="outline" className="text-xs">
+                  {trip.vehicleType}
+                </Badge>
                 <span>•</span>
-                <span>{trip.distance}</span>
+                <span>{trip.capacity} seats</span>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-primary">
-                ${trip.price}
-              </div>
-              <div className="text-sm text-muted-foreground">per person</div>
+              <Badge variant="secondary" className="text-sm">
+                {trip.status}
+              </Badge>
             </div>
           </div>
 
@@ -88,13 +94,13 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Link
-                href={`/drivers/${trip.id}`}
+                href={`/drivers/${trip.publisher.id}`}
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Avatar className="h-10 w-10">
                   <AvatarImage
-                    src={trip.publisher.avatar || "/placeholder.svg"}
+                    src="/placeholder.svg"
                     alt={trip.publisher.name}
                   />
                   <AvatarFallback>
@@ -109,16 +115,13 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
                     <span className="font-medium hover:text-primary transition-colors">
                       {trip.publisher.name}
                     </span>
-                    {trip.publisher.trusted && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Shield className="w-3 h-3 mr-1" />
-                        Trusted
-                      </Badge>
-                    )}
                   </div>
                   <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span>{trip.publisher.rating}</span>
+                    <span>{trip.publisher.averageRating?.toFixed(1) || 'N/A'}</span>
+                    {trip.publisher.ratingCount && (
+                      <span>({trip.publisher.ratingCount})</span>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -127,11 +130,11 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <VehicleIcon className="h-4 w-4" />
-                <span className="capitalize">{trip.vehicleType}</span>
+                <span>{trip.vehicleType}</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span>{trip.availableSeats} seats left</span>
+                <span>{trip.capacity} seats</span>
               </div>
             </div>
           </div>
@@ -145,7 +148,8 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
             </Link>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
