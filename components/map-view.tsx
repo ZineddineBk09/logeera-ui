@@ -20,6 +20,7 @@ import {
   useJsApiLoader,
 } from '@react-google-maps/api';
 import { mapStyles } from '@/lib/map-styles';
+import { extractCoordinates } from '@/lib/utils';
 
 interface MapViewProps {
   trips: Array<{
@@ -53,17 +54,6 @@ const containerStyle = {
 const defaultCenter = {
   lat: 40.7128,
   lng: -74.006,
-};
-
-// originGeom: "POINT(-122.2711 37.8044)"
-const extractCoordinates = (originGeom = '') => {
-  const [lng, lat] = originGeom
-    .split('POINT(')[1]
-    .split(')')[0]
-    .split(' ')
-    .map(Number);
-  console.log('lng', lng, 'lat', lat);
-  return { lat: lat || 0, lng: lng || 0 };
 };
 
 export function MapView({

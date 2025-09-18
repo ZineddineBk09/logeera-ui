@@ -14,7 +14,9 @@
     "db:seed-simple": "node scripts/seed-simple.js",
     "db:seed-api": "node scripts/seed-database.js",
     "db:reset": "npx prisma migrate reset --force && npm run db:seed-simple",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "icons:generate": "node scripts/generate-icons.js",
+    "pwa:build": "npm run icons:generate && next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

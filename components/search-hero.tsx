@@ -185,6 +185,8 @@ export function SearchHero() {
       }
     }
 
+    // Route format: /trips?origin=New York&destination=Los Angeles&originLat=40.7128&originLng=-74.0060&destinationLat=34.0522&destinationLng=-118.2437
+
     router.push(`/trips?${params.toString()}`);
   };
 
