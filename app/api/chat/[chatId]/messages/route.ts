@@ -14,7 +14,10 @@ async function getMessages(req: AuthenticatedRequest) {
 
     // Verify user has access to this chat
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
-    if (!chat || (chat.userAId !== req.user!.userId && chat.userBId !== req.user!.userId)) {
+    if (
+      !chat ||
+      (chat.userAId !== req.user!.userId && chat.userBId !== req.user!.userId)
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -25,7 +28,10 @@ async function getMessages(req: AuthenticatedRequest) {
 
     return NextResponse.json(messages);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -37,7 +43,10 @@ async function createMessage(req: AuthenticatedRequest) {
 
     // Verify user has access to this chat
     const chat = await prisma.chat.findUnique({ where: { id: chatId } });
-    if (!chat || (chat.userAId !== req.user!.userId && chat.userBId !== req.user!.userId)) {
+    if (
+      !chat ||
+      (chat.userAId !== req.user!.userId && chat.userBId !== req.user!.userId)
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -51,14 +60,20 @@ async function createMessage(req: AuthenticatedRequest) {
         chatId,
         senderId,
         content,
-      }
+      },
     });
     return NextResponse.json(savedMessage, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.issues },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
-import { verifyRefreshToken, signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
+import {
+  verifyRefreshToken,
+  signAccessToken,
+  signRefreshToken,
+} from '@/lib/auth/jwt';
 
 export async function POST(req: NextRequest) {
   try {
     const refreshToken = req.cookies.get('refreshToken')?.value;
-    
+
     if (!refreshToken) {
       return NextResponse.json({ error: 'No refresh token' }, { status: 401 });
     }
 
     const payload = await verifyRefreshToken(refreshToken);
-    
-    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+    });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -22,7 +28,7 @@ export async function POST(req: NextRequest) {
     const newRefreshToken = await signRefreshToken(newPayload);
 
     const response = NextResponse.json({ accessToken });
-    
+
     response.cookies.set('refreshToken', newRefreshToken, {
       httpOnly: true,
       sameSite: 'lax',
@@ -33,6 +39,9 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error) {
-    return NextResponse.json({ error: 'Invalid refresh token' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Invalid refresh token' },
+      { status: 401 },
+    );
   }
 }

@@ -11,17 +11,22 @@ const path = require('path');
 
 async function setupDatabase() {
   console.log('🚀 Setting up database with PostGIS...');
-  
+
   try {
     // Check if DATABASE_URL is set
     if (!process.env.DATABASE_URL) {
       console.error('❌ DATABASE_URL environment variable is not set');
       console.log('💡 Please set DATABASE_URL in your .env file');
-      console.log('   Example: DATABASE_URL="postgresql://user:password@localhost:5432/logeera"');
+      console.log(
+        '   Example: DATABASE_URL="postgresql://user:password@localhost:5432/logeera"',
+      );
       process.exit(1);
     }
 
-    console.log('📋 DATABASE_URL found:', process.env.DATABASE_URL.replace(/\/\/.*@/, '//***:***@'));
+    console.log(
+      '📋 DATABASE_URL found:',
+      process.env.DATABASE_URL.replace(/\/\/.*@/, '//***:***@'),
+    );
 
     // Generate Prisma client first
     console.log('🔧 Generating Prisma client...');
@@ -36,10 +41,10 @@ async function setupDatabase() {
     } catch (migrationError) {
       console.log('⚠️  Migration failed, likely due to existing schema...');
       console.log('🔄 Resetting database to start fresh...');
-      
+
       // Reset the database and start fresh
       execSync('npx prisma migrate reset --force', { stdio: 'inherit' });
-      
+
       // Run migrations again
       console.log('🗄️ Running fresh migrations...');
       execSync('npx prisma migrate dev --name init', { stdio: 'inherit' });
@@ -48,14 +53,21 @@ async function setupDatabase() {
     // Run PostGIS extension setup after migration
     console.log('📦 Installing PostGIS extension...');
     try {
-      execSync(`npx prisma db execute --file ./lib/database-extensions.sql --schema ./prisma/schema.prisma`, {
-        stdio: 'inherit',
-        env: { ...process.env }
-      });
+      execSync(
+        `npx prisma db execute --file ./lib/database-extensions.sql --schema ./prisma/schema.prisma`,
+        {
+          stdio: 'inherit',
+          env: { ...process.env },
+        },
+      );
     } catch (postgisError) {
       console.log('⚠️  PostGIS extension setup failed, but continuing...');
-      console.log('   This might be because PostGIS is already installed or not available');
-      console.log('   The app will still work, but geospatial features may be limited');
+      console.log(
+        '   This might be because PostGIS is already installed or not available',
+      );
+      console.log(
+        '   The app will still work, but geospatial features may be limited',
+      );
     }
 
     console.log('✅ Database setup completed successfully!');
@@ -64,7 +76,6 @@ async function setupDatabase() {
     console.log('   1. Run: npm run db:seed (to populate with test data)');
     console.log('   2. Run: npm run dev (to start the development server)');
     console.log('   3. Run: npm run db:studio (to view the database)');
-    
   } catch (error) {
     console.error('❌ Database setup failed:', error.message);
     console.log('\n🔧 Troubleshooting:');

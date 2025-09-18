@@ -19,7 +19,7 @@ async function getTrips(req: AuthenticatedRequest) {
 
     // Build where clause
     const where: any = {};
-    
+
     if (search) {
       where.OR = [
         { originName: { contains: search, mode: 'insensitive' } },
@@ -27,7 +27,7 @@ async function getTrips(req: AuthenticatedRequest) {
         { publisher: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }
-    
+
     if (status && status !== 'all') {
       where.status = status;
     }
@@ -63,7 +63,10 @@ async function getTrips(req: AuthenticatedRequest) {
     });
   } catch (error) {
     console.error('Error fetching trips:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

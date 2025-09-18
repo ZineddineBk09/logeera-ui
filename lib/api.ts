@@ -1,9 +1,9 @@
 import { APP_CONFIG, API_ENDPOINTS } from '@/constants';
-import { 
-  setAccessTokenCookie, 
-  getAccessTokenCookie, 
+import {
+  setAccessTokenCookie,
+  getAccessTokenCookie,
   removeAccessTokenCookie,
-  clearAuthCookies 
+  clearAuthCookies,
 } from '@/lib/cookies';
 
 // Token management with cookies
@@ -11,7 +11,7 @@ let accessTokenMemory: string | null = null;
 
 export function setAccessToken(token: string | null) {
   accessTokenMemory = token;
-  
+
   if (typeof window !== 'undefined') {
     if (token) {
       setAccessTokenCookie(token);
@@ -24,7 +24,7 @@ export function setAccessToken(token: string | null) {
 export function getAccessToken(): string | null {
   // First try memory, then cookies
   if (accessTokenMemory) return accessTokenMemory;
-  
+
   if (typeof window !== 'undefined') {
     const token = getAccessTokenCookie();
     if (token) {
@@ -32,41 +32,53 @@ export function getAccessToken(): string | null {
       return token;
     }
   }
-  
+
   return null;
 }
 
 // Enhanced API client with automatic token refresh
-export async function api(path: string, init: RequestInit = {}): Promise<Response> {
+export async function api(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
   const token = getAccessToken();
-  
+
   const makeRequest = (authToken?: string): RequestInit => ({
-    credentials: "include",
+    credentials: 'include',
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...(init.headers || {}),
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
   });
 
   // First attempt with current token
-  let response = await fetch(`${APP_CONFIG.API_BASE_URL}${path}`, makeRequest(token || undefined));
+  let response = await fetch(
+    `${APP_CONFIG.API_BASE_URL}${path}`,
+    makeRequest(token || undefined),
+  );
 
   // If unauthorized, try to refresh token
   if (response.status === 401 && token) {
     try {
-      const refreshResponse = await fetch(`${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_REFRESH}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const refreshResponse = await fetch(
+        `${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_REFRESH}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      );
 
       if (refreshResponse.ok) {
         const { accessToken: newToken } = await refreshResponse.json();
         setAccessToken(newToken);
-        
+
         // Retry original request with new token
-        response = await fetch(`${APP_CONFIG.API_BASE_URL}${path}`, makeRequest(newToken));
+        response = await fetch(
+          `${APP_CONFIG.API_BASE_URL}${path}`,
+          makeRequest(newToken),
+        );
       } else {
         // Refresh failed, clear all auth cookies
         setAccessToken(null);
@@ -83,16 +95,19 @@ export async function api(path: string, init: RequestInit = {}): Promise<Respons
 }
 
 // API response helpers
-export async function apiJson<T = any>(path: string, init?: RequestInit): Promise<T> {
+export async function apiJson<T = any>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const response = await api(path, init);
-  
+
   if (!response.ok) {
     const error = new Error(`API Error: ${response.status}`);
     (error as any).status = response.status;
     (error as any).response = response;
     throw error;
   }
-  
+
   return response.json();
 }
 
@@ -123,5 +138,3 @@ export async function apiDelete<T = any>(path: string): Promise<T> {
     method: 'DELETE',
   });
 }
-
-

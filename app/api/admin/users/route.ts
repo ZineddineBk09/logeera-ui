@@ -19,7 +19,7 @@ async function getUsers(req: AuthenticatedRequest) {
 
     // Build where clause
     const where: any = {};
-    
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -27,7 +27,7 @@ async function getUsers(req: AuthenticatedRequest) {
         { phoneNumber: { contains: search, mode: 'insensitive' } },
       ];
     }
-    
+
     if (status && status !== 'all') {
       where.status = status;
     }
@@ -67,9 +67,11 @@ async function getUsers(req: AuthenticatedRequest) {
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
 export const GET = withAuth(getUsers);
-

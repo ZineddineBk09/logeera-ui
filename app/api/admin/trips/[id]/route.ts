@@ -53,7 +53,10 @@ async function getTrip(req: AuthenticatedRequest) {
     return NextResponse.json(trip);
   } catch (error) {
     console.error('Error fetching trip:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -90,7 +93,10 @@ async function updateTrip(req: AuthenticatedRequest) {
     return NextResponse.json(trip);
   } catch (error) {
     console.error('Error updating trip:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -122,7 +128,10 @@ async function deleteTrip(req: AuthenticatedRequest) {
     return NextResponse.json({ message: 'Trip deleted successfully' });
   } catch (error) {
     console.error('Error deleting trip:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

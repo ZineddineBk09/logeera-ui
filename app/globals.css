@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -7,7 +7,9 @@
   /* Updated color palette to use blue theme with Brandeis Blue primary and Azure accent */
   --background: oklch(1 0 0); /* #ffffff - Main background */
   --foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Primary text */
-  --card: oklch(0.985 0.017 240); /* #f8faff - Soft blue-tinted card background */
+  --card: oklch(
+    0.985 0.017 240
+  ); /* #f8faff - Soft blue-tinted card background */
   --card-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Card text */
   --popover: oklch(1 0 0); /* #ffffff - Popover background */
   --popover-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Popover text */
@@ -33,7 +35,9 @@
   --sidebar: oklch(1 0 0); /* #ffffff - Sidebar background */
   --sidebar-foreground: oklch(0.556 0.014 258.338); /* #4b5563 - Sidebar text */
   --sidebar-primary: oklch(0.525 0.246 258.64); /* #0670F8 - Sidebar primary */
-  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff - Sidebar primary text */
+  --sidebar-primary-foreground: oklch(
+    1 0 0
+  ); /* #ffffff - Sidebar primary text */
   --sidebar-accent: oklch(0.565 0.246 258.64); /* #067AF9 - Sidebar accent */
   --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff - Sidebar accent text */
   --sidebar-border: oklch(0.922 0.013 240); /* #e5e7eb - Sidebar border */
@@ -48,9 +52,13 @@
   --card-foreground: oklch(0.985 0 0); /* Light card text */
   --popover: oklch(0.205 0.02 258.64); /* Dark popover */
   --popover-foreground: oklch(0.985 0 0); /* Light popover text */
-  --primary: oklch(0.565 0.246 258.64); /* #067AF9 - Brighter Azure for dark mode */
+  --primary: oklch(
+    0.565 0.246 258.64
+  ); /* #067AF9 - Brighter Azure for dark mode */
   --primary-foreground: oklch(0.145 0 0); /* Dark text on blue */
-  --secondary: oklch(0.525 0.246 258.64); /* #0670F8 - Brandeis Blue secondary */
+  --secondary: oklch(
+    0.525 0.246 258.64
+  ); /* #0670F8 - Brandeis Blue secondary */
   --secondary-foreground: oklch(1 0 0); /* Light secondary text */
   --muted: oklch(0.269 0.02 258.64); /* Dark muted with blue tint */
   --muted-foreground: oklch(0.708 0 0); /* Muted text */

@@ -20,13 +20,16 @@ async function handler(req: AuthenticatedRequest) {
       where: { id: tripId },
       data: { status: 'COMPLETED' },
       include: {
-        publisher: true
-      }
+        publisher: true,
+      },
     });
 
     return NextResponse.json(updatedTrip);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

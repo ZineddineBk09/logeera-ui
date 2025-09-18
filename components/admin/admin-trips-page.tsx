@@ -1,18 +1,24 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -20,7 +26,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,39 +42,42 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Search,
   MoreHorizontal,
-  Eye,
+  Edit,
   Trash2,
+  Eye,
   MapPin,
   Calendar,
   Users,
-  Car,
+  DollarSign,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
-import useSWR from "swr";
-import { swrKeys } from "@/lib/swr-config";
-import { AdminService } from "@/lib/services/admin";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+} from 'lucide-react';
+import useSWR from 'swr';
+import { swrKeys } from '@/lib/swr-config';
+import { AdminService } from '@/lib/services/admin';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface Trip {
   id: string;
-  originName: string;
-  destinationName: string;
-  departureAt: string;
-  vehicleType: string;
+  origin: string;
+  destination: string;
+  departureTime: string;
   capacity: number;
-  status: string;
-  createdAt: string;
+  bookedSeats: number;
+  pricePerSeat: number;
+  status: 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
   publisher: {
     id: string;
     name: string;
     email: string;
   };
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface TripsResponse {
@@ -71,10 +88,12 @@ interface TripsResponse {
   totalPages: number;
 }
 
-export function AdminTripsPageComponent() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+export function AdminTripsPage() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const limit = 10;
@@ -84,24 +103,33 @@ export function AdminTripsPageComponent() {
     page: page.toString(),
     limit: limit.toString(),
     ...(search && { search }),
-    ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(statusFilter !== 'all' && { status: statusFilter }),
   };
 
   // Fetch trips data
-  const { data: tripsData, error, mutate } = useSWR(
+  const {
+    data: tripsData,
+    error,
+    mutate,
+  } = useSWR(
     swrKeys.admin.trips(queryParams),
     async () => {
-      const response = await AdminService.getTrips(page, limit, search || undefined, statusFilter !== "all" ? statusFilter : undefined);
+      const response = await AdminService.getTrips(
+        page,
+        limit,
+        search || undefined,
+        statusFilter !== 'all' ? statusFilter : undefined,
+      );
       return response.json();
     },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       onError: (error) => {
-        console.error("Trips fetch error:", error);
-        toast.error("Failed to load trips");
+        console.error('Trips fetch error:', error);
+        toast.error('Failed to load trips');
       },
-    }
+    },
   );
 
   const trips = tripsData?.trips || [];
@@ -121,11 +149,13 @@ export function AdminTripsPageComponent() {
     try {
       setIsLoading(true);
       await AdminService.deleteTrip(tripId);
-      toast.success("Trip deleted successfully");
+      toast.success('Trip deleted successfully');
       mutate();
+      setIsDeleteDialogOpen(false);
+      setSelectedTrip(null);
     } catch (error) {
-      console.error("Delete trip error:", error);
-      toast.error("Failed to delete trip");
+      console.error('Delete trip error:', error);
+      toast.error('Failed to delete trip');
     } finally {
       setIsLoading(false);
     }
@@ -133,35 +163,27 @@ export function AdminTripsPageComponent() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PUBLISHED":
+      case 'PUBLISHED':
         return <Badge variant="default">Published</Badge>;
-      case "COMPLETED":
-        return <Badge variant="secondary">Completed</Badge>;
-      case "CANCELLED":
+      case 'CANCELLED':
         return <Badge variant="destructive">Cancelled</Badge>;
+      case 'COMPLETED':
+        return <Badge variant="secondary">Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const getVehicleTypeIcon = (vehicleType: string) => {
-    switch (vehicleType) {
-      case "CAR":
-        return "🚗";
-      case "VAN":
-        return "🚐";
-      case "TRUCK":
-        return "🚛";
-      case "BIKE":
-        return "🏍️";
-      default:
-        return "🚗";
-    }
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(price);
   };
 
   if (error) {
     return (
-      <div className="text-center py-8">
+      <div className="py-8 text-center">
         <p className="text-muted-foreground">Failed to load trips</p>
       </div>
     );
@@ -172,9 +194,11 @@ export function AdminTripsPageComponent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Trips Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Trips Management
+          </h1>
           <p className="text-muted-foreground">
-            Manage all trips published on the platform
+            Manage published trips and monitor activity
           </p>
         </div>
       </div>
@@ -188,9 +212,9 @@ export function AdminTripsPageComponent() {
           <div className="flex items-center space-x-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
-                  placeholder="Search trips..."
+                  placeholder="Search trips by origin, destination, or publisher..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="pl-9"
@@ -204,8 +228,8 @@ export function AdminTripsPageComponent() {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="PUBLISHED">Published</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
                 <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -216,9 +240,7 @@ export function AdminTripsPageComponent() {
       <Card>
         <CardHeader>
           <CardTitle>Trips</CardTitle>
-          <CardDescription>
-            A list of all trips in the system
-          </CardDescription>
+          <CardDescription>A list of all trips in the system</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -226,9 +248,9 @@ export function AdminTripsPageComponent() {
               <TableRow>
                 <TableHead>Route</TableHead>
                 <TableHead>Publisher</TableHead>
-                <TableHead>Vehicle</TableHead>
-                <TableHead>Capacity</TableHead>
                 <TableHead>Departure</TableHead>
+                <TableHead>Capacity</TableHead>
+                <TableHead>Price</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="w-[70px]">Actions</TableHead>
@@ -237,7 +259,7 @@ export function AdminTripsPageComponent() {
             <TableBody>
               {trips.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={8} className="py-8 text-center">
                     <p className="text-muted-foreground">No trips found</p>
                   </TableCell>
                 </TableRow>
@@ -246,11 +268,11 @@ export function AdminTripsPageComponent() {
                   <TableRow key={trip.id}>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <MapPin className="text-muted-foreground h-4 w-4" />
                         <div>
-                          <div className="font-medium">{trip.originName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            to {trip.destinationName}
+                          <div className="font-medium">{trip.origin}</div>
+                          <div className="text-muted-foreground text-sm">
+                            → {trip.destination}
                           </div>
                         </div>
                       </div>
@@ -258,14 +280,22 @@ export function AdminTripsPageComponent() {
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src="/placeholder.svg" alt={trip.publisher.name} />
+                          <AvatarImage
+                            src="/placeholder.svg"
+                            alt={trip.publisher.name}
+                          />
                           <AvatarFallback>
-                            {trip.publisher.name.split(" ").map((n: string) => n[0]).join("")}
+                            {trip.publisher.name
+                              .split(' ')
+                              .map((n: string) => n[0])
+                              .join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{trip.publisher.name}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="font-medium">
+                            {trip.publisher.name}
+                          </div>
+                          <div className="text-muted-foreground text-sm">
                             {trip.publisher.email}
                           </div>
                         </div>
@@ -273,21 +303,30 @@ export function AdminTripsPageComponent() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <span className="text-lg">{getVehicleTypeIcon(trip.vehicleType)}</span>
-                        <span className="text-sm">{trip.vehicleType}</span>
+                        <Calendar className="text-muted-foreground h-4 w-4" />
+                        <div>
+                          <div className="font-medium">
+                            {new Date(trip.departureTime).toLocaleDateString()}
+                          </div>
+                          <div className="text-muted-foreground text-sm">
+                            {new Date(trip.departureTime).toLocaleTimeString()}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{trip.capacity}</span>
+                      <div className="flex items-center space-x-2">
+                        <Users className="text-muted-foreground h-4 w-4" />
+                        <span>
+                          {trip.bookedSeats || 0}/{trip.capacity}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {new Date(trip.departureAt).toLocaleDateString()}
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="text-muted-foreground h-4 w-4" />
+                        <span className="font-medium">
+                          {formatPrice(trip.pricePerSeat)}
                         </span>
                       </div>
                     </TableCell>
@@ -308,10 +347,16 @@ export function AdminTripsPageComponent() {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Trip
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => handleDeleteTrip(trip.id)}
-                            disabled={isLoading}
+                            onClick={() => {
+                              setSelectedTrip(trip);
+                              setIsDeleteDialogOpen(true);
+                            }}
                             className="text-red-600"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -329,7 +374,7 @@ export function AdminTripsPageComponent() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between space-x-2 py-4">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Page {page} of {totalPages}
               </div>
               <div className="flex items-center space-x-2">
@@ -356,7 +401,37 @@ export function AdminTripsPageComponent() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Trip</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this trip from{' '}
+              {selectedTrip?.origin} to {selectedTrip?.destination}? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedTrip && handleDeleteTrip(selectedTrip.id)}
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

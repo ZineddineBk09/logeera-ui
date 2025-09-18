@@ -29,6 +29,7 @@ interface MapViewProps {
     departureAt: string;
     vehicleType: string;
     capacity: number;
+    originGeom: string;
     publisher: {
       id: string;
       name: string;
@@ -54,11 +55,16 @@ const defaultCenter = {
   lng: -74.006,
 };
 
-const tripLocations = [
-  { lat: 40.7589, lng: -73.9851 }, // Times Square area
-  { lat: 40.7505, lng: -73.9934 }, // Herald Square area
-  { lat: 40.7282, lng: -73.7949 }, // Queens area
-];
+// originGeom: "POINT(-122.2711 37.8044)"
+const extractCoordinates = (originGeom = '') => {
+  const [lng, lat] = originGeom
+    .split('POINT(')[1]
+    .split(')')[0]
+    .split(' ')
+    .map(Number);
+  console.log('lng', lng, 'lat', lat);
+  return { lat: lat || 0, lng: lng || 0 };
+};
 
 export function MapView({
   trips,
@@ -172,10 +178,10 @@ export function MapView({
             options={{
               icon: {
                 url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" fill="#10B981" stroke="#ffffff" stroke-width="2"/>
-                    <circle cx="12" cy="12" r="4" fill="#ffffff"/>
-                  </svg>
+                  <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 13H16C17.7107 13 19.1506 14.2804 19.3505 15.9795L20 21.5M8 13C6.28928 13 4.84936 14.2804 4.64948 15.9795L4 21.5M8 13V18C8 19.8856 8 20.8284 8.58579 21.4142C9.17157 22 10.1144 22 12 22C13.8856 22 14.8284 22 15.4142 21.4142C16 20.8284 16 19.8856 16 18V17" stroke="#0670F8" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="12" cy="6" r="4" stroke="#0670F8" stroke-width="1.5"/>
+</svg>
                 `)}`,
                 scaledSize: new (window as any).google.maps.Size(24, 24),
                 anchor: new (window as any).google.maps.Point(12, 12),
@@ -296,23 +302,20 @@ export function MapView({
         )}
 
         {/* Trip Markers */}
-        {trips.slice(0, 3).map((trip, index) => (
+        {trips.map((trip, index) => (
           <MarkerF
             key={trip.id}
-            position={tripLocations[index] || defaultCenter}
+            position={extractCoordinates(trip?.originGeom) || defaultCenter}
             onClick={() => onTripSelect?.(trip.id)}
             onMouseOver={() => setHoveredPin(trip.id)}
             onMouseOut={() => setHoveredPin(null)}
             options={{
               icon: {
                 url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="16" cy="16" r="14" fill="${selectedTripId === trip.id ? '#067AF9' : '#ffffff'}" stroke="#067AF9" stroke-width="2"/>
-                    <path d="M8 12h16v8H8z" fill="${selectedTripId === trip.id ? '#ffffff' : '#067AF9'}"/>
-                    <circle cx="12" cy="16" r="1" fill="${selectedTripId === trip.id ? '#067AF9' : '#ffffff'}"/>
-                    <circle cx="20" cy="16" r="1" fill="${selectedTripId === trip.id ? '#067AF9' : '#ffffff'}"/>
-                    <text x="16" y="22" text-anchor="middle" font-size="8" font-weight="bold" fill="${selectedTripId === trip.id ? '#ffffff' : '#067AF9'}">${trip.capacity}</text>
-                  </svg>
+                  <svg width="800px" height="800px" viewBox="-0.5 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 12C14.4853 12 16.5 9.98528 16.5 7.5C16.5 5.01472 14.4853 3 12 3C9.51472 3 7.5 5.01472 7.5 7.5C7.5 9.98528 9.51472 12 12 12Z" stroke="${selectedTripId === trip.id ? '#067AF9' : '#0F0F0F'}" stroke-miterlimit="10" stroke-linecap="round"/>
+<path d="M12 14.0137V22" stroke="${selectedTripId === trip.id ? '#067AF9' : '#0F0F0F'}" stroke-miterlimit="10" stroke-linecap="round"/>
+</svg>
                 `)}`,
                 scaledSize: new (window as any).google.maps.Size(32, 32),
                 anchor: new (window as any).google.maps.Point(16, 16),
@@ -321,10 +324,10 @@ export function MapView({
           >
             {(hoveredPin === trip.id || selectedTripId === trip.id) && (
               <InfoWindowF
-                position={tripLocations[index] || defaultCenter}
+                position={extractCoordinates(trip?.originGeom) || defaultCenter}
                 onCloseClick={() => setHoveredPin(null)}
               >
-                <Card className="border-0 shadow-none">
+                <Card className="border-0 p-0 shadow-none">
                   <CardContent className="space-y-2 p-4">
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium">

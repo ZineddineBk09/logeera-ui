@@ -93,9 +93,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
       const calculateDistanceAndDuration = async () => {
         const result = await DistanceMatrixService.calculateDistanceAndDuration(
           trip.originCoordinates,
-          trip.destinationCoordinates
+          trip.destinationCoordinates,
         );
-        
+
         if (result) {
           setDistanceData({
             distance: result.distance.text,
@@ -184,15 +184,15 @@ export function TripDetails({ tripId }: TripDetailsProps) {
       "I'll wait up to 10 minutes at the pickup location. Please be ready!",
     // Use real coordinates from the database
     route: [
-      { 
-        lat: trip.originCoordinates?.lat || 40.7589, 
-        lng: trip.originCoordinates?.lng || -73.9851, 
-        name: trip.originName 
+      {
+        lat: trip.originCoordinates?.lat || 40.7589,
+        lng: trip.originCoordinates?.lng || -73.9851,
+        name: trip.originName,
       },
-      { 
-        lat: trip.destinationCoordinates?.lat || 42.3601, 
-        lng: trip.destinationCoordinates?.lng || -71.0589, 
-        name: trip.destinationName 
+      {
+        lat: trip.destinationCoordinates?.lat || 42.3601,
+        lng: trip.destinationCoordinates?.lng || -71.0589,
+        name: trip.destinationName,
       },
     ],
   };
@@ -298,17 +298,6 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                 <span>{tripData.duration}</span>
                 <span>•</span>
                 <span>{tripData.distance}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" size="icon">
-                <Share2 className="h-4 w-4" />
-              </Button>
-              <div className="text-right">
-                <Badge variant="secondary" className="px-3 py-1 text-lg">
-                  {trip.status}
-                </Badge>
               </div>
             </div>
           </div>
@@ -449,26 +438,26 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
                 {/* Only show message and call buttons if user is not the trip publisher */}
                 {user?.id !== trip.publisher.id && (
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-transparent"
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent"
                       onClick={handleMessage}
-                  >
+                    >
                       <MessageCircle className="mr-2 h-4 w-4" />
-                    Message
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-transparent"
+                      Message
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent"
                       onClick={handleCall}
-                  >
+                    >
                       <Phone className="mr-2 h-4 w-4" />
-                    Call
-                  </Button>
-                </div>
+                      Call
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -498,36 +487,36 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                       {acceptedSeats} confirmed, {pendingSeats} pending
                     </span>
                   </div>
-                  
+
                   {/* Multi-colored progress bar */}
-                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="bg-muted relative h-2 overflow-hidden rounded-full">
                     {/* Accepted requests (blue) */}
-                    <div 
-                      className="absolute left-0 top-0 h-full bg-blue-500 transition-all duration-300"
+                    <div
+                      className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300"
                       style={{ width: `${acceptedProgress}%` }}
                     />
                     {/* Pending requests (orange) */}
-                    <div 
+                    <div
                       className="absolute top-0 h-full bg-orange-500 transition-all duration-300"
-                      style={{ 
+                      style={{
                         left: `${acceptedProgress}%`,
-                        width: `${pendingProgress}%` 
+                        width: `${pendingProgress}%`,
                       }}
                     />
                   </div>
-                  
+
                   {/* Legend */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-4 text-xs">
                     <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                       <span>Confirmed ({acceptedSeats})</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <div className="h-2 w-2 rounded-full bg-orange-500"></div>
                       <span>Pending ({pendingSeats})</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-muted rounded-full"></div>
+                      <div className="bg-muted h-2 w-2 rounded-full"></div>
                       <span>Available ({tripData.availableSeats})</span>
                     </div>
                   </div>
@@ -553,16 +542,16 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
                 {/* Only show request to join button if user is not the trip publisher */}
                 {user?.id !== trip.publisher.id ? (
-                <Button
-                  className="w-full"
-                  size="lg"
+                  <Button
+                    className="w-full"
+                    size="lg"
                     disabled={tripData.availableSeats === 0}
                     onClick={handleRequestToJoin}
                   >
                     {tripData.availableSeats === 0
                       ? 'Trip Full'
                       : 'Request to Join'}
-                </Button>
+                  </Button>
                 ) : (
                   <div className="py-4 text-center">
                     <p className="text-muted-foreground text-sm">
@@ -581,10 +570,10 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
         {/* Related Trips */}
         <div className="mt-12">
-          <RelatedTrips 
+          <RelatedTrips
             currentTripId={tripId}
             currentTripCoordinates={
-              trip.originCoordinates && trip.destinationCoordinates 
+              trip.originCoordinates && trip.destinationCoordinates
                 ? {
                     origin: trip.originCoordinates,
                     destination: trip.destinationCoordinates,

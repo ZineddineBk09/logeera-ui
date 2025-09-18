@@ -9,10 +9,7 @@ async function getChats(req: AuthenticatedRequest) {
     // Get all chats where the user is either userA or userB
     const chats = await prisma.chat.findMany({
       where: {
-        OR: [
-          { userAId: userId },
-          { userBId: userId },
-        ],
+        OR: [{ userAId: userId }, { userBId: userId }],
       },
       include: {
         userA: {
@@ -20,14 +17,14 @@ async function getChats(req: AuthenticatedRequest) {
             id: true,
             name: true,
             email: true,
-          }
+          },
         },
         userB: {
           select: {
             id: true,
             name: true,
             email: true,
-          }
+          },
         },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -40,10 +37,10 @@ async function getChats(req: AuthenticatedRequest) {
     });
 
     // Transform the data to include the other user and last message
-    const transformedChats = chats.map(chat => {
+    const transformedChats = chats.map((chat) => {
       const otherUser = chat.userAId === userId ? chat.userB : chat.userA;
       const lastMessage = chat.messages[0] || null;
-      
+
       return {
         id: chat.id,
         otherUser: {
@@ -51,12 +48,14 @@ async function getChats(req: AuthenticatedRequest) {
           name: otherUser.name,
           email: otherUser.email,
         },
-        lastMessage: lastMessage ? {
-          id: lastMessage.id,
-          content: lastMessage.content,
-          senderId: lastMessage.senderId,
-          createdAt: lastMessage.createdAt,
-        } : null,
+        lastMessage: lastMessage
+          ? {
+              id: lastMessage.id,
+              content: lastMessage.content,
+              senderId: lastMessage.senderId,
+              createdAt: lastMessage.createdAt,
+            }
+          : null,
         updatedAt: chat.updatedAt,
         createdAt: chat.createdAt,
       };
@@ -65,7 +64,10 @@ async function getChats(req: AuthenticatedRequest) {
     return NextResponse.json(transformedChats);
   } catch (error) {
     console.error('Error fetching chats:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

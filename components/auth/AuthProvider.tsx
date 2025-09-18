@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useEffect } from "react";
-import { SWRConfig } from "swr";
-import { swrConfig } from "@/lib/swr-config";
-import { useAuth as useAuthHook } from "@/lib/hooks/use-auth";
-import { getAccessToken, setAccessToken } from "@/lib/api";
-import { getAccessTokenCookie } from "@/lib/cookies";
+import React, { createContext, useContext, useEffect } from 'react';
+import { SWRConfig } from 'swr';
+import { swrConfig } from '@/lib/swr-config';
+import { useAuth as useAuthHook } from '@/lib/hooks/use-auth';
+import { getAccessToken, setAccessToken } from '@/lib/api';
+import { getAccessTokenCookie } from '@/lib/cookies';
 
 // Legacy AuthContext for backward compatibility
 interface AuthContextValue {
@@ -47,9 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SWRConfig value={swrConfig}>
-      <LegacyAuthProvider>
-        {children}
-      </LegacyAuthProvider>
+      <LegacyAuthProvider>{children}</LegacyAuthProvider>
     </SWRConfig>
   );
 }
@@ -57,8 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 // Legacy useAuth hook for backward compatibility
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-
-

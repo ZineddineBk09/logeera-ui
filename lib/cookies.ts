@@ -47,24 +47,28 @@ export function isAuthenticatedFromCookies(): boolean {
 // Server-side cookie utilities (for middleware and API routes)
 export function getServerSideCookies(cookieHeader: string | null) {
   if (!cookieHeader) return {};
-  
+
   const cookies: Record<string, string> = {};
-  cookieHeader.split(';').forEach(cookie => {
+  cookieHeader.split(';').forEach((cookie) => {
     const [name, value] = cookie.trim().split('=');
     if (name && value) {
       cookies[name] = decodeURIComponent(value);
     }
   });
-  
+
   return cookies;
 }
 
-export function getServerSideAccessToken(cookieHeader: string | null): string | null {
+export function getServerSideAccessToken(
+  cookieHeader: string | null,
+): string | null {
   const cookies = getServerSideCookies(cookieHeader);
   return cookies[APP_CONFIG.ACCESS_TOKEN_KEY] || null;
 }
 
-export function getServerSideRefreshToken(cookieHeader: string | null): string | null {
+export function getServerSideRefreshToken(
+  cookieHeader: string | null,
+): string | null {
   const cookies = getServerSideCookies(cookieHeader);
   return cookies[APP_CONFIG.REFRESH_TOKEN_KEY] || null;
 }

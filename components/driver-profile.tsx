@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   MapPin,
   Clock,
@@ -17,12 +17,12 @@ import {
   Calendar,
   Car,
   Loader2,
-} from "lucide-react";
-import { UsersService, ChatService } from "@/lib/services";
-import { useAuth } from "@/lib/hooks/use-auth";
-import { swrKeys } from "@/lib/swr-config";
-import useSWR from "swr";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { UsersService, ChatService } from '@/lib/services';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { swrKeys } from '@/lib/swr-config';
+import useSWR from 'swr';
+import { toast } from 'sonner';
 
 interface DriverProfileProps {
   driverId: string;
@@ -64,32 +64,41 @@ interface DriverData {
 }
 
 export function DriverProfile({ driverId }: DriverProfileProps) {
-  const [activeTab, setActiveTab] = useState("trips");
+  const [activeTab, setActiveTab] = useState('trips');
   const router = useRouter();
   const { user: currentUser } = useAuth();
 
-  // Fetch driver data
-  const { data: driverData, error, isLoading } = useSWR(
-    swrKeys.users.detail(driverId),
-    () => UsersService.get(driverId).then(async (r) => {
-      if (r.ok) {
-        return await r.json();
-      }
-      throw new Error('Failed to load driver profile');
-    }),
+  // Fetch driver data (public endpoint)
+  const {
+    data: driverData,
+    error,
+    isLoading,
+  } = useSWR(
+    ['users', 'public', driverId],
+    () =>
+      fetch(`/api/users/${driverId}/public`).then(async (r) => {
+        if (r.ok) {
+          return await r.json();
+        }
+        throw new Error('Failed to load driver profile');
+      }),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 300000, // 5 minutes
-    }
+    },
   );
 
   const handleMessageDriver = async () => {
     if (!currentUser || !driverData) return;
-    
+
     try {
       // Create or get chat between current user and driver
-      const response = await ChatService.between(currentUser.id, driverData.user.id, true);
+      const response = await ChatService.between(
+        currentUser.id,
+        driverData.user.id,
+        true,
+      );
       if (response.ok) {
         const chatData = await response.json();
         router.push(`/chats?chatId=${chatData.id}`);
@@ -106,7 +115,7 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -114,26 +123,26 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
   const formatMemberSince = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long'
+      month: 'long',
     });
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="space-y-4 text-center">
+            <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
             <div>
               <h3 className="text-lg font-semibold">Loading Driver Profile</h3>
-              <p className="text-sm text-muted-foreground">Please wait...</p>
+              <p className="text-muted-foreground text-sm">Please wait...</p>
             </div>
           </div>
         </div>
@@ -143,14 +152,16 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
 
   if (error || !driverData) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-full flex items-center justify-center">
-            <Users className="h-8 w-8 text-destructive" />
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="space-y-4 text-center">
+          <div className="bg-destructive/10 mx-auto flex h-16 w-16 items-center justify-center rounded-full">
+            <Users className="text-destructive h-8 w-8" />
           </div>
           <div>
             <h3 className="text-lg font-semibold">Driver Not Found</h3>
-            <p className="text-sm text-muted-foreground">This driver profile may not exist or has been removed.</p>
+            <p className="text-muted-foreground text-sm">
+              This driver profile may not exist or has been removed.
+            </p>
           </div>
         </div>
       </div>
@@ -160,72 +171,74 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
   const { user: driver, trips, ratings } = driverData;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
       {/* Driver Header */}
       <Card className="mb-8">
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <Avatar className="h-24 w-24 mx-auto md:mx-0">
-              <AvatarImage
-                src="/placeholder.svg"
-                alt={driver.name}
-              />
+          <div className="flex flex-col gap-6 md:flex-row">
+            <Avatar className="mx-auto h-24 w-24 md:mx-0">
+              <AvatarImage src="/placeholder.svg" alt={driver?.name} />
               <AvatarFallback className="text-2xl">
-                {driver.name
-                  .split(" ")
+                {driver?.name
+                  .split(' ')
                   .map((n: string) => n[0])
-                  .join("")}
+                  .join('')}
               </AvatarFallback>
             </Avatar>
 
             <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                <h1 className="text-3xl font-bold">{driver.name}</h1>
-                {driver.status === 'ACTIVE' && (
+              <div className="mb-2 flex items-center justify-center gap-2 md:justify-start">
+                <h1 className="text-3xl font-bold">{driver?.name}</h1>
+                {driver?.status === 'ACTIVE' && (
                   <Badge
                     variant="default"
                     className="bg-green-100 text-green-800"
                   >
-                    <Shield className="h-3 w-3 mr-1" />
+                    <Shield className="mr-1 h-3 w-3" />
                     Active
                   </Badge>
                 )}
               </div>
 
-              <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+              <div className="mb-4 flex items-center justify-center gap-4 md:justify-start">
                 <div className="flex items-center gap-1">
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                   <span className="font-semibold">
-                    {driver.averageRating ? driver.averageRating.toFixed(1) : 'No ratings'}
+                    {driver?.averageRating
+                      ? driver?.averageRating.toFixed(1)
+                      : 'No ratings'}
                   </span>
                   <span className="text-muted-foreground">
-                    ({driver.ratingCount || 0} reviews)
+                    ({driver?.ratingCount || 0} reviews)
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  <span>Member since {formatMemberSince(driver.createdAt)}</span>
+                  <span>
+                    Member since {formatMemberSince(driver?.createdAt)}
+                  </span>
                 </div>
               </div>
 
               <p className="text-muted-foreground mb-4">
-                {driver.type === 'DRIVER' ? 'Experienced driver' : 'User'} • {driver.email}
+                {driver?.type === 'DRIVER' ? 'Experienced driver' : 'User'} •{' '}
+                {driver?.email}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-                {currentUser && currentUser.id !== driver.id && (
-                  <Button 
+              <div className="flex flex-col justify-center gap-3 sm:flex-row md:justify-start">
+                {currentUser && currentUser.id !== driver?.id && (
+                  <Button
                     className="flex items-center gap-2"
                     onClick={handleMessageDriver}
                   >
-                  <MessageCircle className="h-4 w-4" />
-                  Send Message
-                </Button>
+                    <MessageCircle className="h-4 w-4" />
+                    Send Message
+                  </Button>
                 )}
                 <Button
                   variant="outline"
                   className="flex items-center gap-2 bg-transparent"
-                  onClick={() => router.push(`/trips?driver=${driver.id}`)}
+                  onClick={() => router.push(`/trips?driver=${driver?.id}`)}
                 >
                   <Car className="h-4 w-4" />
                   View All Trips
@@ -244,60 +257,69 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="trips" className="space-y-4 mt-6">
+        <TabsContent value="trips" className="mt-6 space-y-4">
           {trips.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center">
                 <div className="text-muted-foreground">
-                  <Car className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">No Active Trips</h3>
-                  <p>This driver doesn't have any active trips at the moment.</p>
+                  <Car className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                  <h3 className="mb-2 text-lg font-semibold">
+                    No Active Trips
+                  </h3>
+                  <p>
+                    This driver doesn't have any active trips at the moment.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           ) : (
             trips.map((trip: any) => (
-            <Card key={trip.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold">
+              <Card key={trip.id} className="transition-shadow hover:shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col justify-between gap-4 md:flex-row">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="text-muted-foreground h-4 w-4" />
+                        <span className="font-semibold">
                           {trip.originName} → {trip.destinationName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                            {formatDate(trip.departureAt)} at {formatTime(trip.departureAt)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
+                      <div className="text-muted-foreground flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {formatDate(trip.departureAt)} at{' '}
+                            {formatTime(trip.departureAt)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
                           <span>{trip.capacity} seats available</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Car className="h-4 w-4" />
                           <span>{trip.vehicleType}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                      <Badge variant={trip.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge
+                        variant={
+                          trip.status === 'ACTIVE' ? 'default' : 'secondary'
+                        }
+                      >
                         {trip.status}
                       </Badge>
-                      <Button 
+                      <Button
                         size="sm"
                         onClick={() => router.push(`/trips/${trip.id}`)}
                       >
                         View Trip
                       </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             ))
           )}
         </TabsContent>
@@ -308,34 +330,34 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
               <CardTitle>Driver Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-semibold">{driver.name}</p>
+                  <p className="text-muted-foreground text-sm">Name</p>
+                  <p className="font-semibold">{driver?.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <p className="font-semibold">{driver.type}</p>
+                  <p className="text-muted-foreground text-sm">Type</p>
+                  <p className="font-semibold">{driver?.type}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="font-semibold">{driver.status}</p>
+                  <p className="text-muted-foreground text-sm">Status</p>
+                  <p className="font-semibold">{driver?.status}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Role</p>
-                  <p className="font-semibold">{driver.role}</p>
+                  <p className="text-muted-foreground text-sm">Role</p>
+                  <p className="font-semibold">{driver?.role}</p>
                 </div>
               </div>
-              <div className="pt-4 border-t">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-t pt-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-semibold">{driver.email}</p>
+                    <p className="text-muted-foreground text-sm">Email</p>
+                    <p className="font-semibold">{driver?.email}</p>
                   </div>
-                  {driver.phoneNumber && (
+                  {driver?.phoneNumber && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-semibold">{driver.phoneNumber}</p>
+                      <p className="text-muted-foreground text-sm">Phone</p>
+                      <p className="font-semibold">{driver?.phoneNumber}</p>
                     </div>
                   )}
                 </div>
@@ -344,46 +366,48 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="reviews" className="space-y-4 mt-6">
+        <TabsContent value="reviews" className="mt-6 space-y-4">
           {ratings.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center">
                 <div className="text-muted-foreground">
-                  <Star className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-semibold mb-2">No Reviews Yet</h3>
+                  <Star className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                  <h3 className="mb-2 text-lg font-semibold">No Reviews Yet</h3>
                   <p>This driver hasn't received any reviews yet.</p>
                 </div>
               </CardContent>
             </Card>
           ) : (
             ratings.map((review: any) => (
-            <Card key={review.id}>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                      <p className="font-semibold">{review.reviewer.name}</p>
-                    <p className="text-sm text-muted-foreground">
+              <Card key={review.id}>
+                <CardContent className="pt-6">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold">
+                        {review?.reviewerUser?.name}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
                         {formatDate(review.createdAt)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
                             i < review.value
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
                   {review.comment && (
-                <p className="text-muted-foreground">{review.comment}</p>
+                    <p className="text-muted-foreground">{review.comment}</p>
                   )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             ))
           )}
         </TabsContent>
@@ -391,5 +415,3 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
     </div>
   );
 }
-
-

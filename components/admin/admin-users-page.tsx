@@ -1,18 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -20,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +43,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Search,
   MoreHorizontal,
@@ -50,21 +56,21 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
-import useSWR from "swr";
-import { swrKeys } from "@/lib/swr-config";
-import { AdminService } from "@/lib/services/admin";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+} from 'lucide-react';
+import useSWR from 'swr';
+import { swrKeys } from '@/lib/swr-config';
+import { AdminService } from '@/lib/services/admin';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface User {
   id: string;
   name: string;
   email: string;
   phoneNumber: string;
-  type: "INDIVIDUAL" | "COMPANY";
-  status: "PENDING" | "TRUSTED" | "BLOCKED";
-  role: "USER" | "MODERATOR" | "ADMIN";
+  type: 'INDIVIDUAL' | 'COMPANY';
+  status: 'PENDING' | 'TRUSTED' | 'BLOCKED';
+  role: 'USER' | 'MODERATOR' | 'ADMIN';
   averageRating: number;
   ratingCount: number;
   createdAt: string;
@@ -79,9 +85,9 @@ interface UsersResponse {
   totalPages: number;
 }
 
-export function AdminUsersPageComponent() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+export function AdminUsersPage() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -95,24 +101,33 @@ export function AdminUsersPageComponent() {
     page: page.toString(),
     limit: limit.toString(),
     ...(search && { search }),
-    ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(statusFilter !== 'all' && { status: statusFilter }),
   };
 
   // Fetch users data
-  const { data: usersData, error, mutate } = useSWR(
+  const {
+    data: usersData,
+    error,
+    mutate,
+  } = useSWR(
     swrKeys.admin.users(queryParams),
     async () => {
-      const response = await AdminService.getUsers(page, limit, search || undefined, statusFilter !== "all" ? statusFilter : undefined);
+      const response = await AdminService.getUsers(
+        page,
+        limit,
+        search || undefined,
+        statusFilter !== 'all' ? statusFilter : undefined,
+      );
       return response.json();
     },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       onError: (error) => {
-        console.error("Users fetch error:", error);
-        toast.error("Failed to load users");
+        console.error('Users fetch error:', error);
+        toast.error('Failed to load users');
       },
-    }
+    },
   );
 
   const users = usersData?.users || [];
@@ -132,11 +147,11 @@ export function AdminUsersPageComponent() {
     try {
       setIsLoading(true);
       await AdminService.blockUser(userId);
-      toast.success("User blocked successfully");
+      toast.success('User blocked successfully');
       mutate(); // Refresh the data
     } catch (error) {
-      console.error("Block user error:", error);
-      toast.error("Failed to block user");
+      console.error('Block user error:', error);
+      toast.error('Failed to block user');
     } finally {
       setIsLoading(false);
     }
@@ -146,11 +161,11 @@ export function AdminUsersPageComponent() {
     try {
       setIsLoading(true);
       await AdminService.unblockUser(userId);
-      toast.success("User unblocked successfully");
+      toast.success('User unblocked successfully');
       mutate(); // Refresh the data
     } catch (error) {
-      console.error("Unblock user error:", error);
-      toast.error("Failed to unblock user");
+      console.error('Unblock user error:', error);
+      toast.error('Failed to unblock user');
     } finally {
       setIsLoading(false);
     }
@@ -160,13 +175,13 @@ export function AdminUsersPageComponent() {
     try {
       setIsLoading(true);
       await AdminService.deleteUser(userId);
-      toast.success("User deleted successfully");
+      toast.success('User deleted successfully');
       mutate(); // Refresh the data
       setIsDeleteDialogOpen(false);
       setSelectedUser(null);
     } catch (error) {
-      console.error("Delete user error:", error);
-      toast.error("Failed to delete user");
+      console.error('Delete user error:', error);
+      toast.error('Failed to delete user');
     } finally {
       setIsLoading(false);
     }
@@ -174,11 +189,11 @@ export function AdminUsersPageComponent() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PENDING":
+      case 'PENDING':
         return <Badge variant="secondary">Pending</Badge>;
-      case "TRUSTED":
+      case 'TRUSTED':
         return <Badge variant="default">Trusted</Badge>;
-      case "BLOCKED":
+      case 'BLOCKED':
         return <Badge variant="destructive">Blocked</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -187,11 +202,11 @@ export function AdminUsersPageComponent() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case "ADMIN":
+      case 'ADMIN':
         return <Badge variant="destructive">Admin</Badge>;
-      case "MODERATOR":
+      case 'MODERATOR':
         return <Badge variant="default">Moderator</Badge>;
-      case "USER":
+      case 'USER':
         return <Badge variant="secondary">User</Badge>;
       default:
         return <Badge variant="outline">{role}</Badge>;
@@ -200,7 +215,7 @@ export function AdminUsersPageComponent() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
+      <div className="py-8 text-center">
         <p className="text-muted-foreground">Failed to load users</p>
       </div>
     );
@@ -211,7 +226,9 @@ export function AdminUsersPageComponent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Users Management
+          </h1>
           <p className="text-muted-foreground">
             Manage user accounts, permissions, and status
           </p>
@@ -231,7 +248,7 @@ export function AdminUsersPageComponent() {
           <div className="flex items-center space-x-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder="Search users..."
                   value={search}
@@ -259,9 +276,7 @@ export function AdminUsersPageComponent() {
       <Card>
         <CardHeader>
           <CardTitle>Users</CardTitle>
-          <CardDescription>
-            A list of all users in the system
-          </CardDescription>
+          <CardDescription>A list of all users in the system</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -280,7 +295,7 @@ export function AdminUsersPageComponent() {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={8} className="py-8 text-center">
                     <p className="text-muted-foreground">No users found</p>
                   </TableCell>
                 </TableRow>
@@ -292,12 +307,15 @@ export function AdminUsersPageComponent() {
                         <Avatar className="h-8 w-8">
                           <AvatarImage src="/placeholder.svg" alt={user.name} />
                           <AvatarFallback>
-                            {user.name.split(" ").map((n: string) => n[0]).join("")}
+                            {user.name
+                              .split(' ')
+                              .map((n: string) => n[0])
+                              .join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             {user.phoneNumber}
                           </div>
                         </div>
@@ -306,7 +324,7 @@ export function AdminUsersPageComponent() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {user.type === "INDIVIDUAL" ? "Individual" : "Company"}
+                        {user.type === 'INDIVIDUAL' ? 'Individual' : 'Company'}
                       </Badge>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
@@ -316,7 +334,7 @@ export function AdminUsersPageComponent() {
                         <span className="text-sm font-medium">
                           {user.averageRating.toFixed(1)}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           ({user.ratingCount})
                         </span>
                       </div>
@@ -352,7 +370,7 @@ export function AdminUsersPageComponent() {
                             Edit User
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {user.status === "BLOCKED" ? (
+                          {user.status === 'BLOCKED' ? (
                             <DropdownMenuItem
                               onClick={() => handleUnblockUser(user.id)}
                               disabled={isLoading}
@@ -391,7 +409,7 @@ export function AdminUsersPageComponent() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between space-x-2 py-4">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Page {page} of {totalPages}
               </div>
               <div className="flex items-center space-x-2">
@@ -425,7 +443,8 @@ export function AdminUsersPageComponent() {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete {selectedUser?.name}? This action cannot be undone.
+              Are you sure you want to delete {selectedUser?.name}? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -29,14 +29,21 @@ async function handler(req: AuthenticatedRequest) {
 
     // Check if trip is still available for booking
     if (request.trip.status !== 'PUBLISHED') {
-      return NextResponse.json({ error: 'Trip is no longer available for booking' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Trip is no longer available for booking' },
+        { status: 400 },
+      );
     }
 
     // If accepting a request, check if there are available seats
     if (status === 'ACCEPTED') {
-      const availableSeats = request.trip.capacity - (request.trip.bookedSeats || 0);
+      const availableSeats =
+        request.trip.capacity - (request.trip.bookedSeats || 0);
       if (availableSeats <= 0) {
-        return NextResponse.json({ error: 'No available seats' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'No available seats' },
+          { status: 400 },
+        );
       }
 
       // Update both request and trip in a transaction
@@ -47,18 +54,18 @@ async function handler(req: AuthenticatedRequest) {
           data: { status },
           include: {
             trip: true,
-            applicant: true
-          }
+            applicant: true,
+          },
         });
 
         // Increment booked seats
         await tx.trip.update({
           where: { id: request.tripId },
-          data: { 
+          data: {
             bookedSeats: {
-              increment: 1
-            }
-          }
+              increment: 1,
+            },
+          },
         });
 
         return updatedRequest;
@@ -72,17 +79,23 @@ async function handler(req: AuthenticatedRequest) {
         data: { status },
         include: {
           trip: true,
-          applicant: true
-        }
+          applicant: true,
+        },
       });
 
       return NextResponse.json(updatedRequest);
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.message },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

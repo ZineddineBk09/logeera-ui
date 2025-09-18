@@ -1,11 +1,10 @@
-import { AdminTripsPageComponent } from "@/components/admin/admin-trips-page";
-import { AdminLayout } from "@/components/admin/admin-layout";
+import { AdminTripsPage } from '@/components/admin/admin-trips-page';
+import { AdminLayout } from '@/components/admin/admin-layout';
 
-export default function AdminTripsPage() {
+export default function TripsPage() {
   return (
     <AdminLayout>
-      <AdminTripsPageComponent />
+      <AdminTripsPage />
     </AdminLayout>
   );
 }
-

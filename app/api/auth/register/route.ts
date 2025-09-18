@@ -21,15 +21,15 @@ export async function POST(req: NextRequest) {
     // Check for existing user
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          { email: data.email },
-          { phoneNumber: data.phoneNumber }
-        ]
-      }
+        OR: [{ email: data.email }, { phoneNumber: data.phoneNumber }],
+      },
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 409 },
+      );
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
@@ -38,23 +38,30 @@ export async function POST(req: NextRequest) {
       data: {
         ...userData,
         passwordHash,
-      }
+      },
     });
 
-    const payload = { userId: savedUser.id, email: savedUser.email, role: savedUser.role };
+    const payload = {
+      userId: savedUser.id,
+      email: savedUser.email,
+      role: savedUser.role,
+    };
     const accessToken = await signAccessToken(payload);
     const refreshToken = await signRefreshToken(payload);
 
-    const response = NextResponse.json({ 
-      accessToken, 
-      user: { 
-        id: savedUser.id, 
-        name: savedUser.name, 
-        email: savedUser.email,
-        role: savedUser.role,
-      } 
-    }, { status: 201 });
-    
+    const response = NextResponse.json(
+      {
+        accessToken,
+        user: {
+          id: savedUser.id,
+          name: savedUser.name,
+          email: savedUser.email,
+          role: savedUser.role,
+        },
+      },
+      { status: 201 },
+    );
+
     response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'lax',
@@ -66,8 +73,14 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.message },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

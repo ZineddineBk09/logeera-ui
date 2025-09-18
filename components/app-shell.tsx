@@ -1,129 +1,230 @@
-"use client";
+'use client';
 
-import type React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Logo } from "./logo";
-import { Separator } from "@/components/ui/separator";
-import { Navbar } from "./navbar";
-import { useAuth } from "@/lib/hooks/use-auth";
-import { Search, MapPin, Car, FileText, MessageCircle, Settings } from "lucide-react";
-import { ROUTES } from "@/constants";
+import type React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Logo } from './logo';
+import { Separator } from '@/components/ui/separator';
+import { Navbar } from './navbar';
+import { PWAInstallPrompt } from './pwa-install-prompt';
+import { useAuth } from '@/lib/hooks/use-auth';
+import {
+  Search,
+  MapPin,
+  Car,
+  FileText,
+  MessageCircle,
+  Settings,
+} from 'lucide-react';
+import { ROUTES } from '@/constants';
 
-const navigation = [
-  { name: "Home", href: "/", icon: Search },
-  { name: "Trips", href: "/trips", icon: MapPin },
-  { name: "Publish", href: "/publish", icon: Car },
-  { name: "Requests", href: "/requests", icon: FileText },
-  { name: "Chats", href: "/chats", icon: MessageCircle },
-  { name: "Admin", href: "/admin", icon: Settings },
+const baseNavigation = [
+  { name: 'Home', href: '/', icon: Search },
+  { name: 'Trips', href: '/trips', icon: MapPin },
+  { name: 'Publish', href: '/publish', icon: Car },
+  { name: 'Requests', href: '/requests', icon: FileText },
+  { name: 'Chats', href: '/chats', icon: MessageCircle },
 ];
 
+const adminNavigation = [{ name: 'Admin', href: '/admin', icon: Settings }];
+
 const publicNavigation = [
-  { name: "Home", href: "/", icon: Search },
-  { name: "Trips", href: "/trips", icon: MapPin },
+  { name: 'Home', href: '/', icon: Search },
+  { name: 'Trips', href: '/trips', icon: MapPin },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
   const isAuthenticated = !!user;
-  const currentNavigation = isAuthenticated ? navigation : publicNavigation;
+  const isAdmin = user?.role === 'ADMIN';
 
-  // Hide navbar on auth pages
+  // Build navigation based on user role
+  let currentNavigation = publicNavigation;
+  if (isAuthenticated) {
+    currentNavigation = [...baseNavigation];
+    if (isAdmin) {
+      currentNavigation = [...currentNavigation, ...adminNavigation];
+    }
+  }
+
+  // Hide navbar on auth pages and admin pages
   const isAuthPage = pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER;
+  const isAdminPage = pathname?.startsWith('/admin') || false;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center">
-      {/* Top Navigation - Hidden on auth pages */}
-      {!isAuthPage && <Navbar />}
+    <div className="bg-background flex min-h-screen flex-col items-center">
+      {/* Top Navigation - Hidden on auth pages and admin pages */}
+      {!isAuthPage && !isAdminPage && <Navbar />}
 
       {/* Main Content */}
-      <main className="flex-1 w-full">{children}</main>
+      <main className="w-full flex-1">{children}</main>
 
-      {/* Footer - Hidden on auth pages */}
-      {!isAuthPage && (
-        <footer className="w-full border-t bg-background/95">
-          <div className="container mx-auto px-4 py-8 grid gap-6 md:grid-cols-3">
+      {/* Footer - Hidden on auth pages and admin pages */}
+      {!isAuthPage && !isAdminPage && (
+        <footer className="bg-background/95 w-full border-t">
+          <div className="container mx-auto grid gap-6 px-4 py-8 md:grid-cols-4">
             <div className="space-y-3">
               <Logo className="h-7 w-24" />
-              <p className="text-sm text-muted-foreground">
-                RideShare helps you find trusted rides and share journeys
-                sustainably.
+              <p className="text-muted-foreground text-sm">
+                Logeera connects travelers, making journeys safer, more
+                affordable, and sustainable through trusted ridesharing.
               </p>
             </div>
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Company</h4>
-              <ul className="text-sm text-muted-foreground space-y-2">
+              <h4 className="text-sm font-semibold">Platform</h4>
+              <ul className="text-muted-foreground space-y-2 text-sm">
                 <li>
-                  <Link href="/help">Support</Link>
+                  <Link
+                    href="/trips"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Browse Trips
+                  </Link>
                 </li>
                 <li>
-                  <Link href="#">About</Link>
+                  <Link
+                    href="/publish"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Publish a Trip
+                  </Link>
                 </li>
                 <li>
-                  <Link href="#">Terms</Link>
+                  <Link
+                    href="/drivers"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Trusted Drivers
+                  </Link>
                 </li>
                 <li>
-                  <Link href="#">Privacy</Link>
+                  <Link
+                    href="/requests"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    My Requests
+                  </Link>
                 </li>
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Product</h4>
-              <ul className="text-sm text-muted-foreground space-y-2">
+              <h4 className="text-sm font-semibold">Support</h4>
+              <ul className="text-muted-foreground space-y-2 text-sm">
                 <li>
-                  <Link href="/trips">Browse Trips</Link>
+                  <Link
+                    href="/help"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Help Center
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/publish">Publish a Trip</Link>
+                  <Link
+                    href="/safety"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Safety Guidelines
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/requests">Requests</Link>
+                  <Link
+                    href="/contact"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Contact Us
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/chats">Chats</Link>
+                  <Link
+                    href="/faq"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    FAQ
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">Legal</h4>
+              <ul className="text-muted-foreground space-y-2 text-sm">
+                <li>
+                  <Link
+                    href="/terms"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cookies"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/community"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Community Guidelines
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
           <Separator />
-          <div className="container mx-auto px-4 py-4 text-xs text-muted-foreground flex justify-between">
-            <span>© {new Date().getFullYear()} RideShare. All rights reserved.</span>
+          <div className="text-muted-foreground container mx-auto flex justify-between px-4 py-4 text-xs">
             <span>
-              Built with <span aria-hidden>❤️</span> using Next.js & shadcn/ui
+              © {new Date().getFullYear()} Logeera. All rights reserved.
             </span>
+            {/* <span>
+              Built with <span aria-hidden>❤️</span> using Next.js & shadcn/ui
+            </span> */}
           </div>
         </footer>
       )}
 
-      {/* Mobile Bottom Navigation - Hidden on auth pages */}
-      {!isAuthPage && (
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
-        <div className="flex items-center justify-around py-2">
+      {/* Mobile Bottom Navigation - Hidden on auth pages and admin pages */}
+      {!isAuthPage && !isAdminPage && (
+        <nav className="bg-background fixed right-0 bottom-0 left-0 z-50 border-t md:hidden">
+          <div className="flex items-center justify-around py-2">
             {currentNavigation.slice(0, 5).map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex flex-col items-center space-y-1 p-2 transition-colors ${
-                  pathname === item.href
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="text-xs">{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex flex-col items-center space-y-1 p-2 transition-colors ${
+                    pathname === item.href
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs">{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       )}
 
       {/* Mobile Bottom Padding - Only when mobile nav is shown */}
-      {!isAuthPage && <div className="md:hidden h-16" />}
+      {!isAuthPage && !isAdminPage && <div className="h-16 md:hidden" />}
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

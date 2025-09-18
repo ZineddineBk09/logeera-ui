@@ -4,7 +4,7 @@ import { prisma } from '@/lib/database';
 // Function to parse WKT POINT format and extract coordinates
 function parseWKTPoint(wkt: string): { lat: number; lng: number } | null {
   if (!wkt) return null;
-  
+
   // Match POINT(longitude latitude) format
   const match = wkt.match(/POINT\(([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\)/);
   if (match) {
@@ -17,11 +17,11 @@ function parseWKTPoint(wkt: string): { lat: number; lng: number } | null {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const tripId = req.nextUrl.pathname.split('/')[3];
-    
+
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
@@ -33,15 +33,15 @@ export async function GET(
             phoneNumber: true,
             averageRating: true,
             ratingCount: true,
-          }
+          },
         },
         requests: {
           select: {
             id: true,
             status: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!trip) {
@@ -53,8 +53,12 @@ export async function GET(
     const destinationCoords = parseWKTPoint(trip.destinationGeom);
 
     // Calculate request counts
-    const acceptedRequests = trip.requests.filter(r => r.status === 'ACCEPTED').length;
-    const pendingRequests = trip.requests.filter(r => r.status === 'PENDING').length;
+    const acceptedRequests = trip.requests.filter(
+      (r) => r.status === 'ACCEPTED',
+    ).length;
+    const pendingRequests = trip.requests.filter(
+      (r) => r.status === 'PENDING',
+    ).length;
 
     // Add parsed coordinates and request data to the response
     const tripWithCoords = {
@@ -68,6 +72,9 @@ export async function GET(
     return NextResponse.json(tripWithCoords);
   } catch (error) {
     console.error('Error fetching trip:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

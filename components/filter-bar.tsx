@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   X,
   SlidersHorizontal,
@@ -11,20 +11,25 @@ import {
   Shield,
   MapPin,
   RotateCcw,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
+import {
+  GooglePlacesService,
+  PlacePrediction,
+} from '@/lib/services/google-places';
 
 export interface FilterState {
   date: string;
@@ -34,6 +39,9 @@ export interface FilterState {
   maxPrice: string;
   startLocation: string;
   endLocation: string;
+  // Place data for coordinate-based filtering
+  startPlace?: PlacePrediction | null;
+  endPlace?: PlacePrediction | null;
 }
 
 export function FilterBar({
@@ -50,20 +58,22 @@ export function FilterBar({
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<FilterState>(
     value || {
-      date: "",
-      vehicleType: "any",
-      capacity: "any",
+      date: '',
+      vehicleType: 'any',
+      capacity: 'any',
       trustedOnly: false,
-      maxPrice: "",
-      startLocation: "",
-      endLocation: "",
+      maxPrice: '',
+      startLocation: '',
+      endLocation: '',
+      startPlace: null,
+      endPlace: null,
     },
   );
 
   // Initialize filters from URL search params
   useEffect(() => {
     if (!searchParams) return;
-    
+
     const origin = searchParams.get('origin') || '';
     const destination = searchParams.get('destination') || '';
     const date = searchParams.get('date') || '';
@@ -75,7 +85,7 @@ export function FilterBar({
       vehicleType,
       capacity,
       trustedOnly: false,
-      maxPrice: "",
+      maxPrice: '',
       startLocation: origin,
       endLocation: destination,
     });
@@ -94,10 +104,10 @@ export function FilterBar({
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       });
     } catch {
       return dateString;
@@ -114,24 +124,30 @@ export function FilterBar({
 
   const activeFilters = [
     ...(filters.date
-      ? [{ key: "date", label: formatDate(filters.date), removable: false }]
+      ? [{ key: 'date', label: formatDate(filters.date), removable: false }]
       : []),
     ...(formatRoute(filters.startLocation, filters.endLocation)
-      ? [{ key: "route", label: formatRoute(filters.startLocation, filters.endLocation), removable: false }]
+      ? [
+          {
+            key: 'route',
+            label: formatRoute(filters.startLocation, filters.endLocation),
+            removable: false,
+          },
+        ]
       : []),
-    ...(filters.vehicleType !== "any"
-      ? [{ key: "vehicleType", label: filters.vehicleType, removable: true }]
+    ...(filters.vehicleType !== 'any'
+      ? [{ key: 'vehicleType', label: filters.vehicleType, removable: true }]
       : []),
     ...(filters.trustedOnly
-      ? [{ key: "trusted", label: "Trusted only", removable: true }]
+      ? [{ key: 'trusted', label: 'Trusted only', removable: true }]
       : []),
     ...(filters.maxPrice
-      ? [{ key: "price", label: `Under $${filters.maxPrice}`, removable: true }]
+      ? [{ key: 'price', label: `Under $${filters.maxPrice}`, removable: true }]
       : []),
     ...(filters.startLocation && !filters.endLocation
       ? [
           {
-            key: "startLocation",
+            key: 'startLocation',
             label: `From: ${filters.startLocation}`,
             removable: true,
           },
@@ -140,7 +156,7 @@ export function FilterBar({
     ...(filters.endLocation && !filters.startLocation
       ? [
           {
-            key: "endLocation",
+            key: 'endLocation',
             label: `To: ${filters.endLocation}`,
             removable: true,
           },
@@ -151,24 +167,26 @@ export function FilterBar({
   const removeFilter = (key: string) => {
     set((prev) => ({
       ...prev,
-      ...(key === "vehicleType" && { vehicleType: "any" }),
-      ...(key === "trusted" && { trustedOnly: false }),
-      ...(key === "price" && { maxPrice: "" }),
-      ...(key === "startLocation" && { startLocation: "" }),
-      ...(key === "endLocation" && { endLocation: "" }),
-      ...(key === "date" && { date: "" }),
+      ...(key === 'vehicleType' && { vehicleType: 'any' }),
+      ...(key === 'trusted' && { trustedOnly: false }),
+      ...(key === 'price' && { maxPrice: '' }),
+      ...(key === 'startLocation' && { startLocation: '', startPlace: null }),
+      ...(key === 'endLocation' && { endLocation: '', endPlace: null }),
+      ...(key === 'date' && { date: '' }),
     }));
   };
 
   const clearAllFilters = () => {
     const clearedFilters: FilterState = {
-      date: "",
-      vehicleType: "any",
-      capacity: "any",
+      date: '',
+      vehicleType: 'any',
+      capacity: 'any',
       trustedOnly: false,
-      maxPrice: "",
-      startLocation: "",
-      endLocation: "",
+      maxPrice: '',
+      startLocation: '',
+      endLocation: '',
+      startPlace: null,
+      endPlace: null,
     };
     setFilters(clearedFilters);
     onChange?.(clearedFilters);
@@ -176,11 +194,11 @@ export function FilterBar({
   };
 
   return (
-    <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b">
+    <div className="bg-background/95 sticky top-16 z-40 border-b backdrop-blur">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Active Filters */}
-          <div className="flex items-center space-x-2 flex-1 overflow-x-auto">
+          <div className="flex flex-1 items-center space-x-2 overflow-x-auto">
             {activeFilters.length > 0 ? (
               activeFilters.map((filter) => (
                 <Badge
@@ -192,7 +210,7 @@ export function FilterBar({
                   {filter.removable && (
                     <button
                       onClick={() => removeFilter(filter.key)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                      className="hover:bg-secondary-foreground/20 ml-1 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -200,12 +218,14 @@ export function FilterBar({
                 </Badge>
               ))
             ) : (
-              <span className="text-sm text-muted-foreground">No filters applied</span>
+              <span className="text-muted-foreground text-sm">
+                No filters applied
+              </span>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center space-x-2 ml-4">
+          <div className="ml-4 flex items-center space-x-2">
             {activeFilters.length > 0 && (
               <Button
                 variant="ghost"
@@ -213,170 +233,182 @@ export function FilterBar({
                 onClick={clearAllFilters}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <RotateCcw className="h-4 w-4 mr-1" />
+                <RotateCcw className="mr-1 h-4 w-4" />
                 Clear All
               </Button>
             )}
             <Sheet>
               <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-transparent"
-                >
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <Button variant="outline" size="sm" className="bg-transparent">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Filters
                 </Button>
               </SheetTrigger>
-            <SheetContent className="p-3">
-              <div className="space-y-6 mt-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Filter Results</h3>
-                </div>
+              <SheetContent className="p-3">
+                <div className="mt-6 space-y-6">
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold">
+                      Filter Results
+                    </h3>
+                  </div>
 
-                {/* Start Location Filter */}
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Start Location</span>
-                  </Label>
-                  <Input
-                    placeholder="Enter start location"
-                    value={filters.startLocation}
-                    onChange={(e) =>
-                      set((prev) => ({
-                        ...prev,
-                        startLocation: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                  {/* Start Location Filter */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>Start Location</span>
+                    </Label>
+                    <AutocompleteInput
+                      placeholder="Enter start location"
+                      value={filters.startLocation}
+                      onChange={(value) =>
+                        set((prev) => ({
+                          ...prev,
+                          startLocation: value,
+                        }))
+                      }
+                      onPlaceSelect={(place) =>
+                        set((prev) => ({
+                          ...prev,
+                          startLocation: place.description,
+                          startPlace: place,
+                        }))
+                      }
+                    />
+                  </div>
 
-                {/* Destination Filter */}
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Destination</span>
-                  </Label>
-                  <Input
-                    placeholder="Enter destination"
-                    value={filters.endLocation}
-                    onChange={(e) =>
-                      set((prev) => ({
-                        ...prev,
-                        endLocation: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                  {/* Destination Filter */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>Destination</span>
+                    </Label>
+                    <AutocompleteInput
+                      placeholder="Enter destination"
+                      value={filters.endLocation}
+                      onChange={(value) =>
+                        set((prev) => ({
+                          ...prev,
+                          endLocation: value,
+                        }))
+                      }
+                      onPlaceSelect={(place) =>
+                        set((prev) => ({
+                          ...prev,
+                          endLocation: place.description,
+                          endPlace: place,
+                        }))
+                      }
+                    />
+                  </div>
 
-                {/* Date Filter */}
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Departure Date</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={filters.date}
-                    onChange={(e) =>
-                      set((prev) => ({ ...prev, date: e.target.value }))
-                    }
-                  />
-                </div>
+                  {/* Date Filter */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>Departure Date</span>
+                    </Label>
+                    <Input
+                      type="date"
+                      value={filters.date}
+                      onChange={(e) =>
+                        set((prev) => ({ ...prev, date: e.target.value }))
+                      }
+                    />
+                  </div>
 
-                {/* Vehicle Type */}
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <Car className="h-4 w-4" />
-                    <span>Vehicle Type</span>
-                  </Label>
-                  <Select
-                    value={filters.vehicleType}
-                    onValueChange={(value) =>
-                      set((prev) => ({ ...prev, vehicleType: value }))
-                    }
+                  {/* Vehicle Type */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <Car className="h-4 w-4" />
+                      <span>Vehicle Type</span>
+                    </Label>
+                    <Select
+                      value={filters.vehicleType}
+                      onValueChange={(value) =>
+                        set((prev) => ({ ...prev, vehicleType: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any vehicle</SelectItem>
+                        <SelectItem value="CAR">Car</SelectItem>
+                        <SelectItem value="VAN">Van</SelectItem>
+                        <SelectItem value="TRUCK">Truck</SelectItem>
+                        <SelectItem value="BIKE">Motorcycle</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Capacity */}
+                  <div className="w-full flex-1 space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <Users className="h-4 w-4" />
+                      <span>Minimum Seats</span>
+                    </Label>
+                    <Select
+                      value={filters.capacity}
+                      onValueChange={(value) =>
+                        set((prev) => ({ ...prev, capacity: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="w-full flex-1">
+                        <SelectItem value="any">Any capacity</SelectItem>
+                        <SelectItem value="1">1+ seats</SelectItem>
+                        <SelectItem value="2">2+ seats</SelectItem>
+                        <SelectItem value="3">3+ seats</SelectItem>
+                        <SelectItem value="4">4+ seats</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Max Price */}
+                  <div className="space-y-2">
+                    <Label>Maximum Price</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter max price"
+                      value={filters.maxPrice}
+                      onChange={(e) =>
+                        set((prev) => ({
+                          ...prev,
+                          maxPrice: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  {/* Trusted Only */}
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center space-x-2">
+                      <Shield className="h-4 w-4" />
+                      <span>Trusted drivers only</span>
+                    </Label>
+                    <Switch
+                      checked={filters.trustedOnly}
+                      onCheckedChange={(checked) =>
+                        set((prev) => ({ ...prev, trustedOnly: checked }))
+                      }
+                      // gray bg when disabled
+                      className="cursor-pointer bg-gray-300"
+                    />
+                  </div>
+
+                  {/* Apply Button */}
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => onApply?.(filters)}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any vehicle</SelectItem>
-                      <SelectItem value="CAR">Car</SelectItem>
-                      <SelectItem value="VAN">Van</SelectItem>
-                      <SelectItem value="TRUCK">Truck</SelectItem>
-                      <SelectItem value="BIKE">Motorcycle</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    Apply Filters
+                  </Button>
                 </div>
-
-                {/* Capacity */}
-                <div className="space-y-2 w-full flex-1">
-                  <Label className="flex items-center space-x-2">
-                    <Users className="h-4 w-4" />
-                    <span>Minimum Seats</span>
-                  </Label>
-                  <Select
-                    value={filters.capacity}
-                    onValueChange={(value) =>
-                      set((prev) => ({ ...prev, capacity: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="flex-1 w-full">
-                      <SelectItem value="any">Any capacity</SelectItem>
-                      <SelectItem value="1">1+ seats</SelectItem>
-                      <SelectItem value="2">2+ seats</SelectItem>
-                      <SelectItem value="3">3+ seats</SelectItem>
-                      <SelectItem value="4">4+ seats</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Max Price */}
-                <div className="space-y-2">
-                  <Label>Maximum Price</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter max price"
-                    value={filters.maxPrice}
-                    onChange={(e) =>
-                      set((prev) => ({
-                        ...prev,
-                        maxPrice: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                {/* Trusted Only */}
-                <div className="flex items-center justify-between">
-                  <Label className="flex items-center space-x-2">
-                    <Shield className="h-4 w-4" />
-                    <span>Trusted drivers only</span>
-                  </Label>
-                  <Switch
-                    checked={filters.trustedOnly}
-                    onCheckedChange={(checked) =>
-                      set((prev) => ({ ...prev, trustedOnly: checked }))
-                    }
-                    // gray bg when disabled
-                    className="bg-gray-300 cursor-pointer"
-                  />
-                </div>
-
-                {/* Apply Button */}
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={() => onApply?.(filters)}
-                >
-                  Apply Filters
-                </Button>
-              </div>
-            </SheetContent>
+              </SheetContent>
             </Sheet>
           </div>
         </div>

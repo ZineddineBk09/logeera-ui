@@ -42,11 +42,16 @@ export interface ChangePasswordData {
 // Auth hook
 export function useAuth() {
   const router = useRouter();
-  
+
   // Get current user data
-  const { data: user, error, mutate, isLoading } = useSWR<User>(
+  const {
+    data: user,
+    error,
+    mutate,
+    isLoading,
+  } = useSWR<User>(
     getAccessToken() ? swrKeys.auth.me() : null,
-    () => api(API_ENDPOINTS.AUTH_ME).then(res => res.json()),
+    () => api(API_ENDPOINTS.AUTH_ME).then((res) => res.json()),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -59,85 +64,102 @@ export function useAuth() {
           router.push(ROUTES.LOGIN);
         }
       },
-    }
+    },
   );
 
   // Login function
-  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
-    try {
-      const response = await fetch(`${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_LOGIN}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(credentials),
-      });
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<boolean> => {
+      try {
+        const response = await fetch(
+          `${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_LOGIN}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(credentials),
+          },
+        );
 
-      if (!response.ok) {
-        const error = await response.json();
-        toast.error(error.error || 'Login failed');
-        return false;
-      }
-
-      const { accessToken } = await response.json();
-      setAccessToken(accessToken);
-      
-      // Revalidate user data
-      await mutate();
-      
-      // Check if user is blocked after getting user data
-      const userResponse = await fetch(`${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_ME}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        if (userData.status === 'BLOCKED') {
-          setAccessToken(null);
-          clearAuthCookies();
-          toast.error('Your account has been blocked. Please contact support.');
+        if (!response.ok) {
+          const error = await response.json();
+          toast.error(error.error || 'Login failed');
           return false;
         }
-      }
-      
-      toast.success('Login successful');
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Login failed');
-      return false;
-    }
-  }, [mutate]);
 
-  // Register function
-  const register = useCallback(async (data: RegisterData): Promise<boolean> => {
-    try {
-      const response = await fetch(`${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_REGISTER}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
+        const { accessToken } = await response.json();
+        setAccessToken(accessToken);
 
-      if (!response.ok) {
-        const error = await response.json();
-        toast.error(error.error || 'Registration failed');
+        // Revalidate user data
+        await mutate();
+
+        // Check if user is blocked after getting user data
+        const userResponse = await fetch(
+          `${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_ME}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        );
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          if (userData.status === 'BLOCKED') {
+            setAccessToken(null);
+            clearAuthCookies();
+            toast.error(
+              'Your account has been blocked. Please contact support.',
+            );
+            return false;
+          }
+        }
+
+        toast.success('Login successful');
+        return true;
+      } catch (error) {
+        console.error('Login error:', error);
+        toast.error('Login failed');
         return false;
       }
+    },
+    [mutate],
+  );
 
-      const { accessToken } = await response.json();
-      setAccessToken(accessToken);
-      
-      // Revalidate user data
-      await mutate();
-      
-      toast.success('Registration successful');
-      return true;
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Registration failed');
-      return false;
-    }
-  }, [mutate]);
+  // Register function
+  const register = useCallback(
+    async (data: RegisterData): Promise<boolean> => {
+      try {
+        const response = await fetch(
+          `${APP_CONFIG.API_BASE_URL}${API_ENDPOINTS.AUTH_REGISTER}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data),
+          },
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          toast.error(error.error || 'Registration failed');
+          return false;
+        }
+
+        const { accessToken } = await response.json();
+        setAccessToken(accessToken);
+
+        // Revalidate user data
+        await mutate();
+
+        toast.success('Registration successful');
+        return true;
+      } catch (error) {
+        console.error('Registration error:', error);
+        toast.error('Registration failed');
+        return false;
+      }
+    },
+    [mutate],
+  );
 
   // Logout function
   const logout = useCallback(async () => {
@@ -145,7 +167,7 @@ export function useAuth() {
       setAccessToken(null);
       clearAuthCookies();
       await mutate(undefined, false);
-      
+
       toast.success('Logged out successfully');
       router.push(ROUTES.LOGIN);
     } catch (error) {
@@ -154,26 +176,32 @@ export function useAuth() {
   }, [mutate, router]);
 
   // Change password function
-  const changePassword = useCallback(async (data: ChangePasswordData): Promise<boolean> => {
-    try {
-      await apiPost(API_ENDPOINTS.AUTH_CHANGE_PASSWORD, data);
-      toast.success('Password changed successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Change password error:', error);
-      const message = error.info?.error || 'Failed to change password';
-      toast.error(message);
-      return false;
-    }
-  }, []);
+  const changePassword = useCallback(
+    async (data: ChangePasswordData): Promise<boolean> => {
+      try {
+        await apiPost(API_ENDPOINTS.AUTH_CHANGE_PASSWORD, data);
+        toast.success('Password changed successfully');
+        return true;
+      } catch (error: any) {
+        console.error('Change password error:', error);
+        const message = error.info?.error || 'Failed to change password';
+        toast.error(message);
+        return false;
+      }
+    },
+    [],
+  );
 
   // Check if user is authenticated
   const isAuthenticated = !!user && !error;
-  
+
   // Check if user has specific role
-  const hasRole = useCallback((role: string) => {
-    return user?.role === role;
-  }, [user?.role]);
+  const hasRole = useCallback(
+    (role: string) => {
+      return user?.role === role;
+    },
+    [user?.role],
+  );
 
   // Check if user is admin
   const isAdmin = hasRole(APP_CONFIG.USER_ROLES.ADMIN);

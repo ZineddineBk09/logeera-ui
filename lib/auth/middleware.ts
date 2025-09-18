@@ -5,10 +5,12 @@ export interface AuthenticatedRequest extends NextRequest {
   user?: JWTPayload;
 }
 
-export const withAuth = (handler: (req: AuthenticatedRequest) => Promise<NextResponse>) => {
+export const withAuth = (
+  handler: (req: AuthenticatedRequest) => Promise<NextResponse>,
+) => {
   return async (req: NextRequest) => {
     const authHeader = req.headers.get('authorization');
-    
+
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -31,7 +31,7 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
   console.log('trip', trip);
   const [directions, setDirections] = useState<any>(null);
   const [map, setMap] = useState<any>(null);
-  
+
   // Calculate center point between origin and destination
   const originCoords = trip.route[0];
   const destinationCoords = trip.route[1];
@@ -44,7 +44,7 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
   const latDiff = Math.abs(originCoords.lat - destinationCoords.lat);
   const lngDiff = Math.abs(originCoords.lng - destinationCoords.lng);
   const maxDiff = Math.max(latDiff, lngDiff);
-  
+
   let zoomLevel = 10;
   if (maxDiff < 0.1) zoomLevel = 12;
   else if (maxDiff < 0.5) zoomLevel = 10;
@@ -186,7 +186,7 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
       </div>
 
       {/* Trip Info Overlay */}
-      <div className="absolute right-4 bottom-4 left-4">
+      {/* <div className="absolute right-4 bottom-4 left-4">
         <div className="bg-background/95 rounded-lg p-4 shadow-lg backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -211,7 +211,7 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

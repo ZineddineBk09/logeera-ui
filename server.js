@@ -12,7 +12,7 @@ const handler = app.getRequestHandler();
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
-  
+
   const io = new Server(httpServer, {
     path: '/api/socketio',
     cors: {
@@ -35,7 +35,7 @@ app.prepare().then(() => {
       socket.data.userId = 'user_' + Math.random().toString(36).substr(2, 9);
       socket.data.userEmail = 'user@example.com';
       socket.data.userRole = 'USER';
-      
+
       next();
     } catch (error) {
       console.error('Socket authentication error:', error);
@@ -70,7 +70,7 @@ app.prepare().then(() => {
     socket.on('send-message', async (data) => {
       try {
         const { chatId, content } = data;
-        
+
         // Create a mock message object
         const message = {
           id: 'msg_' + Math.random().toString(36).substr(2, 9),
@@ -87,8 +87,10 @@ app.prepare().then(() => {
 
         // Emit message to all users in the chat room
         io.to(`chat:${chatId}`).emit('new-message', message);
-        
-        console.log(`Message sent in chat ${chatId} by user ${socket.data.userId}: ${content}`);
+
+        console.log(
+          `Message sent in chat ${chatId} by user ${socket.data.userId}: ${content}`,
+        );
       } catch (error) {
         console.error('Error sending message:', error);
         socket.emit('error', { message: 'Failed to send message' });

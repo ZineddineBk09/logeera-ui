@@ -3,6 +3,7 @@
 ## Quick Start (Recommended)
 
 ### 1. **Environment Setup**
+
 ```bash
 # Copy environment template
 cp env.example .env.local
@@ -14,6 +15,7 @@ DATABASE_URL="postgresql://username:password@localhost:5432/logeera"
 ### 2. **Database Setup (Choose One)**
 
 #### Option A: Full Setup with PostGIS (Recommended)
+
 ```bash
 # Install dependencies
 pnpm install
@@ -26,6 +28,7 @@ pnpm run db:seed
 ```
 
 #### Option B: Simple Setup (No PostGIS)
+
 ```bash
 # Install dependencies
 pnpm install
@@ -41,6 +44,7 @@ pnpm run db:seed-simple
 ```
 
 ### 3. **Start Development**
+
 ```bash
 # Start the development server
 pnpm dev
@@ -54,12 +58,14 @@ node scripts/test-api.js
 ### Database Connection Issues
 
 **Error: `DATABASE_URL` not found**
+
 ```bash
 # Make sure you have a .env.local file with:
 DATABASE_URL="postgresql://user:password@localhost:5432/database_name"
 ```
 
 **Error: Connection refused**
+
 ```bash
 # Make sure PostgreSQL is running
 # On macOS with Homebrew:
@@ -73,6 +79,7 @@ sudo systemctl start postgresql
 ```
 
 **Error: Database does not exist**
+
 ```bash
 # Create the database manually
 createdb logeera
@@ -85,6 +92,7 @@ CREATE DATABASE logeera;
 ### PostGIS Issues
 
 **Error: PostGIS extension not found**
+
 ```bash
 # Install PostGIS (optional - app works without it)
 # On macOS:
@@ -98,18 +106,21 @@ sudo apt-get install postgresql-14-postgis-3
 ```
 
 **If PostGIS installation fails:**
+
 - Use the simple setup option: `pnpm run db:seed-simple`
 - The app will work without PostGIS, but geospatial features will be limited
 
 ### Migration Issues
 
 **Error: Migration conflicts**
+
 ```bash
 # Reset the database and start fresh
 pnpm run db:reset
 ```
 
 **Error: Prisma client not generated**
+
 ```bash
 # Generate the Prisma client
 npx prisma generate
@@ -117,24 +128,25 @@ npx prisma generate
 
 ## 📊 Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm run db:setup` | Full database setup with PostGIS |
-| `pnpm run db:seed` | Seed with full test data |
+| Command                   | Description                             |
+| ------------------------- | --------------------------------------- |
+| `pnpm run db:setup`       | Full database setup with PostGIS        |
+| `pnpm run db:seed`        | Seed with full test data                |
 | `pnpm run db:seed-simple` | Seed with simple test data (no PostGIS) |
-| `pnpm run db:reset` | Reset database and reseed |
-| `pnpm run db:studio` | Open Prisma Studio (database GUI) |
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
+| `pnpm run db:reset`       | Reset database and reseed               |
+| `pnpm run db:studio`      | Open Prisma Studio (database GUI)       |
+| `pnpm dev`                | Start development server                |
+| `pnpm build`              | Build for production                    |
 
 ## 🧪 Testing
 
 ### Test Credentials
+
 ```
 Email: john.doe@example.com
 Password: password123
 
-Email: jane.smith@example.com  
+Email: jane.smith@example.com
 Password: password123
 
 Email: admin@logeera.com
@@ -142,6 +154,7 @@ Password: password123
 ```
 
 ### API Testing
+
 ```bash
 # Test all endpoints
 node scripts/test-api.js
@@ -152,6 +165,7 @@ curl http://localhost:3000/api/trips
 ```
 
 ### Database Inspection
+
 ```bash
 # Open Prisma Studio
 pnpm run db:studio
@@ -163,6 +177,7 @@ psql -U postgres -d logeera
 ## 🚀 Production Deployment
 
 ### Environment Variables
+
 ```env
 DATABASE_URL="postgresql://user:password@host:5432/database"
 JWT_ACCESS_SECRET="your-secret-key"
@@ -171,6 +186,7 @@ CORS_ORIGIN="https://yourdomain.com"
 ```
 
 ### Database Migration
+
 ```bash
 # Production migration
 npx prisma migrate deploy

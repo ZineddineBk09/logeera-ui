@@ -26,10 +26,7 @@ export async function POST(req: NextRequest) {
 
     // check if user is blocked
     if (user.status === 'BLOCKED') {
-      return NextResponse.json(
-        { error: 'User is blocked' },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: 'User is blocked' }, { status: 401 });
     }
 
     console.log(user);

@@ -1,24 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { getServerSideAccessToken } from '@/lib/cookies';
-import { 
-  PROTECTED_ROUTES, 
-  ADMIN_ROUTES, 
-  AUTH_REDIRECT_ROUTES, 
+import {
+  PROTECTED_ROUTES,
+  ADMIN_ROUTES,
+  AUTH_REDIRECT_ROUTES,
   ROUTES,
-  APP_CONFIG 
+  APP_CONFIG,
 } from '@/constants';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // CORS headers for API routes
   if (pathname.startsWith('/api/')) {
     const response = NextResponse.next();
-    
-    response.headers.set('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || 'http://localhost:3000');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    response.headers.set(
+      'Access-Control-Allow-Origin',
+      process.env.CORS_ORIGIN || 'http://localhost:3000',
+    );
+    response.headers.set(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    );
+    response.headers.set(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization',
+    );
     response.headers.set('Access-Control-Allow-Credentials', 'true');
 
     // Security headers
@@ -35,8 +44,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Route protection for frontend routes
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
-  const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
+    pathname.startsWith(route),
+  );
+  const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
   const isAuthRedirectRoute = AUTH_REDIRECT_ROUTES.includes(pathname as any);
 
   // Get access token from cookies

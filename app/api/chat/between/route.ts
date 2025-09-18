@@ -25,7 +25,7 @@ async function handler(req: AuthenticatedRequest) {
 
     if (!chat && create) {
       chat = await prisma.chat.create({
-        data: { userAId, userBId }
+        data: { userAId, userBId },
       });
     }
 
@@ -35,7 +35,10 @@ async function handler(req: AuthenticatedRequest) {
 
     return NextResponse.json({ id: chat.id });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

@@ -8,6 +8,7 @@ import {
   Smartphone,
   Monitor,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,18 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 interface ProfileSecurityProps {
   user: {
@@ -41,6 +54,8 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { logout } = useAuth();
   const schema = z
     .object({
       currentPassword: z.string().min(8, 'At least 8 characters'),
@@ -70,9 +85,23 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
 
   const passwordData = watch();
 
-  const passwordStrength = calculatePasswordStrength(passwordData.newPassword || '');
+  const passwordStrength = calculatePasswordStrength(
+    passwordData.newPassword || '',
+  );
 
   const onSubmit = async (values: FormValues) => {
+    console.log('Form values:', values); // Debug log
+
+    // Validate that all fields are present
+    if (
+      !values.currentPassword ||
+      !values.newPassword ||
+      !values.confirmPassword
+    ) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+
     try {
       const res = await api('/api/auth/change-password', {
         method: 'POST',
@@ -82,14 +111,38 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
         }),
       });
       if (res.ok) {
-        toast.success('Password changed');
+        toast.success('Password changed successfully');
         reset();
       } else {
-        const t = await res.text();
-        toast.error(t || 'Failed to change password');
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.error || 'Failed to change password');
       }
-    } catch {
+    } catch (error) {
+      console.error('Password change error:', error);
       toast.error('Network error');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await api(`/api/users/${user.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Account deleted successfully');
+        // Log out the user
+        await logout();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.error || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -243,10 +296,7 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
               )}
             </div>
 
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Changing...' : 'Change Password'}
             </Button>
           </form>
@@ -268,13 +318,39 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
                 Permanently delete your account and data
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive bg-transparent"
-            >
-              Delete
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive bg-transparent"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete your account? This action
+                    cannot be undone. All your trips, requests, messages, and
+                    reviews will be permanently deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete Account'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
@@ -284,7 +360,7 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
 
 function calculatePasswordStrength(password: string) {
   if (!password) return { score: 0, label: 'Very Weak' };
-  
+
   let score = 0;
   if (password.length >= 8) score++;
   if (/[A-Z]/.test(password)) score++;

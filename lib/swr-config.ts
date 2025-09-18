@@ -44,7 +44,7 @@ export const swrConfig: SWRConfiguration = {
   // Global error handler
   onError: (error, key) => {
     console.error('SWR Error:', error, 'Key:', key);
-    
+
     // Handle specific error cases
     if (error.status === 401) {
       // Unauthorized - redirect to login
@@ -66,51 +66,67 @@ export const swrKeys = {
   auth: {
     me: () => ['auth', 'me'] as const,
   },
-  
+
   // Trips
   trips: {
-    list: (params?: Record<string, string>) => ['trips', 'list', params] as const,
-    nearby: (params: Record<string, string>) => ['trips', 'nearby', params] as const,
+    list: (params?: Record<string, string>) =>
+      ['trips', 'list', params] as const,
+    nearby: (params: Record<string, string>) =>
+      ['trips', 'nearby', params] as const,
     detail: (id: string) => ['trips', 'detail', id] as const,
   },
-  
+
   // Requests
   requests: {
     incoming: () => ['requests', 'incoming'] as const,
     outgoing: () => ['requests', 'outgoing'] as const,
     detail: (id: string) => ['requests', 'detail', id] as const,
   },
-  
+
   // Chat
   chat: {
     list: () => ['chat', 'list'] as const,
-    between: (userAId: string, userBId: string) => ['chat', 'between', userAId, userBId] as const,
+    between: (userAId: string, userBId: string) =>
+      ['chat', 'between', userAId, userBId] as const,
     messages: (chatId: string) => ['chat', 'messages', chatId] as const,
   },
-  
+
   // Users
   users: {
     detail: (id: string) => ['users', 'detail', id] as const,
     ratings: (id: string) => ['users', 'ratings', id] as const,
   },
-  
+
+  // Drivers
+  drivers: {
+    list: (params?: Record<string, string>) =>
+      ['drivers', 'list', params] as const,
+    trusted: (limit?: string) => ['drivers', 'trusted', limit] as const,
+  },
+
   // Ratings
   ratings: {
     list: (userId?: string) => ['ratings', 'list', userId] as const,
   },
-  
+
   // Admin
   admin: {
-    dashboard: (timeRange: string) => ['admin', 'dashboard', timeRange] as const,
-    users: (params?: Record<string, string>) => ['admin', 'users', params] as const,
+    dashboard: (timeRange: string) =>
+      ['admin', 'dashboard', timeRange] as const,
+    users: (params?: Record<string, string>) =>
+      ['admin', 'users', params] as const,
     user: (id: string) => ['admin', 'users', id] as const,
-    trips: (params?: Record<string, string>) => ['admin', 'trips', params] as const,
+    trips: (params?: Record<string, string>) =>
+      ['admin', 'trips', params] as const,
     trip: (id: string) => ['admin', 'trips', id] as const,
-    requests: (params?: Record<string, string>) => ['admin', 'requests', params] as const,
+    requests: (params?: Record<string, string>) =>
+      ['admin', 'requests', params] as const,
     request: (id: string) => ['admin', 'requests', id] as const,
-    messages: (params?: Record<string, string>) => ['admin', 'messages', params] as const,
+    messages: (params?: Record<string, string>) =>
+      ['admin', 'messages', params] as const,
     message: (id: string) => ['admin', 'messages', id] as const,
-    analytics: (timeRange: string) => ['admin', 'analytics', timeRange] as const,
+    analytics: (timeRange: string) =>
+      ['admin', 'analytics', timeRange] as const,
     settings: () => ['admin', 'settings'] as const,
   },
 } as const;

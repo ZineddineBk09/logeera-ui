@@ -20,14 +20,20 @@ export async function GET(req: NextRequest) {
     // Use PostGIS for proper geospatial proximity search
     const trips = await findTripsNearby(
       { longitude: lon, latitude: lat },
-      radiusMeters
+      radiusMeters,
     );
 
     return NextResponse.json(trips);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.message },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

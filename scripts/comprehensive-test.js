@@ -10,7 +10,11 @@ const API_BASE = process.env.API_BASE || 'http://localhost:3000';
 // Test credentials from seed data
 const TEST_USERS = [
   { email: 'john.doe@example.com', password: 'password123', name: 'John Doe' },
-  { email: 'jane.smith@example.com', password: 'password123', name: 'Jane Smith' },
+  {
+    email: 'jane.smith@example.com',
+    password: 'password123',
+    name: 'Jane Smith',
+  },
   { email: 'admin@logeera.com', password: 'password123', name: 'Admin User' },
 ];
 
@@ -35,7 +39,7 @@ async function makeRequest(endpoint, options = {}) {
     });
 
     const data = await response.json();
-    
+
     return {
       status: response.status,
       ok: response.ok,
@@ -52,14 +56,14 @@ async function makeRequest(endpoint, options = {}) {
 
 async function testAuthentication() {
   console.log('\n🔐 === AUTHENTICATION TESTS ===');
-  
+
   // Test 1: Login with valid credentials
   console.log('\n1. Testing login with valid credentials...');
   const loginResult = await makeRequest('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(TEST_USERS[0]),
   });
-  
+
   if (loginResult.ok) {
     accessTokens.user1 = loginResult.data.accessToken;
     console.log('✅ Login successful - User 1');
@@ -74,7 +78,7 @@ async function testAuthentication() {
     method: 'POST',
     body: JSON.stringify(TEST_USERS[1]),
   });
-  
+
   if (login2Result.ok) {
     accessTokens.user2 = login2Result.data.accessToken;
     console.log('✅ Login successful - User 2');
@@ -89,7 +93,7 @@ async function testAuthentication() {
     method: 'POST',
     body: JSON.stringify(TEST_USERS[2]),
   });
-  
+
   if (adminLoginResult.ok) {
     accessTokens.admin = adminLoginResult.data.accessToken;
     console.log('✅ Admin login successful');
@@ -101,9 +105,9 @@ async function testAuthentication() {
   // Test 4: Get user profile
   console.log('\n4. Testing get user profile...');
   const profileResult = await makeRequest('/api/auth/me', {
-    token: accessTokens.user1
+    token: accessTokens.user1,
   });
-  
+
   if (profileResult.ok) {
     testData.user1Id = profileResult.data.id;
     console.log('✅ Get profile successful:', profileResult.data.name);
@@ -118,11 +122,14 @@ async function testAuthentication() {
     method: 'POST',
     body: JSON.stringify({ email: 'invalid@test.com', password: 'wrong' }),
   });
-  
+
   if (invalidLoginResult.status === 401) {
     console.log('✅ Invalid login correctly rejected');
   } else {
-    console.log('❌ Invalid login should be rejected:', invalidLoginResult.data);
+    console.log(
+      '❌ Invalid login should be rejected:',
+      invalidLoginResult.data,
+    );
     return false;
   }
 
@@ -137,12 +144,12 @@ async function testAuthentication() {
     type: 'INDIVIDUAL',
     officialIdNumber: `TEST${timestamp}`,
   };
-  
+
   const registerResult = await makeRequest('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify(registerData),
   });
-  
+
   if (registerResult.ok) {
     testData.newUserId = registerResult.data.user.id;
     console.log('✅ User registration successful');
@@ -157,11 +164,14 @@ async function testAuthentication() {
     method: 'POST',
     body: JSON.stringify(registerData),
   });
-  
+
   if (duplicateResult.status === 409) {
     console.log('✅ Duplicate registration correctly rejected');
   } else {
-    console.log('❌ Duplicate registration should be rejected:', duplicateResult.data);
+    console.log(
+      '❌ Duplicate registration should be rejected:',
+      duplicateResult.data,
+    );
     return false;
   }
 
@@ -170,14 +180,16 @@ async function testAuthentication() {
 
 async function testTrips() {
   console.log('\n🚗 === TRIPS TESTS ===');
-  
+
   // Test 1: Get all trips
   console.log('\n1. Testing get all trips...');
   const tripsResult = await makeRequest('/api/trips');
-  
+
   if (tripsResult.ok && tripsResult.data.length > 0) {
     testData.trips = tripsResult.data;
-    console.log(`✅ Get trips successful: ${tripsResult.data.length} trips found`);
+    console.log(
+      `✅ Get trips successful: ${tripsResult.data.length} trips found`,
+    );
   } else {
     console.log('❌ Get trips failed:', tripsResult.data);
     return false;
@@ -185,10 +197,14 @@ async function testTrips() {
 
   // Test 2: Get trips with filters
   console.log('\n2. Testing trips with filters...');
-  const filteredResult = await makeRequest('/api/trips?vehicleType=CAR&q=San Francisco');
-  
+  const filteredResult = await makeRequest(
+    '/api/trips?vehicleType=CAR&q=San Francisco',
+  );
+
   if (filteredResult.ok) {
-    console.log(`✅ Filtered trips successful: ${filteredResult.data.length} trips found`);
+    console.log(
+      `✅ Filtered trips successful: ${filteredResult.data.length} trips found`,
+    );
   } else {
     console.log('❌ Filtered trips failed:', filteredResult.data);
     return false;
@@ -209,7 +225,7 @@ async function testTrips() {
   const createResult = await makeRequest('/api/trips', {
     method: 'POST',
     body: JSON.stringify(newTrip),
-    token: accessTokens.user1
+    token: accessTokens.user1,
   });
 
   if (createResult.ok) {
@@ -222,10 +238,14 @@ async function testTrips() {
 
   // Test 4: Nearby trips
   console.log('\n4. Testing nearby trips...');
-  const nearbyResult = await makeRequest('/api/trips/nearby?lon=-122.4194&lat=37.7749&radiusMeters=50000');
-  
+  const nearbyResult = await makeRequest(
+    '/api/trips/nearby?lon=-122.4194&lat=37.7749&radiusMeters=50000',
+  );
+
   if (nearbyResult.ok) {
-    console.log(`✅ Nearby trips successful: ${nearbyResult.data.length} trips found`);
+    console.log(
+      `✅ Nearby trips successful: ${nearbyResult.data.length} trips found`,
+    );
   } else {
     console.log('❌ Nearby trips failed:', nearbyResult.data);
     return false;
@@ -233,11 +253,14 @@ async function testTrips() {
 
   // Test 5: Complete trip (use the newly created trip)
   console.log('\n5. Testing complete trip...');
-  const completeResult = await makeRequest(`/api/trips/${testData.newTripId}/complete`, {
-    method: 'PATCH',
-    token: accessTokens.user1
-  });
-  
+  const completeResult = await makeRequest(
+    `/api/trips/${testData.newTripId}/complete`,
+    {
+      method: 'PATCH',
+      token: accessTokens.user1,
+    },
+  );
+
   if (completeResult.ok) {
     console.log('✅ Complete trip successful');
   } else {
@@ -250,14 +273,16 @@ async function testTrips() {
 
 async function testRequests() {
   console.log('\n📋 === REQUESTS TESTS ===');
-  
+
   // Test 1: Create request (use a trip published by user1, requested by user2)
   console.log('\n1. Testing create request...');
-  const availableTrip = testData.trips.find(trip => trip.publisherId === testData.user1Id);
+  const availableTrip = testData.trips.find(
+    (trip) => trip.publisherId === testData.user1Id,
+  );
   const createRequestResult = await makeRequest('/api/requests', {
     method: 'POST',
     body: JSON.stringify({ tripId: availableTrip.id }),
-    token: accessTokens.user2
+    token: accessTokens.user2,
   });
 
   if (createRequestResult.ok) {
@@ -271,11 +296,13 @@ async function testRequests() {
   // Test 2: Get incoming requests
   console.log('\n2. Testing get incoming requests...');
   const incomingResult = await makeRequest('/api/requests/incoming', {
-    token: accessTokens.user1
+    token: accessTokens.user1,
   });
-  
+
   if (incomingResult.ok) {
-    console.log(`✅ Get incoming requests successful: ${incomingResult.data.length} requests found`);
+    console.log(
+      `✅ Get incoming requests successful: ${incomingResult.data.length} requests found`,
+    );
   } else {
     console.log('❌ Get incoming requests failed:', incomingResult.data);
     return false;
@@ -284,11 +311,13 @@ async function testRequests() {
   // Test 3: Get outgoing requests
   console.log('\n3. Testing get outgoing requests...');
   const outgoingResult = await makeRequest('/api/requests/outgoing', {
-    token: accessTokens.user2
+    token: accessTokens.user2,
   });
-  
+
   if (outgoingResult.ok) {
-    console.log(`✅ Get outgoing requests successful: ${outgoingResult.data.length} requests found`);
+    console.log(
+      `✅ Get outgoing requests successful: ${outgoingResult.data.length} requests found`,
+    );
   } else {
     console.log('❌ Get outgoing requests failed:', outgoingResult.data);
     return false;
@@ -296,12 +325,15 @@ async function testRequests() {
 
   // Test 4: Update request status
   console.log('\n4. Testing update request status...');
-  const updateResult = await makeRequest(`/api/requests/${testData.requestId}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status: 'ACCEPTED' }),
-    token: accessTokens.user1
-  });
-  
+  const updateResult = await makeRequest(
+    `/api/requests/${testData.requestId}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'ACCEPTED' }),
+      token: accessTokens.user1,
+    },
+  );
+
   if (updateResult.ok) {
     console.log('✅ Update request status successful');
   } else {
@@ -314,13 +346,16 @@ async function testRequests() {
   const ownTripResult = await makeRequest('/api/requests', {
     method: 'POST',
     body: JSON.stringify({ tripId: testData.trips[0].id }),
-    token: accessTokens.user1
+    token: accessTokens.user1,
   });
-  
+
   if (ownTripResult.status === 400) {
     console.log('✅ Cannot request own trip correctly rejected');
   } else {
-    console.log('❌ Should not be able to request own trip:', ownTripResult.data);
+    console.log(
+      '❌ Should not be able to request own trip:',
+      ownTripResult.data,
+    );
     return false;
   }
 
@@ -329,17 +364,22 @@ async function testRequests() {
 
 async function testChat() {
   console.log('\n💬 === CHAT TESTS ===');
-  
+
   // Test 1: Create/get chat between users
   console.log('\n1. Testing create/get chat...');
   // Get user2 ID from profile
-  const user2Profile = await makeRequest('/api/auth/me', { token: accessTokens.user2 });
-  const user2Id = user2Profile.data.id;
-  
-  const chatResult = await makeRequest(`/api/chat/between?userAId=${testData.user1Id}&userBId=${user2Id}&create=1`, {
-    token: accessTokens.user1
+  const user2Profile = await makeRequest('/api/auth/me', {
+    token: accessTokens.user2,
   });
-  
+  const user2Id = user2Profile.data.id;
+
+  const chatResult = await makeRequest(
+    `/api/chat/between?userAId=${testData.user1Id}&userBId=${user2Id}&create=1`,
+    {
+      token: accessTokens.user1,
+    },
+  );
+
   if (chatResult.ok) {
     testData.chatId = chatResult.data.id;
     console.log('✅ Create/get chat successful:', chatResult.data.id);
@@ -350,12 +390,17 @@ async function testChat() {
 
   // Test 2: Get chat messages (use user2 token since they're part of the chat)
   console.log('\n2. Testing get chat messages...');
-  const messagesResult = await makeRequest(`/api/chat/${testData.chatId}/messages`, {
-    token: accessTokens.user2
-  });
-  
+  const messagesResult = await makeRequest(
+    `/api/chat/${testData.chatId}/messages`,
+    {
+      token: accessTokens.user2,
+    },
+  );
+
   if (messagesResult.ok) {
-    console.log(`✅ Get messages successful: ${messagesResult.data.length} messages found`);
+    console.log(
+      `✅ Get messages successful: ${messagesResult.data.length} messages found`,
+    );
   } else {
     console.log('❌ Get messages failed:', messagesResult.data);
     return false;
@@ -365,15 +410,18 @@ async function testChat() {
   console.log('\n3. Testing send message...');
   const messageData = {
     senderId: testData.user1Id,
-    content: 'Hello! This is a test message.'
+    content: 'Hello! This is a test message.',
   };
-  
-  const sendResult = await makeRequest(`/api/chat/${testData.chatId}/messages`, {
-    method: 'POST',
-    body: JSON.stringify(messageData),
-    token: accessTokens.user1
-  });
-  
+
+  const sendResult = await makeRequest(
+    `/api/chat/${testData.chatId}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+      token: accessTokens.user1,
+    },
+  );
+
   if (sendResult.ok) {
     console.log('✅ Send message successful');
   } else {
@@ -386,7 +434,7 @@ async function testChat() {
 
 async function testRatings() {
   console.log('\n⭐ === RATINGS TESTS ===');
-  
+
   // Test 1: Create rating
   console.log('\n1. Testing create rating...');
   const ratingData = {
@@ -395,13 +443,13 @@ async function testRatings() {
     value: 5,
     comment: 'Excellent service!',
   };
-  
+
   const ratingResult = await makeRequest('/api/ratings', {
     method: 'POST',
     body: JSON.stringify(ratingData),
-    token: accessTokens.user1
+    token: accessTokens.user1,
   });
-  
+
   if (ratingResult.ok) {
     console.log('✅ Create rating successful');
   } else {
@@ -417,18 +465,21 @@ async function testRatings() {
     value: 5,
     comment: 'Self rating',
   };
-  
+
   const selfRatingResult = await makeRequest('/api/ratings', {
     method: 'POST',
     body: JSON.stringify(selfRatingData),
-    token: accessTokens.user1
+    token: accessTokens.user1,
   });
-  
+
   // This should fail because reviewerUserId must match the authenticated user
   if (selfRatingResult.status === 403 || selfRatingResult.status === 400) {
     console.log('✅ Cannot rate yourself correctly rejected');
   } else {
-    console.log('❌ Should not be able to rate yourself:', selfRatingResult.data);
+    console.log(
+      '❌ Should not be able to rate yourself:',
+      selfRatingResult.data,
+    );
     return false;
   }
 
@@ -437,11 +488,11 @@ async function testRatings() {
 
 async function testHealthAndMetrics() {
   console.log('\n🏥 === HEALTH & METRICS TESTS ===');
-  
+
   // Test 1: Health check
   console.log('\n1. Testing health check...');
   const healthResult = await makeRequest('/api/health');
-  
+
   if (healthResult.ok && healthResult.data.status === 'ok') {
     console.log('✅ Health check successful');
   } else {
@@ -452,7 +503,7 @@ async function testHealthAndMetrics() {
   // Test 2: Metrics endpoint
   console.log('\n2. Testing metrics endpoint...');
   const metricsResult = await makeRequest('/api/metrics');
-  
+
   if (metricsResult.ok) {
     console.log('✅ Metrics endpoint successful');
   } else {
@@ -465,37 +516,43 @@ async function testHealthAndMetrics() {
 
 async function testSecurity() {
   console.log('\n🔒 === SECURITY TESTS ===');
-  
+
   // Test 1: Unauthorized access
   console.log('\n1. Testing unauthorized access...');
   const unauthorizedResult = await makeRequest('/api/auth/me');
-  
+
   if (unauthorizedResult.status === 401) {
     console.log('✅ Unauthorized access correctly rejected');
   } else {
-    console.log('❌ Unauthorized access should be rejected:', unauthorizedResult.data);
+    console.log(
+      '❌ Unauthorized access should be rejected:',
+      unauthorizedResult.data,
+    );
     return false;
   }
 
   // Test 2: Invalid token
   console.log('\n2. Testing invalid token...');
   const invalidTokenResult = await makeRequest('/api/auth/me', {
-    token: 'invalid-token'
+    token: 'invalid-token',
   });
-  
+
   if (invalidTokenResult.status === 401) {
     console.log('✅ Invalid token correctly rejected');
   } else {
-    console.log('❌ Invalid token should be rejected:', invalidTokenResult.data);
+    console.log(
+      '❌ Invalid token should be rejected:',
+      invalidTokenResult.data,
+    );
     return false;
   }
 
   // Test 3: Access other user's data
-  console.log('\n3. Testing access other user\'s data...');
+  console.log("\n3. Testing access other user's data...");
   const otherUserResult = await makeRequest('/api/requests/incoming', {
-    token: accessTokens.user2
+    token: accessTokens.user2,
   });
-  
+
   if (otherUserResult.ok) {
     console.log('✅ Can access own data');
   } else {
@@ -509,7 +566,7 @@ async function testSecurity() {
 async function runComprehensiveTests() {
   console.log('🧪 === COMPREHENSIVE BACKEND TEST SUITE ===');
   console.log('Testing ALL backend features for 100% confidence...\n');
-  
+
   const tests = [
     { name: 'Authentication', fn: testAuthentication },
     { name: 'Trips', fn: testTrips },
@@ -543,14 +600,18 @@ async function runComprehensiveTests() {
   console.log('📊 COMPREHENSIVE TEST RESULTS:');
   console.log(`✅ Passed: ${passed}/${tests.length}`);
   console.log(`❌ Failed: ${failed}/${tests.length}`);
-  
+
   if (failed === 0) {
-    console.log('\n🎉 ALL TESTS PASSED! Backend is 100% ready for frontend integration!');
+    console.log(
+      '\n🎉 ALL TESTS PASSED! Backend is 100% ready for frontend integration!',
+    );
     console.log('🚀 You can proceed with confidence to frontend integration.');
   } else {
-    console.log('\n⚠️  Some tests failed. Please fix issues before frontend integration.');
+    console.log(
+      '\n⚠️  Some tests failed. Please fix issues before frontend integration.',
+    );
   }
-  
+
   console.log('='.repeat(50));
 }
 
@@ -566,7 +627,7 @@ async function checkServer() {
 
 async function main() {
   const serverRunning = await checkServer();
-  
+
   if (!serverRunning) {
     console.log('❌ Server is not running at', API_BASE);
     console.log('💡 Please start the server with: npm run dev');

@@ -83,7 +83,10 @@ async function getUser(req: AuthenticatedRequest) {
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -129,7 +132,10 @@ async function updateUser(req: AuthenticatedRequest) {
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error updating user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -155,7 +161,10 @@ async function deleteUser(req: AuthenticatedRequest) {
 
     // Prevent admin from deleting themselves
     if (userId === req.user!.id) {
-      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot delete your own account' },
+        { status: 400 },
+      );
     }
 
     // Delete user (cascade will handle related records)
@@ -166,11 +175,13 @@ async function deleteUser(req: AuthenticatedRequest) {
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
 export const GET = withAuth(getUser);
 export const PUT = withAuth(updateUser);
 export const DELETE = withAuth(deleteUser);
-

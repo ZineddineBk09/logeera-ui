@@ -4,6 +4,38 @@ import { prisma } from '@/lib/database';
 import { validateWKT } from '@/lib/geospatial';
 import { z } from 'zod';
 
+// Function to parse WKT POINT format and extract coordinates
+function parseWKTPoint(wkt: string): { lat: number; lng: number } | null {
+  if (!wkt) return null;
+
+  // Match POINT(longitude latitude) format
+  const match = wkt.match(/POINT\(([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\)/);
+  if (match) {
+    const lng = parseFloat(match[1]);
+    const lat = parseFloat(match[2]);
+    return { lat, lng };
+  }
+  return null;
+}
+
+// Function to calculate distance between two points using Haversine formula
+function calculateDistance(
+  point1: { lat: number; lng: number },
+  point2: { lat: number; lng: number },
+): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = ((point2.lat - point1.lat) * Math.PI) / 180;
+  const dLng = ((point2.lng - point1.lng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((point1.lat * Math.PI) / 180) *
+      Math.cos((point2.lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in kilometers
+}
+
 const createTripSchema = z.object({
   origin: z.string(), // WKT format: "POINT(lon lat)"
   destination: z.string(), // WKT format: "POINT(lon lat)"
@@ -22,10 +54,16 @@ async function createTrip(req: AuthenticatedRequest) {
 
     // Validate WKT format for geospatial data
     if (!validateWKT(data.origin)) {
-      return NextResponse.json({ error: 'Invalid origin coordinates format' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid origin coordinates format' },
+        { status: 400 },
+      );
     }
     if (!validateWKT(data.destination)) {
-      return NextResponse.json({ error: 'Invalid destination coordinates format' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid destination coordinates format' },
+        { status: 400 },
+      );
     }
 
     const savedTrip = await prisma.trip.create({
@@ -39,14 +77,20 @@ async function createTrip(req: AuthenticatedRequest) {
         vehicleType: data.vehicleType,
         capacity: data.capacity,
         pricePerSeat: data.pricePerSeat,
-      }
+      },
     });
     return NextResponse.json(savedTrip, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.message },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -61,16 +105,23 @@ async function getTrips(req: NextRequest) {
     const originLng = searchParams.get('originLng');
     const destinationLat = searchParams.get('destinationLat');
     const destinationLng = searchParams.get('destinationLng');
+    const publisherId =
+      searchParams.get('publisherId') || searchParams.get('driver');
 
     const where: any = {
-      status: 'PUBLISHED'
+      status: 'PUBLISHED',
     };
+
+    // Filter by publisher/driver
+    if (publisherId) {
+      where.publisherId = publisherId;
+    }
 
     // Text-based search
     if (q) {
       where.OR = [
         { originName: { contains: q, mode: 'insensitive' } },
-        { destinationName: { contains: q, mode: 'insensitive' } }
+        { destinationName: { contains: q, mode: 'insensitive' } },
       ];
     }
 
@@ -81,7 +132,7 @@ async function getTrips(req: NextRequest) {
       endDate.setDate(endDate.getDate() + 1);
       where.departureAt = {
         gte: startDate,
-        lt: endDate
+        lt: endDate,
       };
     }
 
@@ -93,7 +144,7 @@ async function getTrips(req: NextRequest) {
     // Capacity filter
     if (capacity && !isNaN(Number(capacity))) {
       where.capacity = {
-        gte: Number(capacity)
+        gte: Number(capacity),
       };
     }
 
@@ -102,7 +153,7 @@ async function getTrips(req: NextRequest) {
       const originPoint = `POINT(${originLng} ${originLat})`;
       // Find trips with valid origin geometry (non-empty string)
       where.originGeom = {
-        not: ""
+        not: '',
       };
     }
 
@@ -110,7 +161,7 @@ async function getTrips(req: NextRequest) {
       const destinationPoint = `POINT(${destinationLng} ${destinationLat})`;
       // Find trips with valid destination geometry (non-empty string)
       where.destinationGeom = {
-        not: ""
+        not: '',
       };
     }
 
@@ -124,30 +175,47 @@ async function getTrips(req: NextRequest) {
             email: true,
             averageRating: true,
             ratingCount: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
-        departureAt: 'asc'
-      }
+        departureAt: 'asc',
+      },
     });
 
     // Post-process for geospatial filtering if coordinates are provided
     if ((originLat && originLng) || (destinationLat && destinationLng)) {
-      trips = trips.filter(trip => {
+      trips = trips.filter((trip) => {
         let matchesOrigin = true;
         let matchesDestination = true;
 
         if (originLat && originLng && trip.originGeom) {
-          // Parse the WKT POINT and calculate distance
-          const originMatch = trip.originGeom.includes(originLng) && trip.originGeom.includes(originLat);
-          matchesOrigin = originMatch;
+          // Parse the WKT POINT and calculate distance using Haversine formula
+          const tripOrigin = parseWKTPoint(trip.originGeom);
+          if (tripOrigin) {
+            const distance = calculateDistance(
+              { lat: parseFloat(originLat), lng: parseFloat(originLng) },
+              tripOrigin,
+            );
+            // Match if within 50km radius
+            matchesOrigin = distance <= 50;
+          }
         }
 
         if (destinationLat && destinationLng && trip.destinationGeom) {
-          // Parse the WKT POINT and calculate distance
-          const destinationMatch = trip.destinationGeom.includes(destinationLng) && trip.destinationGeom.includes(destinationLat);
-          matchesDestination = destinationMatch;
+          // Parse the WKT POINT and calculate distance using Haversine formula
+          const tripDestination = parseWKTPoint(trip.destinationGeom);
+          if (tripDestination) {
+            const distance = calculateDistance(
+              {
+                lat: parseFloat(destinationLat),
+                lng: parseFloat(destinationLng),
+              },
+              tripDestination,
+            );
+            // Match if within 50km radius
+            matchesDestination = distance <= 50;
+          }
         }
 
         return matchesOrigin && matchesDestination;
@@ -157,7 +225,10 @@ async function getTrips(req: NextRequest) {
     return NextResponse.json(trips);
   } catch (error) {
     console.error('Error fetching trips:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

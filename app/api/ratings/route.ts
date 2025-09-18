@@ -22,40 +22,50 @@ async function createRating(req: AuthenticatedRequest) {
 
     // Check if rating already exists
     const existingRating = await prisma.rating.findFirst({
-      where: { 
-        ratedUserId: data.ratedUserId, 
-        reviewerUserId: data.reviewerUserId 
+      where: {
+        ratedUserId: data.ratedUserId,
+        reviewerUserId: data.reviewerUserId,
       },
     });
 
     if (existingRating) {
-      return NextResponse.json({ error: 'Rating already exists' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'Rating already exists' },
+        { status: 409 },
+      );
     }
 
     const savedRating = await prisma.rating.create({
-      data
+      data,
     });
 
     // Update user's average rating
-    const ratings = await prisma.rating.findMany({ 
-      where: { ratedUserId: data.ratedUserId } 
+    const ratings = await prisma.rating.findMany({
+      where: { ratedUserId: data.ratedUserId },
     });
-    const averageRating = ratings.reduce((sum, r) => sum + r.value, 0) / ratings.length;
-    
+    const averageRating =
+      ratings.reduce((sum, r) => sum + r.value, 0) / ratings.length;
+
     await prisma.user.update({
       where: { id: data.ratedUserId },
       data: {
         averageRating,
         ratingCount: ratings.length,
-      }
+      },
     });
 
     return NextResponse.json(savedRating, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.message }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.message },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -77,25 +87,28 @@ async function getRatings(req: NextRequest) {
             id: true,
             name: true,
             email: true,
-          }
+          },
         },
         ratedUser: {
           select: {
             id: true,
             name: true,
             email: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     return NextResponse.json(ratings);
   } catch (error) {
     console.error('Error fetching ratings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

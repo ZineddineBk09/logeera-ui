@@ -22,9 +22,9 @@ import { toast } from 'sonner';
 
 interface RequestIncoming {
   id: string;
-  applicant: { 
+  applicant: {
     id: string;
-    name: string; 
+    name: string;
     email: string;
     averageRating: number;
     ratingCount: number;
@@ -181,7 +181,8 @@ export function RequestsManagement() {
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
-                              {request.applicant.averageRating.toFixed(1)} ({request.applicant.ratingCount} reviews)
+                              {request.applicant.averageRating.toFixed(1)} (
+                              {request.applicant.ratingCount} reviews)
                             </span>
                           </div>
                         </div>
@@ -196,13 +197,23 @@ export function RequestsManagement() {
                       <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {request.trip.originName} → {request.trip.destinationName}
+                          {request.trip.originName} →{' '}
+                          {request.trip.destinationName}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {new Date(request.trip.departureAt).toLocaleDateString()} at {new Date(request.trip.departureAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(
+                            request.trip.departureAt,
+                          ).toLocaleDateString()}{' '}
+                          at{' '}
+                          {new Date(
+                            request.trip.departureAt,
+                          ).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -240,7 +251,12 @@ export function RequestsManagement() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleMessage(request.applicant.id, request.applicant.name)}
+                          onClick={() =>
+                            handleMessage(
+                              request.applicant.id,
+                              request.applicant.name,
+                            )
+                          }
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
@@ -302,7 +318,8 @@ export function RequestsManagement() {
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
-                              {request.trip.publisher.averageRating.toFixed(1)} ({request.trip.publisher.ratingCount} reviews)
+                              {request.trip.publisher.averageRating.toFixed(1)}{' '}
+                              ({request.trip.publisher.ratingCount} reviews)
                             </span>
                           </div>
                         </div>
@@ -313,8 +330,8 @@ export function RequestsManagement() {
                             request.status === 'ACCEPTED'
                               ? 'default'
                               : request.status === 'REJECTED'
-                              ? 'destructive'
-                              : 'secondary'
+                                ? 'destructive'
+                                : 'secondary'
                           }
                           className="text-xs"
                         >
@@ -331,13 +348,23 @@ export function RequestsManagement() {
                       <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {request.trip.originName} → {request.trip.destinationName}
+                          {request.trip.originName} →{' '}
+                          {request.trip.destinationName}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {new Date(request.trip.departureAt).toLocaleDateString()} at {new Date(request.trip.departureAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(
+                            request.trip.departureAt,
+                          ).toLocaleDateString()}{' '}
+                          at{' '}
+                          {new Date(
+                            request.trip.departureAt,
+                          ).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -356,15 +383,20 @@ export function RequestsManagement() {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleMessage(request.trip.publisher.id, request.trip.publisher.name)}
-                                className="ml-auto"
-                              >
-                                <MessageCircle className="mr-2 h-4 w-4" />
-                                Message
-                              </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleMessage(
+                            request.trip.publisher.id,
+                            request.trip.publisher.name,
+                          )
+                        }
+                        className="ml-auto"
+                      >
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Message
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

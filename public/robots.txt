@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /trips
+Allow: /drivers
+Allow: /help
+
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /publish
+Disallow: /requests
+Disallow: /chats
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+
+Sitemap: https://logeera.com/sitemap.xml

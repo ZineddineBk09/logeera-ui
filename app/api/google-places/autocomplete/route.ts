@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || 'AIzaSyADEv_BhmFoht8_TwlG0jJD53KIPu7blaI';
+const GOOGLE_MAPS_API_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
+  'AIzaSyADEv_BhmFoht8_TwlG0jJD53KIPu7blaI';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${GOOGLE_MAPS_API_KEY}&input=${encodeURIComponent(input)}&types=${types}`
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${GOOGLE_MAPS_API_KEY}&input=${encodeURIComponent(input)}&types=${types}`,
     );
 
     if (!response.ok) {
@@ -24,6 +26,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error in autocomplete proxy:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

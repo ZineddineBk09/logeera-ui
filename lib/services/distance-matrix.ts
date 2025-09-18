@@ -14,7 +14,7 @@ export interface DistanceMatrixResult {
 export class DistanceMatrixService {
   static async calculateDistanceAndDuration(
     origin: { lat: number; lng: number },
-    destination: { lat: number; lng: number }
+    destination: { lat: number; lng: number },
   ): Promise<DistanceMatrixResult | null> {
     try {
       const response = await api('/api/google-distance-matrix', {
@@ -32,11 +32,11 @@ export class DistanceMatrixService {
       }
 
       const data = await response.json();
-      
+
       if (data.rows?.[0]?.elements?.[0]?.status === 'OK') {
         return data.rows[0].elements[0];
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error calculating distance:', error);

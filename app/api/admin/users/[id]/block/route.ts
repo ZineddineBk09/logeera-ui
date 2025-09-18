@@ -24,7 +24,10 @@ async function blockUser(req: AuthenticatedRequest) {
 
     // Prevent admin from blocking themselves
     if (userId === req.user!.id) {
-      return NextResponse.json({ error: 'Cannot block your own account' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot block your own account' },
+        { status: 400 },
+      );
     }
 
     // Block user
@@ -46,9 +49,11 @@ async function blockUser(req: AuthenticatedRequest) {
     });
   } catch (error) {
     console.error('Error blocking user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
 export const POST = withAuth(blockUser);
-

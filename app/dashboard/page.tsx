@@ -1,26 +1,32 @@
-"use client";
+'use client';
 
-import { useAuth } from "@/lib/hooks/use-auth";
-import { useRequireAuth } from "@/lib/hooks/use-auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Car, 
-  MapPin, 
-  MessageCircle, 
-  Star, 
+import { useAuth } from '@/lib/hooks/use-auth';
+import { useRequireAuth } from '@/lib/hooks/use-auth';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Car,
+  MapPin,
+  MessageCircle,
+  Star,
   TrendingUp,
   Users,
   Calendar,
   Clock,
-  Loader2
-} from "lucide-react";
-import Link from "next/link";
-import { ROUTES } from "@/constants";
-import { TripsService, RequestsService, ChatService } from "@/lib/services";
-import { swrKeys } from "@/lib/swr-config";
-import useSWR from "swr";
+  Loader2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { ROUTES } from '@/constants';
+import { TripsService, RequestsService, ChatService } from '@/lib/services';
+import { swrKeys } from '@/lib/swr-config';
+import useSWR from 'swr';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -29,32 +35,36 @@ export default function DashboardPage() {
   // Fetch user's published trips
   const { data: userTrips = [], isLoading: tripsLoading } = useSWR(
     user ? swrKeys.trips.list({ publisherId: user.id }) : null,
-    () => TripsService.list({ publisherId: user!.id }).then(r => r.json())
+    () => TripsService.list({ publisherId: user!.id }).then((r) => r.json()),
   );
 
   // Fetch incoming requests
   const { data: incomingRequests = [], isLoading: incomingLoading } = useSWR(
     user ? swrKeys.requests.incoming() : null,
-    () => RequestsService.incoming().then(r => r.json())
+    () => RequestsService.incoming().then((r) => r.json()),
   );
 
   // Fetch outgoing requests
   const { data: outgoingRequests = [], isLoading: outgoingLoading } = useSWR(
     user ? swrKeys.requests.outgoing() : null,
-    () => RequestsService.outgoing().then(r => r.json())
+    () => RequestsService.outgoing().then((r) => r.json()),
   );
 
   // Fetch chats
   const { data: chats = [], isLoading: chatsLoading } = useSWR(
     user ? swrKeys.chat.list() : null,
-    () => ChatService.list().then(r => r.json())
+    () => ChatService.list().then((r) => r.json()),
   );
 
   // Calculate stats
-  const activeTrips = userTrips.filter((trip: any) => trip.status === 'ACTIVE').length;
-  const pendingRequests = incomingRequests.filter((req: any) => req.status === 'PENDING').length;
-  const unreadMessages = chats.filter((chat: any) => 
-    chat.lastMessage && chat.lastMessage.senderId !== user?.id
+  const activeTrips = userTrips.filter(
+    (trip: any) => trip.status === 'ACTIVE',
+  ).length;
+  const pendingRequests = incomingRequests.filter(
+    (req: any) => req.status === 'PENDING',
+  ).length;
+  const unreadMessages = chats.filter(
+    (chat: any) => chat.lastMessage && chat.lastMessage.senderId !== user?.id,
   ).length;
 
   // Get upcoming trips (next 7 days)
@@ -63,9 +73,16 @@ export default function DashboardPage() {
       const departureDate = new Date(trip.departureAt);
       const now = new Date();
       const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      return departureDate > now && departureDate <= weekFromNow && trip.status === 'ACTIVE';
+      return (
+        departureDate > now &&
+        departureDate <= weekFromNow &&
+        trip.status === 'ACTIVE'
+      );
     })
-    .sort((a: any, b: any) => new Date(a.departureAt).getTime() - new Date(b.departureAt).getTime())
+    .sort(
+      (a: any, b: any) =>
+        new Date(a.departureAt).getTime() - new Date(b.departureAt).getTime(),
+    )
     .slice(0, 3);
 
   // Get recent activity
@@ -75,21 +92,26 @@ export default function DashboardPage() {
       message: 'New request received',
       detail: `From ${req.applicant?.name || 'Unknown'}`,
       status: req.status,
-      time: req.createdAt
+      time: req.createdAt,
     })),
     ...chats.slice(0, 2).map((chat: any) => ({
       type: 'message',
       message: 'Message received',
       detail: `From ${chat.otherUser.name}`,
       status: 'unread',
-      time: chat.lastMessage?.createdAt || chat.updatedAt
-    }))
-  ].sort((a: any, b: any) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 3);
-  
+      time: chat.lastMessage?.createdAt || chat.updatedAt,
+    })),
+  ]
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.time).getTime() - new Date(a.time).getTime(),
+    )
+    .slice(0, 3);
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="border-primary h-32 w-32 animate-spin rounded-full border-b-2"></div>
       </div>
     );
   }
@@ -99,30 +121,34 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="bg-background min-h-screen">
+      <div className="container mx-auto space-y-8 px-4 py-8">
         {/* Welcome Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">
-            Welcome back, {user?.name}!
-          </h1>
+          <h1 className="text-3xl font-bold">Welcome back, {user?.name}!</h1>
           <p className="text-muted-foreground">
             Here's what's happening with your rides today
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Trips</CardTitle>
-              <Car className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Active Trips
+              </CardTitle>
+              <Car className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {tripsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : activeTrips}
+                {tripsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  activeTrips
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {userTrips.length} total trips
               </p>
             </CardContent>
@@ -130,14 +156,20 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">
+                Pending Requests
+              </CardTitle>
+              <Users className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {incomingLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : pendingRequests}
+                {incomingLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  pendingRequests
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {incomingRequests.length} total requests
               </p>
             </CardContent>
@@ -146,11 +178,13 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Your Rating</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
+              <Star className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{user?.averageRating?.toFixed(1) || 'N/A'}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-2xl font-bold">
+                {user?.averageRating?.toFixed(1) || 'N/A'}
+              </div>
+              <p className="text-muted-foreground text-xs">
                 {user?.ratingCount || 0} reviews
               </p>
             </CardContent>
@@ -159,13 +193,17 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageCircle className="h-4 w-4 text-muted-foreground" />
+              <MessageCircle className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {chatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : chats.length}
+                {chatsLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  chats.length
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {unreadMessages} unread
               </p>
             </CardContent>
@@ -173,7 +211,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -185,25 +223,25 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 <Button asChild className="h-20 flex-col">
                   <Link href={ROUTES.PUBLISH}>
-                    <Car className="h-6 w-6 mb-2" />
+                    <Car className="mb-2 h-6 w-6" />
                     Publish Trip
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="h-20 flex-col">
                   <Link href={ROUTES.TRIPS}>
-                    <MapPin className="h-6 w-6 mb-2" />
+                    <MapPin className="mb-2 h-6 w-6" />
                     Find Trips
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="h-20 flex-col">
                   <Link href={ROUTES.REQUESTS}>
-                    <Users className="h-6 w-6 mb-2" />
+                    <Users className="mb-2 h-6 w-6" />
                     Manage Requests
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="h-20 flex-col">
                   <Link href={ROUTES.CHAT}>
-                    <MessageCircle className="h-6 w-6 mb-2" />
+                    <MessageCircle className="mb-2 h-6 w-6" />
                     Messages
                   </Link>
                 </Button>
@@ -221,25 +259,43 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 {recentActivity.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No recent activity</p>
+                  <div className="py-4 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      No recent activity
+                    </p>
                   </div>
                 ) : (
                   recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        activity.type === 'request' ? 'bg-blue-500' : 'bg-yellow-500'
-                      }`}></div>
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          activity.type === 'request'
+                            ? 'bg-blue-500'
+                            : 'bg-yellow-500'
+                        }`}
+                      ></div>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{activity.message}</p>
-                        <p className="text-xs text-muted-foreground">{activity.detail}</p>
+                        <p className="text-sm font-medium">
+                          {activity.message}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {activity.detail}
+                        </p>
                       </div>
-                      <Badge variant={
-                        activity.status === 'PENDING' ? 'outline' : 
-                        activity.status === 'unread' ? 'secondary' : 'default'
-                      }>
-                        {activity.status === 'PENDING' ? 'Pending' : 
-                         activity.status === 'unread' ? 'Unread' : activity.status}
+                      <Badge
+                        variant={
+                          activity.status === 'PENDING'
+                            ? 'outline'
+                            : activity.status === 'unread'
+                              ? 'secondary'
+                              : 'default'
+                        }
+                      >
+                        {activity.status === 'PENDING'
+                          ? 'Pending'
+                          : activity.status === 'unread'
+                            ? 'Unread'
+                            : activity.status}
                       </Badge>
                     </div>
                   ))
@@ -260,29 +316,44 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {upcomingTrips.length === 0 ? (
-                <div className="text-center py-8">
-                  <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">No upcoming trips</p>
-                  <p className="text-xs text-muted-foreground">Publish a trip to get started</p>
+                <div className="py-8 text-center">
+                  <Car className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                  <p className="text-muted-foreground text-sm">
+                    No upcoming trips
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Publish a trip to get started
+                  </p>
                 </div>
               ) : (
                 upcomingTrips.map((trip: any) => (
-                  <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={trip.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Car className="h-6 w-6 text-primary" />
+                      <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-lg">
+                        <Car className="text-primary h-6 w-6" />
                       </div>
                       <div>
-                        <p className="font-medium">{trip.originName} → {trip.destinationName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(trip.departureAt).toLocaleDateString()} at {new Date(trip.departureAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <p className="font-medium">
+                          {trip.originName} → {trip.destinationName}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {new Date(trip.departureAt).toLocaleDateString()} at{' '}
+                          {new Date(trip.departureAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant="outline">{trip.capacity} seats</Badge>
                       <Button size="sm" variant="outline" asChild>
-                        <Link href={`${ROUTES.TRIPS}/${trip.id}`}>View Details</Link>
+                        <Link href={`${ROUTES.TRIPS}/${trip.id}`}>
+                          View Details
+                        </Link>
                       </Button>
                     </div>
                   </div>

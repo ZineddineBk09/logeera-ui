@@ -7,6 +7,7 @@ This guide provides a comprehensive migration path from the current NestJS backe
 ### Current NestJS Backend Architecture
 
 **Core Modules:**
+
 - **Auth Module**: JWT authentication with refresh tokens, role-based access control (RBAC)
 - **Users Module**: User management with individual/company types, ratings system
 - **Trips Module**: PostGIS-powered trip publishing with proximity search
@@ -17,6 +18,7 @@ This guide provides a comprehensive migration path from the current NestJS backe
 - **Health Module**: Health checks and Prometheus metrics
 
 **Key Technologies:**
+
 - NestJS framework with TypeScript
 - PostgreSQL + PostGIS for geospatial data
 - Prisma for database operations
@@ -125,7 +127,14 @@ export const initializeDatabase = async () => {
 Create `lib/entities/User.ts`:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'Prisma';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'Prisma';
 import { Trip } from './Trip';
 import { Request } from './Request';
 import { Rating } from './Rating';
@@ -187,16 +196,16 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Trip, trip => trip.publisher)
+  @OneToMany(() => Trip, (trip) => trip.publisher)
   publishedTrips: Trip[];
 
-  @OneToMany(() => Request, request => request.applicant)
+  @OneToMany(() => Request, (request) => request.applicant)
   requests: Request[];
 
-  @OneToMany(() => Rating, rating => rating.ratedUser)
+  @OneToMany(() => Rating, (rating) => rating.ratedUser)
   receivedRatings: Rating[];
 
-  @OneToMany(() => Rating, rating => rating.reviewerUser)
+  @OneToMany(() => Rating, (rating) => rating.reviewerUser)
   givenRatings: Rating[];
 }
 ```
@@ -204,7 +213,16 @@ export class User {
 Create `lib/entities/Trip.ts`:
 
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'Prisma';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'Prisma';
 import { User } from './User';
 import { Request } from './Request';
 
@@ -263,7 +281,7 @@ export class Trip {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Request, request => request.trip)
+  @OneToMany(() => Request, (request) => request.trip)
   requests: Request[];
 }
 ```
@@ -316,10 +334,12 @@ export interface AuthenticatedRequest extends NextRequest {
   user?: JWTPayload;
 }
 
-export const withAuth = (handler: (req: AuthenticatedRequest) => Promise<NextResponse>) => {
+export const withAuth = (
+  handler: (req: AuthenticatedRequest) => Promise<NextResponse>,
+) => {
   return async (req: NextRequest) => {
     const authHeader = req.headers.get('authorization');
-    
+
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -373,15 +393,21 @@ export async function POST(req: NextRequest) {
 
     await AppDataSource.initialize();
     const userRepository = AppDataSource.getRepository(User);
-    
+
     const user = await userRepository.findOne({ where: { email } });
     if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 },
+      );
     }
 
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 },
+      );
     }
 
     const payload = { userId: user.id, email: user.email, role: user.role };
@@ -389,7 +415,7 @@ export async function POST(req: NextRequest) {
     const refreshToken = signRefreshToken(payload);
 
     const response = NextResponse.json({ accessToken });
-    
+
     response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'lax',
@@ -400,7 +426,10 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -438,7 +467,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 409 },
+      );
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
@@ -449,19 +481,23 @@ export async function POST(req: NextRequest) {
 
     const savedUser = await userRepository.save(user);
 
-    const payload = { userId: savedUser.id, email: savedUser.email, role: savedUser.role };
+    const payload = {
+      userId: savedUser.id,
+      email: savedUser.email,
+      role: savedUser.role,
+    };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
-    const response = NextResponse.json({ 
-      accessToken, 
-      user: { 
-        id: savedUser.id, 
-        name: savedUser.name, 
-        email: savedUser.email 
-      } 
+    const response = NextResponse.json({
+      accessToken,
+      user: {
+        id: savedUser.id,
+        name: savedUser.name,
+        email: savedUser.email,
+      },
     });
-    
+
     response.cookies.set('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'lax',
@@ -473,9 +509,15 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -492,10 +534,20 @@ async function handler(req: NextRequest) {
   try {
     await AppDataSource.initialize();
     const userRepository = AppDataSource.getRepository(User);
-    
+
     const user = await userRepository.findOne({
       where: { id: req.user!.userId },
-      select: ['id', 'name', 'email', 'phoneNumber', 'type', 'status', 'role', 'averageRating', 'ratingCount'],
+      select: [
+        'id',
+        'name',
+        'email',
+        'phoneNumber',
+        'type',
+        'status',
+        'role',
+        'averageRating',
+        'ratingCount',
+      ],
     });
 
     if (!user) {
@@ -504,7 +556,10 @@ async function handler(req: NextRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -550,9 +605,15 @@ async function createTrip(req: NextRequest) {
     return NextResponse.json(savedTrip, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -574,22 +635,29 @@ async function getTrips(req: NextRequest) {
     if (q) {
       query = query.andWhere(
         '(trip.originName ILIKE :q OR trip.destinationName ILIKE :q)',
-        { q: `%${q}%` }
+        { q: `%${q}%` },
       );
     }
 
     if (departureDate) {
-      query = query.andWhere('DATE(trip.departureAt) = :date', { date: departureDate });
+      query = query.andWhere('DATE(trip.departureAt) = :date', {
+        date: departureDate,
+      });
     }
 
     if (vehicleType) {
-      query = query.andWhere('trip.vehicleType = :vehicleType', { vehicleType });
+      query = query.andWhere('trip.vehicleType = :vehicleType', {
+        vehicleType,
+      });
     }
 
     const trips = await query.getMany();
     return NextResponse.json(trips);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -633,16 +701,22 @@ export async function GET(req: NextRequest) {
           ST_SetSRID(ST_MakePoint(:lon, :lat), 4326),
           :radius
         )`,
-        { lon, lat, radius: radiusMeters }
+        { lon, lat, radius: radiusMeters },
       )
       .getMany();
 
     return NextResponse.json(trips);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -678,7 +752,10 @@ async function createRequest(req: NextRequest) {
     }
 
     if (trip.publisherId === req.user!.userId) {
-      return NextResponse.json({ error: 'Cannot request your own trip' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot request your own trip' },
+        { status: 400 },
+      );
     }
 
     const existingRequest = await requestRepository.findOne({
@@ -686,7 +763,10 @@ async function createRequest(req: NextRequest) {
     });
 
     if (existingRequest) {
-      return NextResponse.json({ error: 'Request already exists' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'Request already exists' },
+        { status: 409 },
+      );
     }
 
     const request = requestRepository.create({
@@ -699,9 +779,15 @@ async function createRequest(req: NextRequest) {
     return NextResponse.json(savedRequest, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -720,17 +806,27 @@ async function getRequests(req: NextRequest) {
       .leftJoinAndSelect('trip.publisher', 'publisher');
 
     if (type === 'incoming') {
-      query = query.where('trip.publisherId = :userId', { userId: req.user!.userId });
+      query = query.where('trip.publisherId = :userId', {
+        userId: req.user!.userId,
+      });
     } else if (type === 'outgoing') {
-      query = query.where('request.applicantId = :userId', { userId: req.user!.userId });
+      query = query.where('request.applicantId = :userId', {
+        userId: req.user!.userId,
+      });
     } else {
-      return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid type parameter' },
+        { status: 400 },
+      );
     }
 
     const requests = await query.getMany();
     return NextResponse.json(requests);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -772,7 +868,10 @@ import { NextApiResponseServerIO } from '@/lib/socket/server';
 import { Server as SocketIOServer } from 'socket.io';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 
-export default function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponseServerIO,
+) {
   if (res.socket.server.io) {
     console.log('Socket is already running');
   } else {
@@ -792,7 +891,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
       if (!token) {
         return next(new Error('Authentication error'));
       }
-      
+
       try {
         const user = verifyAccessToken(token);
         socket.data.user = user;
@@ -809,17 +908,20 @@ export default function handler(req: NextApiRequest, res: NextApiResponseServerI
         socket.join(`chat-${chatId}`);
       });
 
-      socket.on('message', async (data: { chatId: string; content: string }) => {
-        // Save message to database
-        // Broadcast to chat room
-        socket.to(`chat-${data.chatId}`).emit('message', {
-          id: Date.now().toString(),
-          chatId: data.chatId,
-          senderId: socket.data.user.userId,
-          content: data.content,
-          createdAt: new Date(),
-        });
-      });
+      socket.on(
+        'message',
+        async (data: { chatId: string; content: string }) => {
+          // Save message to database
+          // Broadcast to chat room
+          socket.to(`chat-${data.chatId}`).emit('message', {
+            id: Date.now().toString(),
+            chatId: data.chatId,
+            senderId: socket.data.user.userId,
+            content: data.content,
+            createdAt: new Date(),
+          });
+        },
+      );
 
       socket.on('disconnect', () => {
         console.log('Client disconnected');
@@ -844,10 +946,19 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(request: NextRequest) {
   // CORS headers
   const response = NextResponse.next();
-  
-  response.headers.set('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || 'http://localhost:3000');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  response.headers.set(
+    'Access-Control-Allow-Origin',
+    process.env.CORS_ORIGIN || 'http://localhost:3000',
+  );
+  response.headers.set(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, OPTIONS',
+  );
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization',
+  );
   response.headers.set('Access-Control-Allow-Credentials', 'true');
 
   // Security headers
@@ -872,21 +983,25 @@ import { NextRequest } from 'next/server';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-export function rateLimit(identifier: string, limit: number = 100, windowMs: number = 60000) {
+export function rateLimit(
+  identifier: string,
+  limit: number = 100,
+  windowMs: number = 60000,
+) {
   const now = Date.now();
   const windowStart = now - windowMs;
-  
+
   const record = rateLimitMap.get(identifier);
-  
+
   if (!record || record.resetTime < now) {
     rateLimitMap.set(identifier, { count: 1, resetTime: now + windowMs });
     return true;
   }
-  
+
   if (record.count >= limit) {
     return false;
   }
-  
+
   record.count++;
   return true;
 }
@@ -912,7 +1027,7 @@ export async function GET() {
   try {
     await AppDataSource.initialize();
     await AppDataSource.query('SELECT 1');
-    
+
     return NextResponse.json({
       status: 'ok',
       uptime: process.uptime(),
@@ -921,7 +1036,7 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json(
       { status: 'error', error: 'Database connection failed' },
-      { status: 503 }
+      { status: 503 },
     );
   }
 }
@@ -968,7 +1083,7 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: HeadersInit = {
@@ -997,7 +1112,9 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const error = await response
+        .json()
+        .catch(() => ({ error: 'Unknown error' }));
       throw new Error(error.error || 'Request failed');
     }
 
@@ -1055,7 +1172,9 @@ class ApiClient {
   }
 
   async getNearbyTrips(lon: number, lat: number, radiusMeters = 5000) {
-    return this.request(`/trips/nearby?lon=${lon}&lat=${lat}&radiusMeters=${radiusMeters}`);
+    return this.request(
+      `/trips/nearby?lon=${lon}&lat=${lat}&radiusMeters=${radiusMeters}`,
+    );
   }
 
   // Request methods
@@ -1156,9 +1275,18 @@ const nextConfig = {
       {
         source: '/api/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: process.env.CORS_ORIGIN || 'http://localhost:3000' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: process.env.CORS_ORIGIN || 'http://localhost:3000',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
         ],
       },

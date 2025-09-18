@@ -6,23 +6,26 @@ async function handler(req: AuthenticatedRequest) {
   try {
     const requests = await prisma.request.findMany({
       where: {
-        applicantId: req.user!.userId
+        applicantId: req.user!.userId,
       },
       include: {
         trip: {
           include: {
-            publisher: true
-          }
-        }
+            publisher: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     return NextResponse.json(requests);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

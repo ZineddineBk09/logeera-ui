@@ -18,7 +18,9 @@ export const signAccessToken = async (payload: JWTPayload): Promise<string> => {
     .sign(secret);
 };
 
-export const signRefreshToken = async (payload: JWTPayload): Promise<string> => {
+export const signRefreshToken = async (
+  payload: JWTPayload,
+): Promise<string> => {
   const secret = getSecret(process.env.JWT_REFRESH_SECRET!);
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -33,7 +35,9 @@ export const verifyAccessToken = async (token: string): Promise<JWTPayload> => {
   return payload as JWTPayload;
 };
 
-export const verifyRefreshToken = async (token: string): Promise<JWTPayload> => {
+export const verifyRefreshToken = async (
+  token: string,
+): Promise<JWTPayload> => {
   const secret = getSecret(process.env.JWT_REFRESH_SECRET!);
   const { payload } = await jwtVerify(token, secret);
   return payload as JWTPayload;

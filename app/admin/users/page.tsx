@@ -1,11 +1,10 @@
-import { AdminUsersPageComponent } from "@/components/admin/admin-users-page";
-import { AdminLayout } from "@/components/admin/admin-layout";
+import { AdminUsersPage } from '@/components/admin/admin-users-page';
+import { AdminLayout } from '@/components/admin/admin-layout';
 
-export default function AdminUsersPage() {
+export default function UsersPage() {
   return (
     <AdminLayout>
-      <AdminUsersPageComponent />
+      <AdminUsersPage />
     </AdminLayout>
   );
 }
-

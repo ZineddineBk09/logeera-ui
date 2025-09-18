@@ -117,7 +117,7 @@ async function seed() {
     for (let i = 0; i < trips.length; i++) {
       const tripData = trips[i];
       const publisher = createdUsers[i % createdUsers.length];
-      
+
       const trip = await prisma.trip.create({
         data: {
           ...tripData,
@@ -125,7 +125,9 @@ async function seed() {
         },
       });
       createdTrips.push(trip);
-      console.log(`✅ Created trip: ${trip.originName} → ${trip.destinationName}`);
+      console.log(
+        `✅ Created trip: ${trip.originName} → ${trip.destinationName}`,
+      );
     }
 
     // Create a simple chat
@@ -139,7 +141,7 @@ async function seed() {
 
     // Add some messages
     const messages = [
-      'Hi! I\'m interested in your trip.',
+      "Hi! I'm interested in your trip.",
       'Great! What time works for you?',
       '8 AM would be perfect.',
     ];
@@ -183,14 +185,13 @@ async function seed() {
     console.log(`🚗 Trips: ${createdTrips.length}`);
     console.log(`💬 Chats: 1`);
     console.log(`⭐ Ratings: 1`);
-    
+
     console.log('\n🔑 Test Credentials:');
     console.log('Email: john.doe@example.com | Password: password123');
     console.log('Email: jane.smith@example.com | Password: password123');
     console.log('Email: admin@logeera.com | Password: password123');
-    
-    console.log('\n🚀 You can now start testing the API endpoints!');
 
+    console.log('\n🚀 You can now start testing the API endpoints!');
   } catch (error) {
     console.error('❌ Seeding failed:', error);
     throw error;
@@ -200,8 +201,7 @@ async function seed() {
 }
 
 // Run the seed function
-seed()
-  .catch((error) => {
-    console.error('💥 Seed script failed:', error);
-    process.exit(1);
-  });
+seed().catch((error) => {
+  console.error('💥 Seed script failed:', error);
+  process.exit(1);
+});

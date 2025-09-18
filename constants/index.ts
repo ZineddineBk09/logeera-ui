@@ -5,7 +5,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   HELP: '/help',
-  
+
   // Protected routes
   DASHBOARD: '/dashboard',
   TRIPS: '/trips',
@@ -15,7 +15,7 @@ export const ROUTES = {
   PROFILE: '/profile',
   REVIEWS: '/reviews',
   SETTINGS: '/settings',
-  
+
   // Admin routes
   ADMIN: '/admin',
   ADMIN_USERS: '/admin/users',
@@ -35,29 +35,29 @@ export const API_ENDPOINTS = {
   AUTH_REFRESH: '/api/auth/refresh',
   AUTH_LOGOUT: '/api/auth/logout',
   AUTH_CHANGE_PASSWORD: '/api/auth/change-password',
-  
+
   // Trips
   TRIPS: '/api/trips',
   TRIPS_NEARBY: '/api/trips/nearby',
   TRIPS_COMPLETE: (id: string) => `/api/trips/${id}/complete`,
-  
+
   // Requests
   REQUESTS: '/api/requests',
   REQUESTS_INCOMING: '/api/requests/incoming',
   REQUESTS_OUTGOING: '/api/requests/outgoing',
   REQUESTS_STATUS: (id: string) => `/api/requests/${id}/status`,
-  
+
   // Chat
   CHAT_BETWEEN: '/api/chat/between',
   CHAT_MESSAGES: (chatId: string) => `/api/chat/${chatId}/messages`,
-  
+
   // Ratings
   RATINGS: '/api/ratings',
-  
+
   // Health
   HEALTH: '/api/health',
   METRICS: '/api/metrics',
-  
+
   // Admin
   ADMIN_DASHBOARD: '/api/admin/dashboard',
   ADMIN_USERS: '/api/admin/users',
@@ -80,20 +80,20 @@ export const APP_CONFIG = {
   DESCRIPTION: 'Modern ride-sharing platform connecting travelers and drivers',
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000',
   SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000',
-  
+
   // Auth
   ACCESS_TOKEN_KEY: 'accessToken',
   REFRESH_TOKEN_KEY: 'refreshToken',
   TOKEN_EXPIRY_BUFFER: 5 * 60 * 1000, // 5 minutes
-  
+
   // Pagination
   DEFAULT_PAGE_SIZE: 10,
   MAX_PAGE_SIZE: 100,
-  
+
   // File uploads
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
   ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
-  
+
   // Trip statuses
   TRIP_STATUS: {
     PUBLISHED: 'PUBLISHED',
@@ -101,7 +101,7 @@ export const APP_CONFIG = {
     COMPLETED: 'COMPLETED',
     CANCELLED: 'CANCELLED',
   },
-  
+
   // Request statuses
   REQUEST_STATUS: {
     PENDING: 'PENDING',
@@ -109,20 +109,20 @@ export const APP_CONFIG = {
     REJECTED: 'REJECTED',
     CANCELLED: 'CANCELLED',
   },
-  
+
   // User roles
   USER_ROLES: {
     USER: 'USER',
     ADMIN: 'ADMIN',
     MODERATOR: 'MODERATOR',
   },
-  
+
   // User types
   USER_TYPES: {
     INDIVIDUAL: 'INDIVIDUAL',
     COMPANY: 'COMPANY',
   },
-  
+
   // Vehicle types
   VEHICLE_TYPES: {
     CAR: 'CAR',
@@ -162,7 +162,4 @@ export const PUBLIC_ROUTES = [
 ] as const;
 
 // Routes that redirect to dashboard if user is already authenticated
-export const AUTH_REDIRECT_ROUTES = [
-  ROUTES.LOGIN,
-  ROUTES.REGISTER,
-] as const;
+export const AUTH_REDIRECT_ROUTES = [ROUTES.LOGIN, ROUTES.REGISTER] as const;

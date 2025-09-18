@@ -41,9 +41,11 @@ async function unblockUser(req: AuthenticatedRequest) {
     });
   } catch (error) {
     console.error('Error unblocking user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
 export const POST = withAuth(unblockUser);
-

@@ -1,13 +1,13 @@
 export const mapStyles = [
   {
-    featureType: "all",
-    elementType: "labels.text.fill",
+    featureType: 'all',
+    elementType: 'labels.text.fill',
     stylers: [
       {
         saturation: 36,
       },
       {
-        color: "#333333",
+        color: '#333333',
       },
       {
         lightness: 40,
@@ -15,14 +15,14 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "all",
-    elementType: "labels.text.stroke",
+    featureType: 'all',
+    elementType: 'labels.text.stroke',
     stylers: [
       {
-        visibility: "on",
+        visibility: 'on',
       },
       {
-        color: "#ffffff",
+        color: '#ffffff',
       },
       {
         lightness: 16,
@@ -30,20 +30,20 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "all",
-    elementType: "labels.icon",
+    featureType: 'all',
+    elementType: 'labels.icon',
     stylers: [
       {
-        visibility: "off",
+        visibility: 'off',
       },
     ],
   },
   {
-    featureType: "administrative",
-    elementType: "geometry.fill",
+    featureType: 'administrative',
+    elementType: 'geometry.fill',
     stylers: [
       {
-        color: "#fefefe",
+        color: '#fefefe',
       },
       {
         lightness: 20,
@@ -51,11 +51,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "administrative",
-    elementType: "geometry.stroke",
+    featureType: 'administrative',
+    elementType: 'geometry.stroke',
     stylers: [
       {
-        color: "#fefefe",
+        color: '#fefefe',
       },
       {
         lightness: 17,
@@ -66,11 +66,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "landscape",
-    elementType: "geometry",
+    featureType: 'landscape',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#f5f5f5",
+        color: '#f5f5f5',
       },
       {
         lightness: 20,
@@ -78,11 +78,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "poi",
-    elementType: "geometry",
+    featureType: 'poi',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#f5f5f5",
+        color: '#f5f5f5',
       },
       {
         lightness: 21,
@@ -90,11 +90,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "poi.park",
-    elementType: "geometry",
+    featureType: 'poi.park',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#dedede",
+        color: '#dedede',
       },
       {
         lightness: 21,
@@ -102,11 +102,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "road.highway",
-    elementType: "geometry.fill",
+    featureType: 'road.highway',
+    elementType: 'geometry.fill',
     stylers: [
       {
-        color: "#ffffff",
+        color: '#ffffff',
       },
       {
         lightness: 17,
@@ -114,11 +114,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
+    featureType: 'road.highway',
+    elementType: 'geometry.stroke',
     stylers: [
       {
-        color: "#ffffff",
+        color: '#ffffff',
       },
       {
         lightness: 29,
@@ -129,11 +129,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "road.arterial",
-    elementType: "geometry",
+    featureType: 'road.arterial',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#ffffff",
+        color: '#ffffff',
       },
       {
         lightness: 18,
@@ -141,11 +141,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "road.local",
-    elementType: "geometry",
+    featureType: 'road.local',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#ffffff",
+        color: '#ffffff',
       },
       {
         lightness: 16,
@@ -153,11 +153,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "transit",
-    elementType: "geometry",
+    featureType: 'transit',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#f2f2f2",
+        color: '#f2f2f2',
       },
       {
         lightness: 19,
@@ -165,11 +165,11 @@ export const mapStyles = [
     ],
   },
   {
-    featureType: "water",
-    elementType: "geometry",
+    featureType: 'water',
+    elementType: 'geometry',
     stylers: [
       {
-        color: "#e9e9e9",
+        color: '#e9e9e9',
       },
       {
         lightness: 17,

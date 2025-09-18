@@ -1,5 +1,4 @@
-import { ChatService } from "@/lib/services";
-
+import { ChatService } from '@/lib/services';
 
 export interface LongPollingOptions {
   interval?: number; // Polling interval in milliseconds (default: 5000)
@@ -16,12 +15,7 @@ export class LongPollingService {
    * Start long polling for chat messages
    */
   startPolling(chatId: string, options: LongPollingOptions = {}) {
-    const {
-      interval = 5000,
-      maxRetries = 3,
-      onMessage,
-      onError
-    } = options;
+    const { interval = 5000, maxRetries = 3, onMessage, onError } = options;
 
     // Clear existing polling for this chat
     this.stopPolling(chatId);
@@ -30,10 +24,10 @@ export class LongPollingService {
       try {
         const response = await ChatService.messages(chatId);
         const messages = await response.json();
-        
+
         // Reset retry count on successful poll
         this.retryCounts.set(chatId, 0);
-        
+
         // Call onMessage callback if provided
         if (onMessage && messages.length > 0) {
           // Only call for new messages (you might want to implement message deduplication)
@@ -41,20 +35,22 @@ export class LongPollingService {
         }
       } catch (error) {
         console.error(`Long polling error for chat ${chatId}:`, error);
-        
+
         // Increment retry count
         const currentRetries = this.retryCounts.get(chatId) || 0;
         const newRetries = currentRetries + 1;
         this.retryCounts.set(chatId, newRetries);
-        
+
         // Call onError callback if provided
         if (onError) {
           onError(error as Error);
         }
-        
+
         // Stop polling if max retries reached
         if (newRetries >= maxRetries) {
-          console.error(`Max retries reached for chat ${chatId}, stopping polling`);
+          console.error(
+            `Max retries reached for chat ${chatId}, stopping polling`,
+          );
           this.stopPolling(chatId);
           return;
         }
@@ -63,12 +59,14 @@ export class LongPollingService {
 
     // Start polling immediately
     poll();
-    
+
     // Set up interval for subsequent polls
     const intervalId = setInterval(poll, interval);
     this.intervals.set(chatId, intervalId);
-    
-    console.log(`Started long polling for chat ${chatId} with ${interval}ms interval`);
+
+    console.log(
+      `Started long polling for chat ${chatId} with ${interval}ms interval`,
+    );
   }
 
   /**

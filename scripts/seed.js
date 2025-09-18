@@ -161,7 +161,8 @@ const ratings = [
 
 const messages = [
   {
-    content: 'Hi! I\'m interested in your trip to Palo Alto. What time are you planning to leave?',
+    content:
+      "Hi! I'm interested in your trip to Palo Alto. What time are you planning to leave?",
   },
   {
     content: 'I can leave around 8 AM. Does that work for you?',
@@ -170,10 +171,11 @@ const messages = [
     content: 'Perfect! That works great for me. Where should I meet you?',
   },
   {
-    content: 'I can pick you up at the BART station. I\'ll send you the exact location.',
+    content:
+      "I can pick you up at the BART station. I'll send you the exact location.",
   },
   {
-    content: 'Sounds good! I\'ll be there at 7:45 AM. Thanks!',
+    content: "Sounds good! I'll be there at 7:45 AM. Thanks!",
   },
   {
     content: 'Great! See you tomorrow morning.',
@@ -214,7 +216,7 @@ async function seed() {
     for (let i = 0; i < trips.length; i++) {
       const tripData = trips[i];
       const publisher = createdUsers[i % createdUsers.length]; // Distribute trips among users
-      
+
       const trip = await prisma.trip.create({
         data: {
           ...tripData,
@@ -222,7 +224,9 @@ async function seed() {
         },
       });
       createdTrips.push(trip);
-      console.log(`✅ Created trip: ${trip.originName} → ${trip.destinationName}`);
+      console.log(
+        `✅ Created trip: ${trip.originName} → ${trip.destinationName}`,
+      );
     }
 
     // Create requests
@@ -232,7 +236,7 @@ async function seed() {
       const requestData = requests[i];
       const trip = createdTrips[i % createdTrips.length];
       const applicant = createdUsers[(i + 1) % createdUsers.length]; // Different user as applicant
-      
+
       // Don't create request if applicant is the same as publisher
       if (applicant.id === trip.publisherId) {
         continue;
@@ -252,7 +256,7 @@ async function seed() {
     // Create chats and messages
     console.log('💬 Creating chats and messages...');
     const createdChats = [];
-    
+
     // Create chat between first two users
     const chat1 = await prisma.chat.create({
       data: {
@@ -266,7 +270,7 @@ async function seed() {
     for (let i = 0; i < messages.length; i++) {
       const messageData = messages[i];
       const senderId = i % 2 === 0 ? createdUsers[0].id : createdUsers[1].id; // Alternate senders
-      
+
       await prisma.message.create({
         data: {
           ...messageData,
@@ -295,7 +299,7 @@ async function seed() {
 
     for (let i = 0; i < chat2Messages.length; i++) {
       const senderId = i % 2 === 0 ? createdUsers[1].id : createdUsers[2].id;
-      
+
       await prisma.message.create({
         data: {
           content: chat2Messages[i],
@@ -312,7 +316,7 @@ async function seed() {
       const ratingData = ratings[i];
       const ratedUser = createdUsers[i % createdUsers.length];
       const reviewerUser = createdUsers[(i + 1) % createdUsers.length];
-      
+
       // Don't create rating if reviewer is the same as rated user
       if (reviewerUser.id === ratedUser.id) {
         continue;
@@ -330,8 +334,9 @@ async function seed() {
       const userRatings = await prisma.rating.findMany({
         where: { ratedUserId: ratedUser.id },
       });
-      const averageRating = userRatings.reduce((sum, r) => sum + r.value, 0) / userRatings.length;
-      
+      const averageRating =
+        userRatings.reduce((sum, r) => sum + r.value, 0) / userRatings.length;
+
       await prisma.user.update({
         where: { id: ratedUser.id },
         data: {
@@ -340,12 +345,14 @@ async function seed() {
         },
       });
 
-      console.log(`✅ Created rating: ${rating.value}/5 stars for ${ratedUser.name}`);
+      console.log(
+        `✅ Created rating: ${rating.value}/5 stars for ${ratedUser.name}`,
+      );
     }
 
     // Create some additional test data
     console.log('🔧 Creating additional test data...');
-    
+
     // Create a few more trips with different statuses
     const additionalTrips = [
       {
@@ -374,7 +381,9 @@ async function seed() {
 
     for (const tripData of additionalTrips) {
       await prisma.trip.create({ data: tripData });
-      console.log(`✅ Created additional trip: ${tripData.originName} → ${tripData.destinationName} (${tripData.status})`);
+      console.log(
+        `✅ Created additional trip: ${tripData.originName} → ${tripData.destinationName} (${tripData.status})`,
+      );
     }
 
     console.log('\n🎉 Database seeding completed successfully!');
@@ -384,15 +393,14 @@ async function seed() {
     console.log(`📋 Requests: ${createdRequests.length}`);
     console.log(`💬 Chats: ${createdChats.length}`);
     console.log(`⭐ Ratings: ${ratings.length}`);
-    
+
     console.log('\n🔑 Test Credentials:');
     console.log('Email: john.doe@example.com | Password: password123');
     console.log('Email: jane.smith@example.com | Password: password123');
     console.log('Email: admin@logeera.com | Password: password123');
     console.log('Email: moderator@logeera.com | Password: password123');
-    
-    console.log('\n🚀 You can now start testing the API endpoints!');
 
+    console.log('\n🚀 You can now start testing the API endpoints!');
   } catch (error) {
     console.error('❌ Seeding failed:', error);
     throw error;
@@ -402,8 +410,7 @@ async function seed() {
 }
 
 // Run the seed function
-seed()
-  .catch((error) => {
-    console.error('💥 Seed script failed:', error);
-    process.exit(1);
-  });
+seed().catch((error) => {
+  console.error('💥 Seed script failed:', error);
+  process.exit(1);
+});

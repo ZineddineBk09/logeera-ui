@@ -7,7 +7,10 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'Google Maps API key not configured' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Google Maps API key not configured' },
+        { status: 500 },
+      );
     }
 
     // Build the Google Distance Matrix API URL
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
     const response = await fetch(`${baseUrl}?${params}`, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     });
 
@@ -35,6 +38,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error calling Google Distance Matrix API:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }

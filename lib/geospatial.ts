@@ -29,11 +29,11 @@ export function parseWKT(wkt: string): Point {
  */
 export async function findTripsNearby(
   center: Point,
-  radiusMeters: number = 5000
+  radiusMeters: number = 5000,
 ) {
   try {
     const centerWKT = createWKT(center);
-    
+
     // Try PostGIS query first
     return await prisma.$queryRaw`
       SELECT 
@@ -53,7 +53,7 @@ export async function findTripsNearby(
     `;
   } catch (error) {
     console.log('PostGIS query failed, falling back to simple query:', error);
-    
+
     // Fallback: return all published trips if PostGIS fails
     return await prisma.trip.findMany({
       where: { status: 'PUBLISHED' },
@@ -63,10 +63,10 @@ export async function findTripsNearby(
             name: true,
             email: true,
             averageRating: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: { departureAt: 'asc' }
+      orderBy: { departureAt: 'asc' },
     });
   }
 }
@@ -74,17 +74,20 @@ export async function findTripsNearby(
 /**
  * Calculate distance between two points in meters
  */
-export async function calculateDistance(point1: Point, point2: Point): Promise<number> {
+export async function calculateDistance(
+  point1: Point,
+  point2: Point,
+): Promise<number> {
   const wkt1 = createWKT(point1);
   const wkt2 = createWKT(point2);
-  
+
   const result = await prisma.$queryRaw<[{ st_distance: number }]>`
     SELECT ST_Distance(
       ST_GeomFromText(${wkt1}, 4326)::geography,
       ST_GeomFromText(${wkt2}, 4326)::geography
     ) as st_distance
   `;
-  
+
   return result[0].st_distance;
 }
 

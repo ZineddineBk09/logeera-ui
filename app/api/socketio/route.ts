@@ -8,19 +8,19 @@ import { prisma } from '@/lib/database';
 // or use a different approach for Socket.IO with Next.js App Router
 
 export async function GET(req: NextRequest) {
-  return new Response('Socket.IO endpoint - Custom server required', { 
+  return new Response('Socket.IO endpoint - Custom server required', {
     status: 200,
     headers: {
-      'Content-Type': 'text/plain'
-    }
+      'Content-Type': 'text/plain',
+    },
   });
 }
 
 export async function POST(req: NextRequest) {
-  return new Response('Socket.IO endpoint - Custom server required', { 
+  return new Response('Socket.IO endpoint - Custom server required', {
     status: 200,
     headers: {
-      'Content-Type': 'text/plain'
-    }
+      'Content-Type': 'text/plain',
+    },
   });
 }

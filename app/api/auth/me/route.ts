@@ -16,6 +16,7 @@ async function handler(req: AuthenticatedRequest) {
         role: true,
         averageRating: true,
         ratingCount: true,
+        createdAt: true,
       },
     });
 
@@ -25,7 +26,10 @@ async function handler(req: AuthenticatedRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
