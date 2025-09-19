@@ -46,6 +46,28 @@ enum RequestStatus {
   REJECTED
 }
 
+enum ContactCategory {
+  GENERAL
+  TECHNICAL
+  SAFETY
+  BILLING
+  FEEDBACK
+}
+
+enum ContactStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ContactPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model User {
   id              String     @id @default(uuid())
   name            String
@@ -69,6 +91,8 @@ model User {
   chatsAsUserA    Chat[]   @relation("ChatUserA")
   chatsAsUserB    Chat[]   @relation("ChatUserB")
   sentMessages    Message[]
+  blockedUsers    BlockedUser[] @relation("BlockerUser")
+  blockedByUsers  BlockedUser[] @relation("BlockedUser")
 
   @@map("users")
 }
@@ -92,6 +116,7 @@ model Trip {
   // Relations
   publisher       User       @relation(fields: [publisherId], references: [id])
   requests        Request[]
+  ratings         Rating[]
 
   @@map("trips")
 }
@@ -145,6 +170,7 @@ model Rating {
   id              String   @id @default(uuid())
   ratedUserId     String
   reviewerUserId  String
+  tripId          String?  // Optional: link rating to specific trip
   value           Int      // 1-5
   comment         String?
   createdAt       DateTime @default(now())
@@ -152,6 +178,41 @@ model Rating {
   // Relations
   ratedUser       User     @relation("RatedUser", fields: [ratedUserId], references: [id])
   reviewerUser    User     @relation("ReviewerUser", fields: [reviewerUserId], references: [id])
+  trip            Trip?    @relation(fields: [tripId], references: [id])
 
+  @@unique([reviewerUserId, tripId]) // Prevent duplicate ratings for same trip
   @@map("ratings")
+}
+
+model BlockedUser {
+  id          String   @id @default(uuid())
+  blockerId   String
+  blockedId   String
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  blocker     User     @relation("BlockerUser", fields: [blockerId], references: [id])
+  blocked     User     @relation("BlockedUser", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+  @@map("blocked_users")
+}
+
+model ContactSubmission {
+  id          String          @id @default(uuid())
+  name        String
+  email       String
+  subject     String
+  category    ContactCategory
+  message     String
+  status      ContactStatus   @default(OPEN)
+  priority    ContactPriority @default(MEDIUM)
+  response    String?
+  respondedBy String?
+  respondedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("contact_submissions")
 }

@@ -60,13 +60,22 @@ export async function middleware(request: NextRequest) {
       user = await verifyAccessToken(accessToken);
       console.log('user', user);
     } catch (error) {
+      console.log('Invalid token, clearing cookies:', error);
       // Token is invalid, will be handled below
     }
   }
 
   // Redirect authenticated users away from auth pages
   if (isAuthRedirectRoute && user) {
-    return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url));
+    console.log(`Redirecting authenticated user from ${pathname} to dashboard`);
+    
+    // Check if there's a redirect parameter to honor
+    const redirectParam = request.nextUrl.searchParams.get('redirect');
+    const redirectUrl = redirectParam && redirectParam !== pathname 
+      ? redirectParam 
+      : ROUTES.DASHBOARD;
+      
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   // Protect routes that require authentication
@@ -93,12 +102,13 @@ export const config = {
     '/trips/:path*',
     '/publish/:path*',
     '/requests/:path*',
+    '/chats/:path*',
     '/chat/:path*',
     '/profile/:path*',
     '/reviews/:path*',
     '/settings/:path*',
     '/admin/:path*',
-    // Auth redirect routes
+    // Auth redirect routes (important: these need to be exact matches)
     '/login',
     '/register',
   ],

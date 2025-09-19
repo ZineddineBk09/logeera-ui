@@ -5,14 +5,18 @@ import bcrypt from 'bcrypt';
 import { z } from 'zod';
 
 const changePasswordSchema = z.object({
-  oldPassword: z.string().min(8).max(128),
-  newPassword: z.string().min(8).max(128),
+  currentPassword: z.string().min(8, 'At least 8 characters'),
+  newPassword: z.string().min(8, 'At least 8 characters').max(128),
+  confirmPassword: z.string().min(8),
 });
 
 async function handler(req: AuthenticatedRequest) {
   try {
     const body = await req.json();
-    const { oldPassword, newPassword } = changePasswordSchema.parse(body);
+    const { currentPassword, newPassword, confirmPassword } = changePasswordSchema.parse(body);
+    console.log('currentPassword', currentPassword);
+    console.log('newPassword', newPassword);
+    console.log('confirmPassword', confirmPassword);
 
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
@@ -22,12 +26,19 @@ async function handler(req: AuthenticatedRequest) {
     }
 
     const isValidPassword = await bcrypt.compare(
-      oldPassword,
+      currentPassword,
       user.passwordHash,
     );
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Current password is incorrect' },
+        { status: 400 },
+      );
+    }
+
+    if (newPassword !== confirmPassword) {
+      return NextResponse.json(
+        { error: 'Passwords do not match' },
         { status: 400 },
       );
     }

@@ -30,6 +30,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { api } from '@/lib/api';
 
 interface Chat {
   id: string;
@@ -61,6 +72,9 @@ export function ChatsInterface() {
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [userToBlock, setUserToBlock] = useState<{ id: string; name: string } | null>(null);
+  const [isBlocking, setIsBlocking] = useState(false);
   const { socket, isConnected, connectionError } = useSocket();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -345,6 +359,48 @@ export function ChatsInterface() {
     }
   };
 
+  const handleBlockUser = (userId: string, userName: string) => {
+    setUserToBlock({ id: userId, name: userName });
+    setShowBlockDialog(true);
+  };
+
+  const confirmBlockUser = async () => {
+    if (!userToBlock) return;
+
+    setIsBlocking(true);
+    try {
+      const response = await api(`/api/users/${userToBlock.id}/block`, {
+        method: 'POST',
+        body: JSON.stringify({
+          reason: 'Blocked from chat',
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`${userToBlock.name} has been blocked`);
+        setShowBlockDialog(false);
+        setUserToBlock(null);
+        
+        // Remove the chat from the list or redirect to chat list
+        if (selectedChat?.otherUser.id === userToBlock.id) {
+          setSelectedChat(null);
+          router.push('/chats');
+        }
+        
+        // Refresh chats list
+        mutateChats();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to block user');
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -531,21 +587,24 @@ export function ChatsInterface() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon">
-                      <Phone className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Video className="h-4 w-4" />
-                    </Button>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger>
                         <Button variant="ghost" size="icon">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Profile</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(`/drivers/${selectedChat.otherUser.id}`)
+                          }
+                        >
+                          View Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600"
+                          onClick={() => handleBlockUser(selectedChat.otherUser.id, selectedChat.otherUser.name)}
+                        >
                           Block User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -649,6 +708,40 @@ export function ChatsInterface() {
           )}
         </Card>
       </div>
+
+      {/* Block User Dialog */}
+      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to block {userToBlock?.name}? This will prevent them from sending you messages and you won't see their messages anymore.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowBlockDialog(false);
+              setUserToBlock(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBlockUser}
+              disabled={isBlocking}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isBlocking ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Blocking...
+                </>
+              ) : (
+                'Block User'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

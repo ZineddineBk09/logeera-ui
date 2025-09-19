@@ -21,6 +21,7 @@ import {
 } from '@react-google-maps/api';
 import { mapStyles } from '@/lib/map-styles';
 import { extractCoordinates } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface MapViewProps {
   trips: Array<{
@@ -75,6 +76,7 @@ export function MapView({
     lng: number;
   } | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const { push } = useRouter();
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -343,7 +345,11 @@ export function MapView({
                     <Badge variant="secondary" className="text-xs">
                       {trip.vehicleType}
                     </Badge>
-                    <Button size="sm" className="w-full">
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={() => push(`/trips/${trip.id}`)}
+                    >
                       View Details
                     </Button>
                   </CardContent>
@@ -369,18 +375,6 @@ export function MapView({
           disabled={!userLocation}
         >
           <Locate className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="shadow-lg"
-          onClick={() => {
-            if (map) {
-              map.setZoom(15);
-            }
-          }}
-        >
-          <Navigation className="h-4 w-4" />
         </Button>
       </div>
     </div>

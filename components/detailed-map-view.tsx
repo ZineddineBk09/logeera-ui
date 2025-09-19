@@ -178,13 +178,6 @@ export function DetailedMapView({ trip }: DetailedMapViewProps) {
         )}
       </GoogleMap>
 
-      {/* Map Controls */}
-      <div className="absolute top-4 right-4 space-y-2">
-        <Button size="icon" variant="secondary" className="shadow-lg">
-          <Navigation className="h-4 w-4" />
-        </Button>
-      </div>
-
       {/* Trip Info Overlay */}
       {/* <div className="absolute right-4 bottom-4 left-4">
         <div className="bg-background/95 rounded-lg p-4 shadow-lg backdrop-blur-sm">

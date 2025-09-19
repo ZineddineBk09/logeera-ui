@@ -1,21 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Eye,
-  EyeOff,
-  Shield,
-  Smartphone,
-  Monitor,
-  AlertTriangle,
-  Trash2,
-} from 'lucide-react';
+import { Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -74,6 +64,7 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
     formState: { errors, isSubmitting },
     watch,
     reset,
+    setValue,
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -106,7 +97,8 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
       const res = await api('/api/auth/change-password', {
         method: 'POST',
         body: JSON.stringify({
-          oldPassword: values.currentPassword,
+          currentPassword: values.currentPassword,
+          confirmPassword: values.confirmPassword,
           newPassword: values.newPassword,
         }),
       });
@@ -164,6 +156,10 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
                   aria-invalid={!!errors.currentPassword}
                   {...register('currentPassword')}
                   className="pr-10"
+                  placeholder="Enter current password"
+                  value={watch('currentPassword')}
+                  onChange={(e) => setValue('currentPassword', e.target.value)}
+                  required
                 />
                 <button
                   type="button"
@@ -193,6 +189,10 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
                   aria-invalid={!!errors.newPassword}
                   {...register('newPassword')}
                   className="pr-10"
+                  placeholder="Enter new password"
+                  value={watch('newPassword')}
+                  onChange={(e) => setValue('newPassword', e.target.value)}
+                  required
                 />
                 <button
                   type="button"
@@ -276,6 +276,10 @@ export function ProfileSecurity({ user }: ProfileSecurityProps) {
                   aria-invalid={!!errors.confirmPassword}
                   {...register('confirmPassword')}
                   className="pr-10"
+                  placeholder="Enter confirm password"
+                  value={watch('confirmPassword')}
+                  onChange={(e) => setValue('confirmPassword', e.target.value)}
+                  required
                 />
                 <button
                   type="button"

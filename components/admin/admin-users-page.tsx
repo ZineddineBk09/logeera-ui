@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -92,7 +93,19 @@ export function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Form state for adding new user
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'COMPANY',
+    role: 'USER' as 'USER' | 'MODERATOR' | 'ADMIN',
+    status: 'PENDING' as 'PENDING' | 'TRUSTED' | 'BLOCKED',
+  });
 
   const limit = 10;
 
@@ -187,6 +200,44 @@ export function AdminUsersPage() {
     }
   };
 
+  const handleCreateUser = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Basic validation
+      if (!newUser.name || !newUser.email || !newUser.phoneNumber || !newUser.password) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      if (newUser.password.length < 6) {
+        toast.error('Password must be at least 6 characters');
+        return;
+      }
+
+      await AdminService.createUser(newUser);
+      toast.success('User created successfully');
+      mutate(); // Refresh the data
+      setIsAddDialogOpen(false);
+      
+      // Reset form
+      setNewUser({
+        name: '',
+        email: '',
+        phoneNumber: '',
+        password: '',
+        type: 'INDIVIDUAL',
+        role: 'USER',
+        status: 'PENDING',
+      });
+    } catch (error) {
+      console.error('Create user error:', error);
+      toast.error('Failed to create user');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -233,7 +284,7 @@ export function AdminUsersPage() {
             Manage user accounts, permissions, and status
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add User
         </Button>
@@ -344,7 +395,7 @@ export function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -436,6 +487,142 @@ export function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Add User Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account. All fields are required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                className="col-span-3"
+                placeholder="Full name"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                className="col-span-3"
+                placeholder="user@example.com"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                value={newUser.phoneNumber}
+                onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+                className="col-span-3"
+                placeholder="+1234567890"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                className="col-span-3"
+                placeholder="Minimum 6 characters"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="type" className="text-right">
+                Type
+              </Label>
+              <Select
+                value={newUser.type}
+                onValueChange={(value: 'INDIVIDUAL' | 'COMPANY') => 
+                  setNewUser({ ...newUser, type: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INDIVIDUAL">Individual</SelectItem>
+                  <SelectItem value="COMPANY">Company</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="text-right">
+                Role
+              </Label>
+              <Select
+                value={newUser.role}
+                onValueChange={(value: 'USER' | 'MODERATOR' | 'ADMIN') => 
+                  setNewUser({ ...newUser, role: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USER">User</SelectItem>
+                  <SelectItem value="MODERATOR">Moderator</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select
+                value={newUser.status}
+                onValueChange={(value: 'PENDING' | 'TRUSTED' | 'BLOCKED') => 
+                  setNewUser({ ...newUser, status: value })
+                }
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="TRUSTED">Trusted</SelectItem>
+                  <SelectItem value="BLOCKED">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAddDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateUser} disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

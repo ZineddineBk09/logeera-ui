@@ -16,8 +16,9 @@ export function Logo({ className }: LogoProps) {
       <Image
         src="/images/logo.png"
         alt="Logo"
-        width={52}
-        height={52}
+        width={150}
+        height={60}
+        quality={100}
         className={cn('h-full w-full object-contain', className)}
       />
     </div>

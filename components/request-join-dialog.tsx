@@ -33,16 +33,19 @@ interface RequestJoinDialogProps {
     destinationName: string;
     price: number;
     availableSeats: number;
+    departureAt?: string;
     publisher: {
       name: string;
     };
   };
+  mutate: () => void;
 }
 
 export function RequestJoinDialog({
   open,
   onOpenChange,
   trip,
+  mutate,
 }: RequestJoinDialogProps) {
   const [seats, setSeats] = useState('1');
   const [message, setMessage] = useState('');
@@ -59,6 +62,20 @@ export function RequestJoinDialog({
       return;
     }
 
+    // Check if trip date has passed
+    if (trip.departureAt && new Date(trip.departureAt) < new Date()) {
+      toast.error('This trip has already departed');
+      onOpenChange(false);
+      return;
+    }
+
+    // Check if trip is full
+    if (trip.availableSeats === 0) {
+      toast.error('This trip is full');
+      onOpenChange(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await RequestsService.create(trip.id);
@@ -68,6 +85,7 @@ export function RequestJoinDialog({
         // Reset form
         setSeats('1');
         setMessage('');
+        mutate();
       } else {
         const error = await response.json();
         toast.error(error.error || 'Failed to send request');

@@ -24,6 +24,14 @@ async function createRequest(req: AuthenticatedRequest) {
       );
     }
 
+    // check if trip departure date is in the past
+    if (trip.departureAt < new Date()) {
+      return NextResponse.json(
+        { error: 'Trip departure date is in the past' },
+        { status: 400 },
+      );
+    }
+
     // Check if trip is still available for booking
     if (trip.status !== 'PUBLISHED') {
       return NextResponse.json(

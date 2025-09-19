@@ -50,6 +50,21 @@ export class AdminService {
     return this.request(`/api/admin/users/${userId}`);
   }
 
+  static async createUser(userData: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    password: string;
+    type?: 'INDIVIDUAL' | 'COMPANY';
+    role?: 'USER' | 'MODERATOR' | 'ADMIN';
+    status?: 'PENDING' | 'TRUSTED' | 'BLOCKED';
+  }) {
+    return this.request('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
   static async updateUser(userId: string, data: any) {
     return this.request(`/api/admin/users/${userId}`, {
       method: 'PUT',

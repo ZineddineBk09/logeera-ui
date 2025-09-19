@@ -67,6 +67,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
     data: trip,
     error,
     isLoading,
+    mutate,
   } = useSWR(
     swrKeys.trips.detail(tripId),
     () =>
@@ -227,7 +228,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
       if (response.ok) {
         const chatData = await response.json();
         // Navigate to chat page with the chat ID
-        router.push(`/chat?chatId=${chatData.id}`);
+        router.push(`/chats?chatId=${chatData.id}`);
       } else {
         toast.error('Failed to start conversation');
       }
@@ -438,26 +439,26 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
                 {/* Only show message and call buttons if user is not the trip publisher */}
                 {user?.id !== trip.publisher.id && (
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-transparent"
                       onClick={handleMessage}
-                    >
+                  >
                       <MessageCircle className="mr-2 h-4 w-4" />
-                      Message
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
+                    Message
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-transparent"
                       onClick={handleCall}
-                    >
+                  >
                       <Phone className="mr-2 h-4 w-4" />
-                      Call
-                    </Button>
-                  </div>
+                    Call
+                  </Button>
+                </div>
                 )}
               </CardContent>
             </Card>
@@ -542,16 +543,36 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
                 {/* Only show request to join button if user is not the trip publisher */}
                 {user?.id !== trip.publisher.id ? (
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    disabled={tripData.availableSeats === 0}
-                    onClick={handleRequestToJoin}
-                  >
-                    {tripData.availableSeats === 0
-                      ? 'Trip Full'
-                      : 'Request to Join'}
-                  </Button>
+                  (() => {
+                    const isPastTrip = new Date(trip.departureAt) < new Date();
+                    const isFullTrip = tripData.availableSeats === 0;
+                    
+                    if (isPastTrip) {
+                      return (
+                        <Button className="w-full" size="lg" disabled>
+                          Trip Departed
+                        </Button>
+                      );
+                    }
+                    
+                    if (isFullTrip) {
+                      return (
+                        <Button className="w-full" size="lg" disabled>
+                          Trip Full
+                        </Button>
+                      );
+                    }
+                    
+                    return (
+                <Button
+                  className="w-full"
+                  size="lg"
+                        onClick={handleRequestToJoin}
+                >
+                        Request to Join
+                </Button>
+                    );
+                  })()
                 ) : (
                   <div className="py-4 text-center">
                     <p className="text-muted-foreground text-sm">
@@ -587,12 +608,14 @@ export function TripDetails({ tripId }: TripDetailsProps) {
       <RequestJoinDialog
         open={showRequestDialog}
         onOpenChange={setShowRequestDialog}
+        mutate={mutate}
         trip={{
           id: trip.id,
           originName: trip.originName,
           destinationName: trip.destinationName,
           price: trip.pricePerSeat,
           availableSeats: tripData.availableSeats,
+          departureAt: trip.departureAt,
           publisher: {
             name: trip.publisher.name,
           },

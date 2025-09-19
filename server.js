@@ -5,7 +5,7 @@ const { Server } = require('socket.io');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = parseInt(process.env.PORT || '3000', 10);
+const port = parseInt(process.env.PORT || '3001', 10);
 
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
@@ -16,7 +16,7 @@ app.prepare().then(() => {
   const io = new Server(httpServer, {
     path: '/api/socketio',
     cors: {
-      origin: dev ? 'http://localhost:3000' : process.env.NEXT_PUBLIC_APP_URL,
+      origin: dev ? 'http://localhost:3001' : process.env.NEXT_PUBLIC_APP_URL,
       methods: ['GET', 'POST'],
       credentials: true,
     },

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card';
 import Link from 'next/link';
 import { ROUTES } from '@/constants';
+import { AuthRedirectHandler } from '@/components/auth/auth-redirect-handler';
 
 export const metadata: Metadata = {
   title: 'Sign In',
@@ -22,8 +23,9 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-900 dark:to-gray-800">
-      <div className="w-full max-w-md space-y-6">
+    <AuthRedirectHandler>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-900 dark:to-gray-800">
+        <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -66,6 +68,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AuthRedirectHandler>
   );
 }

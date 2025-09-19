@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Clock, Car, Users, Star, Shield } from 'lucide-react';
+import { MapPin, Clock, Car, Users, Star, Shield, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useCallback, useMemo } from 'react';
 
 interface TripCardProps {
   trip: {
@@ -27,6 +28,10 @@ interface TripCardProps {
       averageRating?: number;
       ratingCount?: number;
     };
+    _originDistance?: number;
+    _destinationDistance?: number;
+    _relevanceScore?: number;
+    _isBroadSearch?: boolean;
   };
   isSelected?: boolean;
   onSelect?: () => void;
@@ -40,13 +45,48 @@ const vehicleIcons = {
 };
 
 export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
-  const VehicleIcon =
-    vehicleIcons[trip.vehicleType as keyof typeof vehicleIcons] || Car;
-  const departureTime = new Date(trip.departureAt).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+  const VehicleIcon = useMemo(
+    () => vehicleIcons[trip.vehicleType as keyof typeof vehicleIcons] || Car,
+    [trip.vehicleType],
+  );
+  const departureTime = useMemo(
+    () =>
+      new Date(trip.departureAt).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+    [trip.departureAt],
+  );
+
+  const departureDate = useMemo(
+    () =>
+      new Date(trip.departureAt).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    [trip.departureAt],
+  );
+
+  // Format distance information
+  const formatDistance = useCallback((distance: number) => {
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m away`;
+    } else if (distance < 10) {
+      return `${distance.toFixed(1)}km away`;
+    } else {
+      return `${Math.round(distance)}km away`;
+    }
+  }, []);
+
+  const showDistanceInfo = useMemo(
+    () =>
+      (trip._originDistance !== undefined && trip._originDistance < Infinity) ||
+      (trip._destinationDistance !== undefined &&
+        trip._destinationDistance < Infinity),
+    [trip._originDistance, trip._destinationDistance],
+  );
 
   return (
     <motion.div
@@ -55,13 +95,13 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
     >
       <Card
         className={cn(
-          'bg-card/80 cursor-pointer border-0 transition-all duration-200 hover:shadow-md',
+          'bg-card/80 h-full cursor-pointer border-0 transition-all duration-200 hover:shadow-md',
           isSelected && 'ring-primary shadow-lg ring-2',
         )}
         onClick={onSelect}
       >
-        <CardContent className="p-6">
-          <div className="space-y-4">
+        <CardContent className="h-full p-6">
+          <div className="flex h-full flex-col justify-between gap-y-4">
             {/* Route and Time */}
             <div className="flex items-start justify-between">
               <div className="space-y-1">
@@ -72,6 +112,11 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
                 </div>
                 <div className="text-muted-foreground flex items-center space-x-4 text-sm">
                   <div className="flex items-center space-x-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{departureDate}</span>
+                  </div>
+                  <span>•</span>
+                  <div className="flex items-center space-x-1">
                     <Clock className="h-4 w-4" />
                     <span>{departureTime}</span>
                   </div>
@@ -81,6 +126,20 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
                   </Badge>
                   <span>•</span>
                   <span>{trip.capacity} seats</span>
+                  {showDistanceInfo && (
+                    <>
+                      <span>•</span>
+                      <span className="text-xs font-medium text-blue-600">
+                        {trip._originDistance !== undefined &&
+                        trip._originDistance < Infinity
+                          ? formatDistance(trip._originDistance)
+                          : trip._destinationDistance !== undefined &&
+                              trip._destinationDistance < Infinity
+                            ? `To: ${formatDistance(trip._destinationDistance)}`
+                            : ''}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="text-right">
@@ -142,7 +201,7 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
             </div>
 
             {/* Action Button */}
-            <div className="pt-2">
+            <div className="mt-auto">
               <Link href={`/trips/${trip.id}`}>
                 <Button className="w-full" size="lg">
                   View Details

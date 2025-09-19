@@ -164,28 +164,83 @@ export function SearchHero() {
       params.set('vehicleType', searchData.vehicleType);
     if (searchData.capacity) params.set('capacity', searchData.capacity);
 
-    // Add coordinates if available
+    // Enhanced coordinate handling with fallback searches
+    let hasCoordinates = false;
+
+    // Add origin coordinates
     if (placeData.originPlace) {
-      const originCoords = await GooglePlacesService.getPlaceDetails(
-        placeData.originPlace.place_id,
-      );
-      if (originCoords) {
-        params.set('originLat', originCoords.lat.toString());
-        params.set('originLng', originCoords.lng.toString());
+      try {
+        const originCoords = await GooglePlacesService.getPlaceDetails(
+          placeData.originPlace.place_id,
+        );
+        if (originCoords) {
+          params.set('originLat', originCoords.lat.toString());
+          params.set('originLng', originCoords.lng.toString());
+          params.set('originPlaceId', placeData.originPlace.place_id);
+          hasCoordinates = true;
+        }
+      } catch (error) {
+        console.error('Error getting origin coordinates:', error);
+      }
+    } else if (searchData.origin) {
+      // Try to get coordinates for text-based origin
+      try {
+        const predictions = await GooglePlacesService.getAutocompleteSuggestions(searchData.origin);
+        if (predictions.length > 0) {
+          const coords = await GooglePlacesService.getPlaceDetails(predictions[0].place_id);
+          if (coords) {
+            params.set('originLat', coords.lat.toString());
+            params.set('originLng', coords.lng.toString());
+            params.set('originPlaceId', predictions[0].place_id);
+            hasCoordinates = true;
+          }
+        }
+      } catch (error) {
+        console.error('Error geocoding origin:', error);
       }
     }
 
+    // Add destination coordinates
     if (placeData.destinationPlace) {
-      const destinationCoords = await GooglePlacesService.getPlaceDetails(
-        placeData.destinationPlace.place_id,
-      );
-      if (destinationCoords) {
-        params.set('destinationLat', destinationCoords.lat.toString());
-        params.set('destinationLng', destinationCoords.lng.toString());
+      try {
+        const destinationCoords = await GooglePlacesService.getPlaceDetails(
+          placeData.destinationPlace.place_id,
+        );
+        if (destinationCoords) {
+          params.set('destinationLat', destinationCoords.lat.toString());
+          params.set('destinationLng', destinationCoords.lng.toString());
+          params.set('destinationPlaceId', placeData.destinationPlace.place_id);
+          hasCoordinates = true;
+        }
+      } catch (error) {
+        console.error('Error getting destination coordinates:', error);
+      }
+    } else if (searchData.destination) {
+      // Try to get coordinates for text-based destination
+      try {
+        const predictions = await GooglePlacesService.getAutocompleteSuggestions(searchData.destination);
+        if (predictions.length > 0) {
+          const coords = await GooglePlacesService.getPlaceDetails(predictions[0].place_id);
+          if (coords) {
+            params.set('destinationLat', coords.lat.toString());
+            params.set('destinationLng', coords.lng.toString());
+            params.set('destinationPlaceId', predictions[0].place_id);
+            hasCoordinates = true;
+          }
+        }
+      } catch (error) {
+        console.error('Error geocoding destination:', error);
       }
     }
 
-    // Route format: /trips?origin=New York&destination=Los Angeles&originLat=40.7128&originLng=-74.0060&destinationLat=34.0522&destinationLng=-118.2437
+    // Add search mode for better backend handling
+    if (hasCoordinates) {
+      params.set('searchMode', 'proximity');
+    } else if (searchData.origin || searchData.destination) {
+      params.set('searchMode', 'text');
+    } else {
+      params.set('searchMode', 'browse');
+    }
 
     router.push(`/trips?${params.toString()}`);
   };
@@ -251,17 +306,17 @@ export function SearchHero() {
                   From
                 </label>
                 <AutocompleteInput
-                  placeholder="Origin city"
-                  value={searchData.origin}
+                    placeholder="Origin city"
+                    value={searchData.origin}
                   onChange={(value) =>
-                    setSearchData((prev) => ({
-                      ...prev,
+                      setSearchData((prev) => ({
+                        ...prev,
                       origin: value,
-                    }))
-                  }
+                      }))
+                    }
                   onPlaceSelect={handleOriginPlaceSelect}
                   className="h-10 rounded-full border-1 border-gray-200 dark:border-gray-700"
-                />
+                  />
               </div>
 
               {/* Destination */}
@@ -270,17 +325,17 @@ export function SearchHero() {
                   To
                 </label>
                 <AutocompleteInput
-                  placeholder="Destination city"
-                  value={searchData.destination}
+                    placeholder="Destination city"
+                    value={searchData.destination}
                   onChange={(value) =>
-                    setSearchData((prev) => ({
-                      ...prev,
+                      setSearchData((prev) => ({
+                        ...prev,
                       destination: value,
-                    }))
-                  }
+                      }))
+                    }
                   onPlaceSelect={handleDestinationPlaceSelect}
                   className="h-10 rounded-full border-1 border-gray-200 dark:border-gray-700"
-                />
+                  />
               </div>
 
               {/* Date */}
@@ -349,8 +404,8 @@ export function SearchHero() {
             <div className="mt-6 flex flex-col items-center justify-between border-t pt-6 sm:flex-row">
               <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
                 <p className="text-muted-foreground text-sm">
-                  Can't find what you're looking for?
-                </p>
+                Can't find what you're looking for?
+              </p>
                 <Button
                   variant="ghost"
                   size="sm"

@@ -82,45 +82,45 @@ async function getAnalytics(req: AuthenticatedRequest) {
     // Get user growth data
     const userGrowth = await prisma.$queryRaw`
       SELECT 
-        DATE(created_at) as date,
+        DATE("createdAt") as date,
         COUNT(*) as users
       FROM users 
-      WHERE created_at >= ${startDate}
-      GROUP BY DATE(created_at)
+      WHERE "createdAt" >= ${startDate}
+      GROUP BY DATE("createdAt")
       ORDER BY date
     `;
 
     // Get trip statistics
     const tripStats = await prisma.$queryRaw`
       SELECT 
-        DATE(created_at) as date,
+        DATE("createdAt") as date,
         COUNT(*) as trips,
-        SUM(booked_seats) as bookings
+        SUM("bookedSeats") as bookings
       FROM trips 
-      WHERE created_at >= ${startDate}
-      GROUP BY DATE(created_at)
+      WHERE "createdAt" >= ${startDate}
+      GROUP BY DATE("createdAt")
       ORDER BY date
     `;
 
     // Get revenue data (mock calculation based on trips)
     const revenueData = await prisma.$queryRaw`
       SELECT 
-        DATE(created_at) as date,
-        SUM(price_per_seat * booked_seats) as revenue
+        DATE("createdAt") as date,
+        SUM("pricePerSeat" * "bookedSeats") as revenue
       FROM trips 
-      WHERE created_at >= ${startDate}
-      GROUP BY DATE(created_at)
+      WHERE "createdAt" >= ${startDate}
+      GROUP BY DATE("createdAt")
       ORDER BY date
     `;
 
     // Get top routes
     const topRoutes = await prisma.$queryRaw`
       SELECT 
-        CONCAT(origin, ' → ', destination) as route,
+        CONCAT("originName", ' → ', "destinationName") as route,
         COUNT(*) as count
       FROM trips 
-      WHERE created_at >= ${startDate}
-      GROUP BY origin, destination
+      WHERE "createdAt" >= ${startDate}
+      GROUP BY "originName", "destinationName"
       ORDER BY count DESC
       LIMIT 5
     `;

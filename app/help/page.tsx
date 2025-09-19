@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ContactForm } from '@/components/contact-form';
 
 export const metadata: Metadata = {
   title: 'Help & Support',
@@ -65,16 +63,8 @@ export default function HelpPage() {
           <CardHeader>
             <CardTitle>Contact Support</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Input placeholder="Your name" />
-            <Input placeholder="Email" type="email" />
-            <Textarea
-              placeholder="How can we help? (UI-only)"
-              className="min-h-28"
-            />
-            <div className="flex justify-end">
-              <Button>Send</Button>
-            </div>
+          <CardContent>
+            <ContactForm />
           </CardContent>
         </Card>
       </div>

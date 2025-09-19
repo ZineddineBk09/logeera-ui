@@ -107,6 +107,13 @@ export const swrKeys = {
   // Ratings
   ratings: {
     list: (userId?: string) => ['ratings', 'list', userId] as const,
+    pending: () => ['ratings', 'pending'] as const,
+    trip: (tripId: string) => ['ratings', 'trip', tripId] as const,
+  },
+
+  // Blocked Users
+  blocked: {
+    list: () => ['blocked', 'list'] as const,
   },
 
   // Admin
@@ -128,5 +135,8 @@ export const swrKeys = {
     analytics: (timeRange: string) =>
       ['admin', 'analytics', timeRange] as const,
     settings: () => ['admin', 'settings'] as const,
+    contact: (params?: Record<string, string>) =>
+      ['admin', 'contact', params] as const,
+    contactSubmission: (id: string) => ['admin', 'contact', id] as const,
   },
 } as const;

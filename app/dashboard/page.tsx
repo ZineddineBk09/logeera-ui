@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useRequireAuth } from '@/lib/hooks/use-auth';
 import {
@@ -33,10 +34,13 @@ export default function DashboardPage() {
   const { isAuthenticated, isLoading } = useRequireAuth();
 
   // Fetch user's published trips
-  const { data: userTrips = [], isLoading: tripsLoading } = useSWR(
+  const { data: userTripsData, isLoading: tripsLoading } = useSWR(
     user ? swrKeys.trips.list({ publisherId: user.id }) : null,
     () => TripsService.list({ publisherId: user!.id }).then((r) => r.json()),
   );
+
+  // Handle both old and new API response formats
+  const userTrips = userTripsData?.trips || userTripsData || [];
 
   // Fetch incoming requests
   const { data: incomingRequests = [], isLoading: incomingLoading } = useSWR(
@@ -57,56 +61,85 @@ export default function DashboardPage() {
   );
 
   // Calculate stats
-  const activeTrips = userTrips.filter(
-    (trip: any) => trip.status === 'ACTIVE',
-  ).length;
-  const pendingRequests = incomingRequests.filter(
-    (req: any) => req.status === 'PENDING',
-  ).length;
-  const unreadMessages = chats.filter(
-    (chat: any) => chat.lastMessage && chat.lastMessage.senderId !== user?.id,
-  ).length;
+  const activeTrips = useMemo(
+    () =>
+      Array.isArray(userTrips)
+        ? userTrips.filter((trip: any) => trip.status === 'ACTIVE').length
+        : 0,
+    [userTrips],
+  );
+
+  const pendingRequests = useMemo(
+    () =>
+      Array.isArray(incomingRequests)
+        ? incomingRequests.filter((req: any) => req.status === 'PENDING').length
+        : 0,
+    [incomingRequests],
+  );
+
+  const unreadMessages = useMemo(
+    () =>
+      Array.isArray(chats)
+        ? chats.filter(
+            (chat: any) =>
+              chat.lastMessage && chat.lastMessage.senderId !== user?.id,
+          ).length
+        : 0,
+    [chats, user?.id],
+  );
 
   // Get upcoming trips (next 7 days)
-  const upcomingTrips = userTrips
-    .filter((trip: any) => {
-      const departureDate = new Date(trip.departureAt);
-      const now = new Date();
-      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      return (
-        departureDate > now &&
-        departureDate <= weekFromNow &&
-        trip.status === 'ACTIVE'
-      );
-    })
-    .sort(
-      (a: any, b: any) =>
-        new Date(a.departureAt).getTime() - new Date(b.departureAt).getTime(),
-    )
-    .slice(0, 3);
+  const upcomingTrips = useMemo(() => {
+    if (!Array.isArray(userTrips)) return [];
+
+    return userTrips
+      .filter((trip: any) => {
+        const departureDate = new Date(trip.departureAt);
+        const now = new Date();
+        const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return (
+          departureDate > now &&
+          departureDate <= weekFromNow &&
+          trip.status === 'ACTIVE'
+        );
+      })
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.departureAt).getTime() - new Date(b.departureAt).getTime(),
+      )
+      .slice(0, 3);
+  }, [userTrips]);
 
   // Get recent activity
-  const recentActivity = [
-    ...incomingRequests.slice(0, 2).map((req: any) => ({
-      type: 'request',
-      message: 'New request received',
-      detail: `From ${req.applicant?.name || 'Unknown'}`,
-      status: req.status,
-      time: req.createdAt,
-    })),
-    ...chats.slice(0, 2).map((chat: any) => ({
-      type: 'message',
-      message: 'Message received',
-      detail: `From ${chat.otherUser.name}`,
-      status: 'unread',
-      time: chat.lastMessage?.createdAt || chat.updatedAt,
-    })),
-  ]
-    .sort(
-      (a: any, b: any) =>
-        new Date(b.time).getTime() - new Date(a.time).getTime(),
-    )
-    .slice(0, 3);
+  const recentActivity = useMemo(() => {
+    const activities = [
+      ...(Array.isArray(incomingRequests)
+        ? incomingRequests.slice(0, 2).map((req: any) => ({
+            type: 'request',
+            message: 'New request received',
+            detail: `From ${req.applicant?.name || 'Unknown'}`,
+            status: req.status,
+            time: req.createdAt,
+          }))
+        : []),
+      ...(Array.isArray(chats)
+        ? chats.slice(0, 2).map((chat: any) => ({
+            type: 'message',
+            message: 'Message received',
+            detail: `From ${chat.otherUser.name}`,
+            status: 'unread',
+            time: chat.lastMessage?.createdAt || chat.updatedAt,
+          }))
+        : []),
+    ];
+
+    return activities
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.time).getTime() - new Date(a.time).getTime(),
+      )
+      .slice(0, 3);
+  }, [incomingRequests, chats]);
 
   if (isLoading) {
     return (

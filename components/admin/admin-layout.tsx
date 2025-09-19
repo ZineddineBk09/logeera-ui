@@ -61,6 +61,11 @@ const adminNavigation = [
     icon: MessageSquare,
   },
   {
+    name: 'Contact Support',
+    href: '/admin/contact',
+    icon: Bell,
+  },
+  {
     name: 'Analytics',
     href: '/admin/analytics',
     icon: BarChart3,
@@ -105,7 +110,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background flex min-h-screen items-start">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -117,11 +122,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <div
         className={cn(
-          'bg-card fixed inset-y-0 left-0 z-50 w-64 transform border-r transition-transform duration-200 ease-in-out lg:static lg:inset-0 lg:translate-x-0',
+          'bg-card fixed inset-y-0 left-0 z-50 h-full min-h-screen w-64 transform border-r transition-transform duration-200 ease-in-out lg:static lg:inset-0 lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col justify-between">
           {/* Sidebar header */}
           <div className="flex h-16 items-center justify-between border-b px-6">
             <div className="flex items-center space-x-2">
@@ -164,7 +169,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* User info */}
-          <div className="border-t p-4">
+          <div className="mt-auto border-t p-4">
             <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/placeholder.svg" alt={user?.name} />
@@ -187,7 +192,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl- flex w-full flex-col">
         {/* Top navbar */}
         <header className="bg-background/95 sticky top-0 z-30 flex h-16 items-center justify-between border-b px-4 backdrop-blur lg:px-6">
           <div className="flex items-center space-x-4">
@@ -256,7 +261,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

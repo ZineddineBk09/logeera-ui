@@ -156,7 +156,7 @@ export function AdminDashboard() {
     return matchesSearch && matchesFilter;
   });
 
-  const filteredTrips = trips.filter((trip: any) => {
+  const filteredTrips = Array.isArray(trips) ? trips.filter((trip: any) => {
     const route = `${trip.originName} → ${trip.destinationName}`;
     const matchesSearch =
       route.toLowerCase().includes(tripSearch.toLowerCase()) ||
@@ -165,7 +165,7 @@ export function AdminDashboard() {
       tripFilter === 'all' ||
       trip.status.toLowerCase() === tripFilter.toLowerCase();
     return matchesSearch && matchesFilter;
-  });
+  }) : [];
 
   const handleUserAction = async (userId: string, action: string) => {
     try {
@@ -243,40 +243,7 @@ export function AdminDashboard() {
   ];
 
   return (
-    <div className="bg-background flex h-screen">
-      <div className="bg-card flex w-64 flex-col border-r">
-        <div className="border-b p-6">
-          <h2 className="text-foreground text-xl font-bold">Admin Panel</h2>
-          <p className="text-muted-foreground text-sm">Platform Management</p>
-        </div>
-
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveSection(item.id)}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-                      activeSection === item.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
+    <div className="space-y-6">
           {activeSection === 'overview' && (
             <div className="space-y-6">
               <div>
@@ -409,7 +376,7 @@ export function AdminDashboard() {
                   <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
-                  <CardContent className="flex h-[300px] flex-col justify-center space-y-4">
+                  <CardContent className="flex h-[300px] flex-col items-center gap-y-4">
                     <Button
                       onClick={() => setActiveSection('users')}
                       variant="outline"
@@ -1091,8 +1058,6 @@ export function AdminDashboard() {
               </Card>
             </div>
           )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { TripCard } from '@/components/trip-card';
 import { TripsService } from '@/lib/services';
 import { swrKeys } from '@/lib/swr-config';
 import useSWR from 'swr';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // Function to calculate distance between two points using Haversine formula
 function calculateDistance(
@@ -77,10 +77,10 @@ export function RelatedTrips({
   currentTripCoordinates,
 }: RelatedTripsProps) {
   const [page, setPage] = useState(0);
-  const pageSize = 2;
+  const pageSize = useMemo(() => 2, []);
 
   // Fetch related trips (excluding current trip)
-  const { data: trips = [], isLoading } = useSWR(
+  const { data: tripsData, isLoading } = useSWR(
     swrKeys.trips.list(),
     () =>
       TripsService.list({}).then(async (r) => {
@@ -96,31 +96,50 @@ export function RelatedTrips({
     },
   );
 
+  // Handle both old and new API response formats
+  const trips = useMemo(() => tripsData?.trips || tripsData || [], [tripsData]);
+
   // Filter out current trip and sort by similarity (but don't slice yet)
-  const allRelatedTrips = trips
-    .filter((trip: any) => trip.id !== currentTripId)
-    .map((trip: any) => {
-      // Calculate similarity score if current trip coordinates are available
-      let similarityScore = Math.random(); // Fallback to random if no coordinates
+  const allRelatedTrips = useMemo(
+    () =>
+      Array.isArray(trips)
+        ? trips
+            .filter((trip: any) => trip.id !== currentTripId)
+            .map((trip: any) => {
+              // Calculate similarity score if current trip coordinates are available
+              let similarityScore = Math.random(); // Fallback to random if no coordinates
 
-      if (currentTripCoordinates && trip.originGeom && trip.destinationGeom) {
-        similarityScore = calculateTripSimilarity(currentTripCoordinates, trip);
-      }
+              if (
+                currentTripCoordinates &&
+                trip.originGeom &&
+                trip.destinationGeom
+              ) {
+                similarityScore = calculateTripSimilarity(
+                  currentTripCoordinates,
+                  trip,
+                );
+              }
 
-      return {
-        ...trip,
-        similarityScore,
-      };
-    })
-    .sort((a: any, b: any) => a.similarityScore - b.similarityScore); // Sort by similarity (lower score = more similar)
+              return {
+                ...trip,
+                similarityScore,
+              };
+            })
+            .sort((a: any, b: any) => a.similarityScore - b.similarityScore) // Sort by similarity (lower score = more similar)
+        : [],
+    [trips, currentTripId, currentTripCoordinates],
+  ); // Return empty array if trips is not an array
 
   // Calculate total pages based on all trips
-  const totalPages = Math.ceil(allRelatedTrips.length / pageSize);
+  const totalPages = useMemo(
+    () => Math.ceil(allRelatedTrips.length / pageSize),
+    [allRelatedTrips, pageSize],
+  );
 
   // Get trips for current page
-  const relatedTrips = allRelatedTrips.slice(
-    page * pageSize,
-    (page + 1) * pageSize,
+  const relatedTrips = useMemo(
+    () => allRelatedTrips.slice(page * pageSize, (page + 1) * pageSize),
+    [allRelatedTrips, page, pageSize],
   );
 
   // Reset page if it's out of bounds

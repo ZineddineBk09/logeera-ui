@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Map, List } from 'lucide-react';
+import { Map, List, MapPin } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -14,6 +14,7 @@ import {
 import { TripCard } from '@/components/trip-card';
 import { MapView } from '@/components/map-view';
 import { FilterBar, type FilterState } from '@/components/filter-bar';
+import { Button } from '@/components/ui/button';
 import { TripsService } from '@/lib/services';
 import { GooglePlacesService } from '@/lib/services/google-places';
 import { toast } from 'sonner';
@@ -49,8 +50,6 @@ export function TripsResults() {
     const date = searchParams.get('date') || '';
     const vehicleType = searchParams.get('vehicleType') || 'any';
     const capacity = searchParams.get('capacity') || 'any';
-    const driverId =
-      searchParams.get('driver') || searchParams.get('publisherId') || '';
 
     setFilters({
       date,
@@ -85,6 +84,35 @@ export function TripsResults() {
       setDriverName(null);
     }
   }, [searchParams]);
+
+  // Helper functions for search context
+  const getSearchTitle = () => {
+    const origin = searchParams?.get('origin');
+    const destination = searchParams?.get('destination');
+
+    if (origin && destination) {
+      return `${origin} → ${destination}`;
+    } else if (origin) {
+      return `Trips from ${origin}`;
+    } else if (destination) {
+      return `Trips to ${destination}`;
+    }
+    return 'Available Trips';
+  };
+
+  const getSearchDescription = () => {
+    const searchMode = searchParams?.get('searchMode');
+    const isBroadSearch = searchMetadata?.isBroadSearch;
+
+    if (isBroadSearch) {
+      return ' • Showing trips within 500km radius';
+    } else if (searchMode === 'proximity') {
+      return ' • Showing trips within 200km radius';
+    } else if (searchMode === 'text') {
+      return ' • Text-based search results';
+    }
+    return '';
+  };
 
   // Build query parameters for SWR
   const queryParams = useMemo(() => {
@@ -134,7 +162,7 @@ export function TripsResults() {
 
   // Use SWR to fetch trips
   const {
-    data: trips = [],
+    data: tripsData,
     error,
     isLoading,
   } = useSWR(
@@ -156,7 +184,11 @@ export function TripsResults() {
       },
     },
   );
-  const pageSize = 5;
+
+  // Handle both old and new API response formats
+  const trips = useMemo(() => tripsData?.trips || tripsData || [], [tripsData]);
+  const searchMetadata = useMemo(() => tripsData?.metadata || {}, [tripsData]);
+  const pageSize = useMemo(() => 5, []);
 
   const sortedTrips = useMemo(() => {
     const copy = [...trips];
@@ -271,10 +303,11 @@ export function TripsResults() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">
-                {driverName ? `Trips by ${driverName}` : 'Trips'}
+                {driverName ? `Trips by ${driverName}` : getSearchTitle()}
               </h1>
               <p className="text-muted-foreground">
                 {isLoading ? 'Loading...' : `${sortedTrips.length} trips found`}
+                {getSearchDescription()}
                 {driverName && !isLoading && (
                   <span className="ml-2">
                     •{' '}
@@ -309,14 +342,40 @@ export function TripsResults() {
         {/* Left Panel - Trip List */}
         <div className="w-1/2 overflow-y-auto border-r">
           <div className="space-y-4 p-4">
-            {visibleTrips.map((trip) => (
-              <TripCard
-                key={trip.id}
-                trip={trip}
-                isSelected={selectedTrip === trip.id}
-                onSelect={() => setSelectedTrip(trip.id)}
-              />
-            ))}
+            {visibleTrips.length === 0 && !isLoading ? (
+              <div className="space-y-4 py-12 text-center">
+                <div className="text-muted-foreground">
+                  <MapPin className="mx-auto mb-4 h-12 w-12" />
+                  <h3 className="mb-2 text-lg font-semibold">No trips found</h3>
+                  <p className="mb-4 text-sm">
+                    {searchMetadata?.isBroadSearch
+                      ? "We searched within 500km but couldn't find matching trips."
+                      : 'Try adjusting your search criteria or expanding the search area.'}
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    <p>• Try different dates or locations</p>
+                    <p>• Remove some filters</p>
+                    <p>• Consider nearby cities</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleClearAllFilters}
+                  className="mt-4"
+                >
+                  Browse All Trips
+                </Button>
+              </div>
+            ) : (
+              visibleTrips.map((trip) => (
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  isSelected={selectedTrip === trip.id}
+                  onSelect={() => setSelectedTrip(trip.id)}
+                />
+              ))
+            )}
             <div className="pt-2">
               {visibleTrips.length < sortedTrips.length ? (
                 <button
@@ -377,9 +436,37 @@ export function TripsResults() {
 
           <TabsContent value="list" className="mt-0">
             <div className="space-y-4 p-4 pb-20">
-              {visibleTrips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
-              ))}
+              {visibleTrips.length === 0 && !isLoading ? (
+                <div className="space-y-4 py-12 text-center">
+                  <div className="text-muted-foreground">
+                    <MapPin className="mx-auto mb-4 h-12 w-12" />
+                    <h3 className="mb-2 text-lg font-semibold">
+                      No trips found
+                    </h3>
+                    <p className="mb-4 text-sm">
+                      {searchMetadata?.isBroadSearch
+                        ? "We searched within 500km but couldn't find matching trips."
+                        : 'Try adjusting your search criteria or expanding the search area.'}
+                    </p>
+                    <div className="space-y-2 text-xs">
+                      <p>• Try different dates or locations</p>
+                      <p>• Remove some filters</p>
+                      <p>• Consider nearby cities</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleClearAllFilters}
+                    className="mt-4"
+                  >
+                    Browse All Trips
+                  </Button>
+                </div>
+              ) : (
+                visibleTrips.map((trip) => (
+                  <TripCard key={trip.id} trip={trip} />
+                ))
+              )}
               <div className="pt-2">
                 {visibleTrips.length < sortedTrips.length ? (
                   <button

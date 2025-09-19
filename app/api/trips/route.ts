@@ -98,7 +98,10 @@ async function getTrips(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q');
-    const departureDate = searchParams.get('departureDate');
+    const origin = searchParams.get('origin');
+    const destination = searchParams.get('destination');
+    const departureDate =
+      searchParams.get('departureDate') || searchParams.get('date');
     const vehicleType = searchParams.get('vehicleType');
     const capacity = searchParams.get('capacity');
     const originLat = searchParams.get('originLat');
@@ -107,6 +110,7 @@ async function getTrips(req: NextRequest) {
     const destinationLng = searchParams.get('destinationLng');
     const publisherId =
       searchParams.get('publisherId') || searchParams.get('driver');
+    const searchMode = searchParams.get('searchMode') || 'browse';
 
     const where: any = {
       status: 'PUBLISHED',
@@ -117,11 +121,18 @@ async function getTrips(req: NextRequest) {
       where.publisherId = publisherId;
     }
 
-    // Text-based search
-    if (q) {
+    // Enhanced text-based search
+    if (q || origin || destination) {
+      const searchTerms = [];
+      if (q) searchTerms.push(q);
+      if (origin) searchTerms.push(origin);
+      if (destination) searchTerms.push(destination);
+
+      const searchQuery = searchTerms.join(' ');
+
       where.OR = [
-        { originName: { contains: q, mode: 'insensitive' } },
-        { destinationName: { contains: q, mode: 'insensitive' } },
+        { originName: { contains: searchQuery, mode: 'insensitive' } },
+        { destinationName: { contains: searchQuery, mode: 'insensitive' } },
       ];
     }
 
@@ -148,22 +159,18 @@ async function getTrips(req: NextRequest) {
       };
     }
 
-    // Coordinate-based search using PostGIS
-    if (originLat && originLng) {
-      const originPoint = `POINT(${originLng} ${originLat})`;
-      // Find trips with valid origin geometry (non-empty string)
-      where.originGeom = {
-        not: '',
-      };
+    // For coordinate-based search, we'll fetch all trips and then filter
+    // This is more flexible than complex SQL queries
+    if ((originLat && originLng) || (destinationLat && destinationLng)) {
+      // Only filter for trips with valid geometry
+      where.originGeom = { not: '' };
+      where.destinationGeom = { not: '' };
     }
 
-    if (destinationLat && destinationLng) {
-      const destinationPoint = `POINT(${destinationLng} ${destinationLat})`;
-      // Find trips with valid destination geometry (non-empty string)
-      where.destinationGeom = {
-        not: '',
-      };
-    }
+    // date is after today
+    where.departureAt = {
+      gte: new Date(),
+    };
 
     let trips = await prisma.trip.findMany({
       where,
@@ -183,46 +190,199 @@ async function getTrips(req: NextRequest) {
       },
     });
 
-    // Post-process for geospatial filtering if coordinates are provided
+    // Enhanced geospatial filtering with distance scoring
     if ((originLat && originLng) || (destinationLat && destinationLng)) {
-      trips = trips.filter((trip) => {
-        let matchesOrigin = true;
-        let matchesDestination = true;
+      const searchOrigin =
+        originLat && originLng
+          ? { lat: parseFloat(originLat), lng: parseFloat(originLng) }
+          : null;
+      const searchDestination =
+        destinationLat && destinationLng
+          ? { lat: parseFloat(destinationLat), lng: parseFloat(destinationLng) }
+          : null;
 
-        if (originLat && originLng && trip.originGeom) {
-          // Parse the WKT POINT and calculate distance using Haversine formula
+      trips = trips
+        .map((trip) => {
           const tripOrigin = parseWKTPoint(trip.originGeom);
-          if (tripOrigin) {
-            const distance = calculateDistance(
-              { lat: parseFloat(originLat), lng: parseFloat(originLng) },
-              tripOrigin,
-            );
-            // Match if within 50km radius
-            matchesOrigin = distance <= 50;
-          }
-        }
-
-        if (destinationLat && destinationLng && trip.destinationGeom) {
-          // Parse the WKT POINT and calculate distance using Haversine formula
           const tripDestination = parseWKTPoint(trip.destinationGeom);
-          if (tripDestination) {
-            const distance = calculateDistance(
-              {
-                lat: parseFloat(destinationLat),
-                lng: parseFloat(destinationLng),
-              },
+
+          let originDistance = Infinity;
+          let destinationDistance = Infinity;
+          let relevanceScore = 0;
+
+          // Calculate origin proximity
+          if (searchOrigin && tripOrigin) {
+            originDistance = calculateDistance(searchOrigin, tripOrigin);
+          }
+
+          // Calculate destination proximity
+          if (searchDestination && tripDestination) {
+            destinationDistance = calculateDistance(
+              searchDestination,
               tripDestination,
             );
-            // Match if within 50km radius
-            matchesDestination = distance <= 50;
           }
-        }
 
-        return matchesOrigin && matchesDestination;
-      });
+          // Enhanced scoring logic for trip relevance
+          if (searchOrigin && searchDestination) {
+            // Both origin and destination specified
+            const maxOriginDistance = 100; // km
+            const maxDestinationDistance = 100; // km
+
+            if (
+              originDistance <= maxOriginDistance &&
+              destinationDistance <= maxDestinationDistance
+            ) {
+              // Perfect match bonus if both are very close
+              const originScore = Math.max(
+                0,
+                50 - (originDistance / maxOriginDistance) * 50,
+              );
+              const destinationScore = Math.max(
+                0,
+                50 - (destinationDistance / maxDestinationDistance) * 50,
+              );
+              relevanceScore = originScore + destinationScore;
+
+              // Bonus for exact route matches
+              if (originDistance <= 10 && destinationDistance <= 10) {
+                relevanceScore += 20;
+              }
+            }
+          } else if (searchOrigin) {
+            // Only origin specified - find trips starting nearby
+            const maxDistance = 200; // Increased radius for single-point search
+            if (originDistance <= maxDistance) {
+              relevanceScore = Math.max(
+                0,
+                100 - (originDistance / maxDistance) * 100,
+              );
+
+              // Bonus for very close origins
+              if (originDistance <= 25) {
+                relevanceScore += 20;
+              }
+            }
+          } else if (searchDestination) {
+            // Only destination specified - find trips going there
+            const maxDistance = 200; // Increased radius for single-point search
+            if (destinationDistance <= maxDistance) {
+              relevanceScore = Math.max(
+                0,
+                100 - (destinationDistance / maxDistance) * 100,
+              );
+
+              // Bonus for very close destinations
+              if (destinationDistance <= 25) {
+                relevanceScore += 20;
+              }
+            }
+          }
+
+          return {
+            ...trip,
+            _relevanceScore: relevanceScore,
+            _originDistance: originDistance,
+            _destinationDistance: destinationDistance,
+          };
+        })
+        .filter((trip) => trip._relevanceScore > 0)
+        .sort((a, b) => b._relevanceScore - a._relevanceScore); // Sort by relevance
+
+      // If no trips found with strict proximity, try a broader search
+      if (trips.length === 0 && searchMode === 'proximity') {
+        console.log(
+          'No trips found with proximity search, trying broader search...',
+        );
+
+        // Fetch all trips and apply very broad distance filtering
+        const allTrips = await prisma.trip.findMany({
+          where: {
+            status: 'PUBLISHED',
+            originGeom: { not: '' },
+            destinationGeom: { not: '' },
+            departureAt: {
+              gte: new Date(),
+            }, // date is after today
+          },
+          include: {
+            publisher: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                averageRating: true,
+                ratingCount: true,
+              },
+            },
+          },
+          orderBy: {
+            departureAt: 'asc',
+          },
+        });
+
+        // Apply very broad distance filtering (up to 500km)
+        trips = allTrips
+          .map((trip) => {
+            const tripOrigin = parseWKTPoint(trip.originGeom);
+            const tripDestination = parseWKTPoint(trip.destinationGeom);
+
+            let originDistance = Infinity;
+            let destinationDistance = Infinity;
+            let relevanceScore = 0;
+
+            if (searchOrigin && tripOrigin) {
+              originDistance = calculateDistance(searchOrigin, tripOrigin);
+            }
+
+            if (searchDestination && tripDestination) {
+              destinationDistance = calculateDistance(
+                searchDestination,
+                tripDestination,
+              );
+            }
+
+            // Broader matching criteria
+            if (searchOrigin && searchDestination) {
+              if (originDistance <= 300 && destinationDistance <= 300) {
+                relevanceScore =
+                  Math.max(0, 50 - originDistance / 10) +
+                  Math.max(0, 50 - destinationDistance / 10);
+              }
+            } else if (searchOrigin && originDistance <= 500) {
+              relevanceScore = Math.max(0, 100 - originDistance / 5);
+            } else if (searchDestination && destinationDistance <= 500) {
+              relevanceScore = Math.max(0, 100 - destinationDistance / 5);
+            }
+
+            return {
+              ...trip,
+              _relevanceScore: relevanceScore,
+              _originDistance: originDistance,
+              _destinationDistance: destinationDistance,
+              _isBroadSearch: true,
+            };
+          })
+          .filter((trip) => trip._relevanceScore > 0)
+          .sort((a, b) => b._relevanceScore - a._relevanceScore)
+          .slice(0, 20); // Limit results for broad search
+      }
     }
 
-    return NextResponse.json(trips);
+    // Add search metadata to help frontend understand the results
+    const searchMetadata = {
+      searchMode,
+      hasCoordinates:
+        !!(originLat && originLng) || !!(destinationLat && destinationLng),
+      hasDate: !!departureDate,
+      isBroadSearch: trips.some((trip: any) => trip._isBroadSearch),
+      totalResults: trips.length,
+    };
+
+    return NextResponse.json({
+      trips,
+      metadata: searchMetadata,
+    });
   } catch (error) {
     console.error('Error fetching trips:', error);
     return NextResponse.json(

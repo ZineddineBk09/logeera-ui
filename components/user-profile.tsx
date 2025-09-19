@@ -26,9 +26,13 @@ export function UserProfile() {
     () =>
       TripsService.list({}).then(async (r) => {
         if (r.ok) {
-          const trips = await r.json();
+          const tripsData = await r.json();
+          // Handle both old and new API response formats
+          const trips = tripsData?.trips || tripsData || [];
           // Filter trips published by current user
-          return trips.filter((trip: any) => trip.publisherId === user?.id);
+          return Array.isArray(trips) 
+            ? trips.filter((trip: any) => trip.publisherId === user?.id)
+            : [];
         }
         throw new Error('Failed to load user trips');
       }),
@@ -117,10 +121,10 @@ export function UserProfile() {
                 <div>
                   <div className="mb-2 flex items-center space-x-3">
                     <h1 className="text-3xl font-bold">{user.name}</h1>
-                    <Badge variant="secondary" className="text-sm">
+                      <Badge variant="secondary" className="text-sm">
                       <Shield className="mr-1 h-4 w-4" />
                       {user.role}
-                    </Badge>
+                      </Badge>
                   </div>
                   <div className="text-muted-foreground flex items-center space-x-4">
                     <div className="flex items-center space-x-1">

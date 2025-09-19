@@ -221,7 +221,7 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
               </div>
 
               <p className="text-muted-foreground mb-4">
-                {driver?.type === 'DRIVER' ? 'Experienced driver' : 'User'} •{' '}
+                {driver?.phoneNumber} •{' '}
                 {driver?.email}
               </p>
 
@@ -253,7 +253,6 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="trips">Active Trips</TabsTrigger>
-          <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
         </TabsList>
 
@@ -322,48 +321,6 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
               </Card>
             ))
           )}
-        </TabsContent>
-
-        <TabsContent value="vehicle" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Driver Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div>
-                  <p className="text-muted-foreground text-sm">Name</p>
-                  <p className="font-semibold">{driver?.name}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-sm">Type</p>
-                  <p className="font-semibold">{driver?.type}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-sm">Status</p>
-                  <p className="font-semibold">{driver?.status}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-sm">Role</p>
-                  <p className="font-semibold">{driver?.role}</p>
-                </div>
-              </div>
-              <div className="border-t pt-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Email</p>
-                    <p className="font-semibold">{driver?.email}</p>
-                  </div>
-                  {driver?.phoneNumber && (
-                    <div>
-                      <p className="text-muted-foreground text-sm">Phone</p>
-                      <p className="font-semibold">{driver?.phoneNumber}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-6 space-y-4">

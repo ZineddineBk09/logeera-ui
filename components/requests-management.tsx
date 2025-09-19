@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { RequestsService, ChatService } from '@/lib/services';
 import { toast } from 'sonner';
+import { TripRating } from './trip-rating';
+import { api } from '@/lib/api';
+import useSWR from 'swr';
 
 interface RequestIncoming {
   id: string;
@@ -29,7 +32,7 @@ interface RequestIncoming {
     averageRating: number;
     ratingCount: number;
   };
-  trip: {
+      trip: {
     id: string;
     originName: string;
     destinationName: string;
@@ -43,14 +46,14 @@ interface RequestIncoming {
 
 interface RequestOutgoing {
   id: string;
-  trip: {
+      trip: {
     id: string;
     originName: string;
     destinationName: string;
     departureAt: string;
     capacity: number;
     vehicleType: string;
-    publisher: {
+      publisher: {
       id: string;
       name: string;
       email: string;
@@ -68,6 +71,27 @@ export function RequestsManagement() {
   const [incoming, setIncoming] = useState<RequestIncoming[]>([]);
   const [outgoing, setOutgoing] = useState<RequestOutgoing[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Fetch trips that can be rated
+  const {
+    data: pendingRatings = [],
+    error: ratingsError,
+    isLoading: ratingsLoading,
+    mutate: mutatePendingRatings,
+  } = useSWR(
+    '/api/ratings/pending',
+    () =>
+      api('/api/ratings/pending').then(async (r) => {
+        if (r.ok) {
+          return await r.json();
+        }
+        throw new Error('Failed to load pending ratings');
+      }),
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    },
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -117,7 +141,7 @@ export function RequestsManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="incoming" className="flex items-center gap-2">
             Incoming
             <Badge variant="secondary" className="ml-1">
@@ -128,6 +152,12 @@ export function RequestsManagement() {
             Outgoing
             <Badge variant="secondary" className="ml-1">
               {outgoing.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="ratings" className="flex items-center gap-2">
+            Rate Trips
+            <Badge variant="secondary" className="ml-1">
+              {pendingRatings.length}
             </Badge>
           </TabsTrigger>
         </TabsList>
@@ -159,51 +189,65 @@ export function RequestsManagement() {
                 transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               >
                 <Card className="transition-shadow hover:shadow-md">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage
                             src="/placeholder.svg"
                             alt={request.applicant.name}
-                          />
-                          <AvatarFallback>
+                        />
+                        <AvatarFallback>
                             {request.applicant.name
                               .split(' ')
-                              .map((n) => n[0])
+                            .map((n) => n[0])
                               .join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
                           <h3 className="text-foreground font-semibold">
                             {request.applicant.name}
-                          </h3>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        </h3>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
                               {request.applicant.averageRating.toFixed(1)} (
                               {request.applicant.ratingCount} reviews)
-                            </span>
+                          </span>
                           </div>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {new Date(request.createdAt).toLocaleDateString()}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {new Date(request.createdAt).toLocaleDateString()}
+                        </Badge>
+                        <Badge
+                          variant={
+                            request.status === 'PENDING'
+                              ? 'secondary'
+                              : request.status === 'ACCEPTED'
+                                ? 'default'
+                                : 'destructive'
+                          }
+                          className="text-xs capitalize"
+                        >
+                          {request.status.toLowerCase()}
+                        </Badge>
+                      </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
-                        <span>
+                      <span>
                           {request.trip.originName} →{' '}
                           {request.trip.destinationName}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
-                        <span>
+                      <span>
                           {new Date(
                             request.trip.departureAt,
                           ).toLocaleDateString()}{' '}
@@ -214,56 +258,56 @@ export function RequestsManagement() {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
-                        <span>
+                      <span>
                           {request.trip.capacity} seat
                           {request.trip.capacity > 1 ? 's' : ''}
-                        </span>
-                      </div>
+                      </span>
                     </div>
+                  </div>
 
-                    <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
                         Request to join this trip
                       </p>
-                    </div>
+                  </div>
 
                     {request.status === 'PENDING' && (
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          onClick={() => handleAccept(request.id)}
-                          className="flex-1"
-                        >
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => handleAccept(request.id)}
+                        className="flex-1"
+                      >
                           <Check className="mr-2 h-4 w-4" />
-                          Accept
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDecline(request.id)}
-                          className="flex-1"
-                        >
+                        Accept
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDecline(request.id)}
+                        className="flex-1"
+                      >
                           <X className="mr-2 h-4 w-4" />
-                          Decline
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        Decline
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                           onClick={() =>
                             handleMessage(
                               request.applicant.id,
                               request.applicant.name,
                             )
                           }
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
               </motion.div>
             ))
           )}
@@ -296,65 +340,65 @@ export function RequestsManagement() {
                 transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               >
                 <Card className="transition-shadow hover:shadow-md">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage
                             src="/placeholder.svg"
                             alt={request.trip.publisher.name}
-                          />
-                          <AvatarFallback>
+                        />
+                        <AvatarFallback>
                             {request.trip.publisher.name
                               .split(' ')
-                              .map((n) => n[0])
+                            .map((n) => n[0])
                               .join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
                           <h3 className="text-foreground font-semibold">
                             {request.trip.publisher.name}
-                          </h3>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        </h3>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
                               {request.trip.publisher.averageRating.toFixed(1)}{' '}
                               ({request.trip.publisher.ratingCount} reviews)
-                            </span>
+                          </span>
                           </div>
-                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
                             request.status === 'ACCEPTED'
                               ? 'default'
                               : request.status === 'REJECTED'
                                 ? 'destructive'
                                 : 'secondary'
-                          }
-                          className="text-xs"
-                        >
-                          {request.status}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
+                        }
+                        className="text-xs"
+                      >
+                        {request.status}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
                           {new Date(request.createdAt).toLocaleDateString()}
-                        </Badge>
-                      </div>
+                      </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
-                        <span>
+                      <span>
                           {request.trip.originName} →{' '}
                           {request.trip.destinationName}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
-                        <span>
+                      <span>
                           {new Date(
                             request.trip.departureAt,
                           ).toLocaleDateString()}{' '}
@@ -365,43 +409,90 @@ export function RequestsManagement() {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
-                        <span>
+                      <span>
                           {request.trip.capacity} seat
                           {request.trip.capacity > 1 ? 's' : ''}
-                        </span>
-                      </div>
+                      </span>
                     </div>
+                  </div>
 
-                    <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
                         Your request to join this trip
                       </p>
-                    </div>
+                  </div>
 
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
                         onClick={() =>
                           handleMessage(
                             request.trip.publisher.id,
                             request.trip.publisher.name,
                           )
                         }
-                        className="ml-auto"
-                      >
+                      className="ml-auto"
+                    >
                         <MessageCircle className="mr-2 h-4 w-4" />
-                        Message
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                      Message
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
               </motion.div>
             ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="ratings" className="mt-6 space-y-4">
+          {ratingsLoading ? (
+            <Card>
+              <CardContent className="text-muted-foreground py-12 text-center text-sm">
+                Loading trips to rate...
+              </CardContent>
+            </Card>
+          ) : ratingsError ? (
+            <Card>
+              <CardContent className="text-muted-foreground py-12 text-center text-sm">
+                Failed to load trips. Please try again.
+              </CardContent>
+            </Card>
+          ) : pendingRatings.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Star className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="text-muted-foreground mb-2 text-lg font-semibold">
+                  No trips to rate
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Complete some trips to be able to rate your experience with drivers
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
+              {pendingRatings.map((trip: any) => (
+                <motion.div
+                  key={trip.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <TripRating
+                    trip={trip}
+                    onRatingSubmitted={() => {
+                      mutatePendingRatings(); // Refresh the list
+                      toast.success('Thank you for your feedback!');
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </div>
           )}
         </TabsContent>
       </Tabs>
