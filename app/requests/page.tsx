@@ -1,5 +1,8 @@
 'use client';
 
+// Disable static generation for this page since it requires authentication
+export const dynamic = 'force-dynamic';
+
 import { RequestsManagement } from '@/components/requests-management';
 import { useRequireAuth } from '@/lib/hooks/use-auth';
 

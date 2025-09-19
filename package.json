@@ -81,6 +81,7 @@
     "react-day-picker": "9.8.0",
     "react-dom": "^18",
     "react-hook-form": "^7.62.0",
+    "react-is": "^19.1.1",
     "react-resizable-panels": "^2.1.7",
     "recharts": "latest",
     "sharp": "^0.34.4",
@@ -99,6 +100,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
     "@types/js-cookie": "^3.0.6",
+    "@types/minimatch": "^6.0.0",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",

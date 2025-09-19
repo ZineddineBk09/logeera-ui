@@ -1,4 +1,8 @@
 import type { Metadata } from 'next';
+
+// Disable static generation for this page since it uses client-side form components
+export const dynamic = 'force-dynamic';
+
 import { ContactForm } from '@/components/contact-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

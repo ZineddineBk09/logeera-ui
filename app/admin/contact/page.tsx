@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+
+// Disable static generation for this page since it requires authentication
+export const dynamic = 'force-dynamic';
 import { AdminLayout } from '@/components/admin/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

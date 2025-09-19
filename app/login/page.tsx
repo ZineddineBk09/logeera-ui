@@ -1,4 +1,8 @@
 import type { Metadata } from 'next';
+
+// Disable static generation for this page since it uses client-side auth checks
+export const dynamic = 'force-dynamic';
+
 import { LoginForm } from '@/components/auth/login-form';
 import {
   Card,

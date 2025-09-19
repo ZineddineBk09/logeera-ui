@@ -1,5 +1,8 @@
 'use client';
 
+// Disable static generation for this page since it requires authentication
+export const dynamic = 'force-dynamic';
+
 import { useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useRequireAuth } from '@/lib/hooks/use-auth';
