@@ -16,10 +16,16 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const response = NextResponse.next();
 
-    response.headers.set(
-      'Access-Control-Allow-Origin',
-      process.env.CORS_ORIGIN || 'http://localhost:3000',
-    );
+    // Handle multiple CORS origins
+    const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+    const requestOrigin = request.headers.get('origin');
+    
+    // Check if the request origin is in our allowed list
+    const allowedOrigin = requestOrigin && corsOrigins.includes(requestOrigin) 
+      ? requestOrigin 
+      : corsOrigins[0]; // Default to first origin if not found
+
+    response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
     response.headers.set(
       'Access-Control-Allow-Methods',
       'GET, POST, PUT, PATCH, DELETE, OPTIONS',

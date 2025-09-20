@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "prisma generate && next build",
     "dev": "next dev",
     "dev:socket": "node server.js",
     "lint": "next lint",
@@ -13,10 +13,14 @@
     "db:seed": "node scripts/seed.js",
     "db:seed-simple": "node scripts/seed-simple.js",
     "db:seed-api": "node scripts/seed-database.js",
+    "db:seed-neon": "node scripts/seed-neon.js",
     "db:reset": "npx prisma migrate reset --force && npm run db:seed-simple",
     "db:studio": "npx prisma studio",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate",
     "icons:generate": "node scripts/generate-icons.js",
-    "pwa:build": "npm run icons:generate && next build"
+    "pwa:build": "npm run icons:generate && next build",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -99,6 +103,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
     "@types/js-cookie": "^3.0.6",
+    "@types/minimatch": "^6.0.0",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",

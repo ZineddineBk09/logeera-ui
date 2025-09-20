@@ -1,6 +1,6 @@
 // const fetch = require('node-fetch');
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://logeera.vercel.app';
 
 // African cities with coordinates for realistic trips
 const africanCities = [
