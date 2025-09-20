@@ -377,7 +377,7 @@ Create `app/api/auth/login/route.ts`:
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/lib/database';
 import { User } from '@/lib/entities/User';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import { z } from 'zod';
 
@@ -440,7 +440,7 @@ Create `app/api/auth/register/route.ts`:
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/lib/database';
 import { User, UserType } from '@/lib/entities/User';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import { z } from 'zod';
 

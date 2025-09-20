@@ -130,12 +130,6 @@ export function LoginForm() {
             Remember me
           </Label>
         </div>
-        <Link
-          href="/auth/forgot-password"
-          className="text-primary text-sm hover:underline"
-        >
-          Forgot password?
-        </Link>
       </div>
 
       <Button
@@ -153,10 +147,9 @@ export function LoginForm() {
         </div>
       </div>
 
-
       <p className="text-muted-foreground text-center text-sm">
         Don't have an account?{' '}
-        <Link href="/auth/register" className="text-primary hover:underline">
+        <Link href="/register" className="text-primary hover:underline">
           Sign up
         </Link>
       </p>

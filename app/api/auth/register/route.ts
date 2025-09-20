@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import { z } from 'zod';
 

@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // CORS headers for API routes
-  if (pathname.startsWith('/api/')) {
+  if (pathname.includes('/api/')) {
     const response = NextResponse.next();
 
     // Handle multiple CORS origins
@@ -28,13 +28,14 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
     response.headers.set(
       'Access-Control-Allow-Methods',
-      'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
     );
     response.headers.set(
       'Access-Control-Allow-Headers',
-      'Content-Type, Authorization',
+      'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, X-File-Name',
     );
     response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
 
     // Security headers
     response.headers.set('X-Frame-Options', 'DENY');

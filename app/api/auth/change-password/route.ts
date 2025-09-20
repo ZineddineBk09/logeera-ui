@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/database';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
 const changePasswordSchema = z.object({

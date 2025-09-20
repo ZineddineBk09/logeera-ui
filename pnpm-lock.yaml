@@ -104,9 +104,6 @@ importers:
       '@sveltejs/kit':
         specifier: latest
         version: 2.37.1(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@6.1.4(svelte@5.38.7)(vite@7.1.4(@types/node@22.0.0)(jiti@2.5.1)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.20.5)))(svelte@5.38.7)(vite@7.1.4(@types/node@22.0.0)(jiti@2.5.1)(lightningcss@1.30.1)(terser@5.44.0)(tsx@4.20.5))
-      '@types/bcrypt':
-        specifier: ^6.0.0
-        version: 6.0.0
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
@@ -116,9 +113,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.0)
-      bcrypt:
-        specifier: ^6.0.0
-        version: 6.0.0
+      bcryptjs:
+        specifier: ^3.0.2
+        version: 3.0.2
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -243,9 +240,6 @@ importers:
       '@types/js-cookie':
         specifier: ^3.0.6
         version: 3.0.6
-      '@types/minimatch':
-        specifier: ^6.0.0
-        version: 6.0.0
       '@types/node':
         specifier: ^22
         version: 22.0.0
@@ -2465,9 +2459,6 @@ packages:
   '@tailwindcss/postcss@4.1.9':
     resolution: {integrity: sha512-v3DKzHibZO8ioVDmuVHCW1PR0XSM7nS40EjZFJEA1xPuvTuQPaR5flE1LyikU3hu2u1KNWBtEaSe8qsQjX3tyg==}
 
-  '@types/bcrypt@6.0.0':
-    resolution: {integrity: sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ==}
-
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
 
@@ -2797,9 +2788,9 @@ packages:
     resolution: {integrity: sha512-lGe34o6EHj9y3Kts9R4ZYs/Gr+6N7MCaMlIFA3F1R2O5/m7K06AxfSeO5530PEERE6/WyEg3lsuyw4GHlPZHog==}
     engines: {node: ^4.5.0 || >= 5.9}
 
-  bcrypt@6.0.0:
-    resolution: {integrity: sha512-cU8v/EGSrnH+HnxV2z0J7/blxH8gq7Xh2JFT6Aroax7UohdmiJJlxApMxtKfuI7z68NvvVcmR78k2LbT6efhRg==}
-    engines: {node: '>= 18'}
+  bcryptjs@3.0.2:
+    resolution: {integrity: sha512-k38b3XOZKv60C4E2hVsXTolJWfkGRMbILBIe2IBITXciy5bOsTKot5kDrf3ZfufQtQOUN5mXceUEpU1rTl9Uog==}
+    hasBin: true
 
   big.js@5.2.2:
     resolution: {integrity: sha512-vyL2OymJxmarO8gxMr0mhChsO9QGwhynfuu4+MHTAW6czfq9humCB7rKpUjDd9YUiDPU4mzpyupFSvOClAwbmQ==}
@@ -3887,10 +3878,6 @@ packages:
       sass:
         optional: true
 
-  node-addon-api@8.5.0:
-    resolution: {integrity: sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==}
-    engines: {node: ^18 || ^20 || >= 21}
-
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
@@ -3902,10 +3889,6 @@ packages:
   node-fetch@3.3.2:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-
-  node-gyp-build@4.8.4:
-    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
-    hasBin: true
 
   node-releases@2.0.20:
     resolution: {integrity: sha512-7gK6zSXEH6neM212JgfYFXe+GmZQM+fia5SsusuBIUgnPheLFBmIPhtFoAQRj8/7wASYQnbDlHPVwY0BefoFgA==}
@@ -7159,10 +7142,6 @@ snapshots:
       postcss: 8.5.0
       tailwindcss: 4.1.9
 
-  '@types/bcrypt@6.0.0':
-    dependencies:
-      '@types/node': 22.0.0
-
   '@types/cookie@0.6.0': {}
 
   '@types/cors@2.8.19':
@@ -7531,10 +7510,7 @@ snapshots:
 
   base64id@2.0.0: {}
 
-  bcrypt@6.0.0:
-    dependencies:
-      node-addon-api: 8.5.0
-      node-gyp-build: 4.8.4
+  bcryptjs@3.0.2: {}
 
   big.js@5.2.2: {}
 
@@ -8636,8 +8612,6 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  node-addon-api@8.5.0: {}
-
   node-domexception@1.0.0: {}
 
   node-fetch-native@1.6.7: {}
@@ -8647,8 +8621,6 @@ snapshots:
       data-uri-to-buffer: 4.0.1
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
-
-  node-gyp-build@4.8.4: {}
 
   node-releases@2.0.20: {}
 
