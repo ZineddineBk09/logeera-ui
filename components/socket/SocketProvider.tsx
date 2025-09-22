@@ -28,6 +28,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if Socket.IO is enabled via environment variable
+    const socketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true';
+    
+    if (!socketEnabled) {
+      console.log('Socket.IO disabled via NEXT_PUBLIC_ENABLE_SOCKET environment variable');
+      setConnectionError('Real-time chat disabled - Using polling mode');
+      return;
+    }
+
     const token = Cookies.get('accessToken');
 
     if (!token) {

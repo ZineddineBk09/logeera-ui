@@ -22,7 +22,7 @@ export const RequestsService = {
   setStatus: (id: string, status: 'accepted' | 'rejected') =>
     api(`/api/requests/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status: status.toUpperCase() }),
     }),
   incoming: () => api('/api/requests/incoming'),
   outgoing: () => api('/api/requests/outgoing'),

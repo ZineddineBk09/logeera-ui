@@ -106,19 +106,32 @@ export function ChatsInterface() {
   // Handle URL parameters for direct chat access
   useEffect(() => {
     const chatId = searchParams?.get('chatId');
-    if (chatId && chats.length > 0) {
-      const chat = chats.find((c: any) => c.id === chatId);
-      if (chat) {
-        // Check if user is trying to chat with themselves
-        if (chat.otherUser.id === user?.id) {
-          toast.error('You cannot chat with yourself');
-          router.push('/chat');
-          return;
+    if (chatId && !chatsLoading && user?.id) {
+      // If chats are loaded, try to find the specific chat
+      if (chats.length > 0) {
+        const chat = chats.find((c: any) => c.id === chatId);
+        if (chat) {
+          // Check if user is trying to chat with themselves
+          if (chat.otherUser.id === user.id) {
+            toast.error('You cannot chat with yourself');
+            router.push('/chats');
+            return;
+          }
+          setSelectedChat(chat);
+        } else {
+          // Chat not found in the list, try to fetch it directly
+          // This might be a chat that exists but isn't in the current user's chat list
+          // We'll show an error for now, but in the future we could try to fetch it
+          toast.error('Chat not found or you no longer have access to this conversation');
+          router.push('/chats');
         }
-        setSelectedChat(chat);
+      } else {
+        // No chats available, but we have a chatId - this might be an invalid chat
+        toast.error('Chat not found or you no longer have access to this conversation');
+        router.push('/chats');
       }
     }
-  }, [searchParams, chats, user?.id, router]);
+  }, [searchParams, chats, chatsLoading, user?.id, router]);
 
   // Fetch messages for selected chat
   const {
@@ -131,7 +144,17 @@ export function ChatsInterface() {
     () =>
       ChatService.messages(selectedChat!.id).then(async (r) => {
         if (r.ok) {
-          return await r.json();
+          const messages = await r.json();
+          // Sort messages by createdAt and id to ensure proper ordering
+          return messages.sort((a: Message, b: Message) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            if (dateA !== dateB) {
+              return dateA - dateB;
+            }
+            // If timestamps are equal, sort by ID for consistency
+            return a.id.localeCompare(b.id);
+          });
         }
         throw new Error('Failed to load messages');
       }),
@@ -149,19 +172,20 @@ export function ChatsInterface() {
       chat.otherUser.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // Auto-select first chat if none selected
+  // Auto-select first chat if none selected and no URL parameter
   useEffect(() => {
-    if (chats.length > 0 && !selectedChat) {
+    const chatId = searchParams?.get('chatId');
+    if (chats.length > 0 && !selectedChat && !chatId) {
       setSelectedChat(chats[0]);
     }
-  }, [chats, selectedChat]);
+  }, [chats, selectedChat, searchParams]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Socket.IO message handling
+  // Socket.IO message handling (only if socket is enabled and connected)
   useEffect(() => {
     if (!socket || !isConnected || connectionError) return;
 
@@ -171,7 +195,15 @@ export function ChatsInterface() {
       // If the message is for the currently selected chat, add it to messages
       if (selectedChat && payload.chatId === selectedChat.id) {
         mutateMessages(
-          (currentMessages: Message[] = []) => [...currentMessages, payload],
+          (currentMessages: Message[] = []) => {
+            // Check if message already exists to prevent duplicates
+            const messageExists = currentMessages.some(msg => msg.id === payload.id);
+            if (messageExists) {
+              console.log('Message already exists, skipping duplicate');
+              return currentMessages;
+            }
+            return [...currentMessages, payload];
+          },
           false,
         );
       }
@@ -209,9 +241,12 @@ export function ChatsInterface() {
     mutateChats,
   ]);
 
-  // Long polling fallback when Socket.IO is not available
+  // Long polling fallback when Socket.IO is not available or disabled
   useEffect(() => {
-    if (socket && isConnected && !connectionError) {
+    // Check if Socket.IO is enabled via environment variable
+    const socketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true';
+    
+    if (socketEnabled && socket && isConnected && !connectionError) {
       // Socket.IO is working, stop any long polling
       if (selectedChat) {
         longPollingService.stopPolling(selectedChat.id);
@@ -219,35 +254,51 @@ export function ChatsInterface() {
       return;
     }
 
-    // Socket.IO is not available, start long polling for the selected chat
+    // Socket.IO is disabled or not available, start long polling for the selected chat
     if (selectedChat) {
       longPollingService.startPolling(selectedChat.id, {
         interval: 5000, // Poll every 5 seconds
         maxRetries: 3,
         onMessage: (newMessages: Message[]) => {
-          // Check if there are new messages by comparing with current messages
-          const currentMessageIds = new Set(
-            messages?.map((m: Message) => m.id) || [],
-          );
-          const actualNewMessages = newMessages.filter(
-            (msg) => !currentMessageIds.has(msg.id),
+          // Use mutateMessages to get the current state and check for duplicates
+          let actualNewMessages: Message[] = [];
+          
+          mutateMessages(
+            (currentMessages: Message[] = []) => {
+              // Check if there are new messages by comparing with current messages
+              const currentMessageIds = new Set(
+                currentMessages.map((m: Message) => m.id),
+              );
+              actualNewMessages = newMessages.filter(
+                (msg) => !currentMessageIds.has(msg.id),
+              );
+
+              if (actualNewMessages.length > 0) {
+                console.log(
+                  `Long polling: Found ${actualNewMessages.length} new messages`,
+                );
+                // Sort messages by createdAt and id to ensure proper ordering
+                const allMessages = [...currentMessages, ...actualNewMessages];
+                return allMessages.sort((a, b) => {
+                  const dateA = new Date(a.createdAt).getTime();
+                  const dateB = new Date(b.createdAt).getTime();
+                  if (dateA !== dateB) {
+                    return dateA - dateB;
+                  }
+                  // If timestamps are equal, sort by ID for consistency
+                  return a.id.localeCompare(b.id);
+                });
+              }
+              
+              // No new messages, return current messages unchanged
+              return currentMessages;
+            },
+            false,
           );
 
+          // Update chat list with new last message if there were new messages
           if (actualNewMessages.length > 0) {
-            console.log(
-              `Long polling: Found ${actualNewMessages.length} new messages`,
-            );
-            mutateMessages(
-              (currentMessages: Message[] = []) => [
-                ...currentMessages,
-                ...actualNewMessages,
-              ],
-              false,
-            );
-
-            // Update chat list with new last message
-            const latestMessage =
-              actualNewMessages[actualNewMessages.length - 1];
+            const latestMessage = actualNewMessages[actualNewMessages.length - 1];
             mutateChats((currentChats: Chat[] = []) => {
               return currentChats.map((chat: Chat) => {
                 if (chat.id === selectedChat.id) {
@@ -292,8 +343,46 @@ export function ChatsInterface() {
     mutateChats,
   ]);
 
+  // Simple client-side validation
+  const validateMessage = (content: string): string | null => {
+    if (!content.trim()) {
+      return 'Message cannot be empty';
+    }
+    if (content.length > 1000) {
+      return 'Message cannot exceed 1000 characters';
+    }
+    
+    // Check for basic XSS patterns
+    const xssPatterns = [
+      /<script[^>]*>.*?<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>/gi,
+      /<object[^>]*>/gi,
+      /<embed[^>]*>/gi,
+      /<link[^>]*>/gi,
+      /<meta[^>]*>/gi,
+      /<style[^>]*>.*?<\/style>/gi,
+      /<form[^>]*>/gi,
+      /<input[^>]*>/gi,
+    ];
+    
+    if (xssPatterns.some(pattern => pattern.test(content))) {
+      return 'Message contains potentially harmful content';
+    }
+    
+    return null;
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChat || !user || isSending) return;
+
+    // Validate message content
+    const validationError = validateMessage(newMessage);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -301,14 +390,6 @@ export function ChatsInterface() {
         senderId: user.id,
         content: newMessage.trim(),
       };
-
-      // Send via Socket.IO for real-time delivery (if connected)
-      if (socket && isConnected) {
-        socket.emit('message', {
-          chatId: selectedChat.id,
-          ...messagePayload,
-        });
-      }
 
       // Send via API for persistence
       const response = await ChatService.postMessage(
@@ -319,14 +400,22 @@ export function ChatsInterface() {
       if (response.ok) {
         const newMessageData = await response.json();
 
-        // Optimistically add the message to the UI
-        mutateMessages(
-          (currentMessages: Message[] = []) => [
-            ...currentMessages,
-            newMessageData,
-          ],
-          false,
-        );
+        // Only add to UI if Socket.IO is not enabled (to avoid duplicates)
+        // If Socket.IO is enabled, the message will be received via socket
+        const socketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true';
+        if (!socketEnabled || !socket || !isConnected) {
+          console.log('Adding message to UI via API response:', newMessageData.id);
+          // Optimistically add the message to the UI
+          mutateMessages(
+            (currentMessages: Message[] = []) => [
+              ...currentMessages,
+              newMessageData,
+            ],
+            false,
+          );
+        } else {
+          console.log('Socket.IO enabled, not adding message to UI via API response');
+        }
 
         // Update chat list with new last message
         mutateChats((currentChats: Chat[] = []) => {
@@ -450,16 +539,22 @@ export function ChatsInterface() {
             real-time
           </div>
         )}
-        {!connectionError && !isConnected && (
+        {!connectionError && !isConnected && process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && (
           <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
             Connecting to real-time chat...
           </div>
         )}
-        {isConnected && (
+        {isConnected && process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && (
           <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
             Real-time chat connected
+          </div>
+        )}
+        {process.env.NEXT_PUBLIC_ENABLE_SOCKET !== 'true' && (
+          <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+            Using polling mode for message updates
           </div>
         )}
       </div>
@@ -497,47 +592,47 @@ export function ChatsInterface() {
                 </div>
               ) : (
                 filteredChats.map((chat: Chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat)}
+                <div
+                  key={chat.id}
+                  onClick={() => setSelectedChat(chat)}
                     className={`hover:bg-muted/50 flex cursor-pointer items-center gap-3 border-b p-4 transition-colors ${
                       selectedChat?.id === chat.id ? 'bg-muted/50' : ''
-                    }`}
-                  >
-                    <div className="relative">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
+                  }`}
+                >
+                  <div className="relative">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage
                           src="/placeholder.svg"
                           alt={chat.otherUser.name}
-                        />
-                        <AvatarFallback>
+                      />
+                      <AvatarFallback>
                           {chat.otherUser.name
                             .split(' ')
-                            .map((n) => n[0])
+                          .map((n) => n[0])
                             .join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      {isConnected && !connectionError && (
+                      </AvatarFallback>
+                    </Avatar>
+                      {process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && isConnected && !connectionError && (
                         <div className="border-background absolute -right-1 -bottom-1 h-4 w-4 rounded-full border-2 bg-green-500" />
-                      )}
-                    </div>
+                    )}
+                  </div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center justify-between">
                         <h3 className="truncate text-sm font-semibold">
                           {chat.otherUser.name}
-                        </h3>
+                      </h3>
                         <span className="text-muted-foreground text-xs">
                           {chat.lastMessage
                             ? formatTimestamp(chat.lastMessage.createdAt)
                             : formatTimestamp(chat.updatedAt)}
-                        </span>
-                      </div>
+                      </span>
+                    </div>
                       <div className="mb-1 flex items-center gap-1">
                         <span className="text-muted-foreground truncate text-xs">
                           {chat.otherUser.email}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
                         <p className="text-muted-foreground truncate text-sm">
                           {chat.lastMessage
                             ? chat.lastMessage.content
@@ -556,44 +651,44 @@ export function ChatsInterface() {
         <Card className="flex flex-col lg:col-span-2">
           {selectedChat ? (
             <>
-              {/* Chat Header */}
+          {/* Chat Header */}
               <CardHeader className="border-b pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
                           src="/placeholder.svg"
                           alt={selectedChat.otherUser.name}
-                        />
-                        <AvatarFallback>
+                    />
+                    <AvatarFallback>
                           {selectedChat.otherUser.name
                             .split(' ')
-                            .map((n) => n[0])
+                        .map((n) => n[0])
                             .join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      {isConnected && !connectionError && (
+                    </AvatarFallback>
+                  </Avatar>
+                      {process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && isConnected && !connectionError && (
                         <div className="border-background absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 bg-green-500" />
-                      )}
-                    </div>
-                    <div>
+                  )}
+                </div>
+                <div>
                       <h3 className="font-semibold">
                         {selectedChat.otherUser.name}
                       </h3>
                       <div className="text-muted-foreground flex items-center gap-1 text-sm">
                         <span>{selectedChat.otherUser.email}</span>
-                      </div>
-                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <DropdownMenu>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
                       <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() =>
                             router.push(`/drivers/${selectedChat.otherUser.id}`)
@@ -605,17 +700,17 @@ export function ChatsInterface() {
                           className="text-red-600"
                           onClick={() => handleBlockUser(selectedChat.otherUser.id, selectedChat.otherUser.name)}
                         >
-                          Block User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardHeader>
+                      Block User
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </CardHeader>
 
-              {/* Messages */}
-              <CardContent className="flex-1 p-0">
-                <ScrollArea className="h-[400px] p-4">
+          {/* Messages */}
+          <CardContent className="flex-1 p-0">
+            <ScrollArea className="h-[400px] p-4">
                   {messagesLoading ? (
                     <div className="flex h-full items-center justify-center">
                       <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
@@ -632,23 +727,23 @@ export function ChatsInterface() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+              <div className="space-y-4">
                       {messages.map((message: Message) => {
                         const isMe = message.senderId === user?.id;
                         return (
-                          <div
-                            key={message.id}
+                  <div
+                    key={message.id}
                             className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div
-                              className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
                                 isMe
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted text-foreground'
                               }`}
                             >
                               <p className="text-sm">{message.content}</p>
-                              <span
+                      <span
                                 className={`mt-1 block text-xs ${
                                   isMe
                                     ? 'text-primary-foreground/70'
@@ -656,30 +751,42 @@ export function ChatsInterface() {
                                 }`}
                               >
                                 {formatMessageTime(message.createdAt)}
-                              </span>
-                            </div>
-                          </div>
+                      </span>
+                    </div>
+                  </div>
                         );
                       })}
                       <div ref={messagesEndRef} />
-                    </div>
+              </div>
                   )}
-                </ScrollArea>
-              </CardContent>
+            </ScrollArea>
+          </CardContent>
 
-              {/* Message Input */}
+          {/* Message Input */}
               <div className="border-t p-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) =>
-                      e.key === 'Enter' && !isSending && handleSendMessage()
-                    }
-                    className="flex-1"
-                    disabled={isSending}
-                  />
+            <div className="mb-2 flex justify-end">
+              <span className={`text-xs ${newMessage.length > 900 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                {newMessage.length}/1000
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => {
+                  // Limit input length and prevent XSS
+                  const value = e.target.value;
+                  if (value.length <= 1000) {
+                    setNewMessage(value);
+                  }
+                }}
+                onKeyPress={(e) =>
+                  e.key === 'Enter' && !isSending && handleSendMessage()
+                }
+                className="flex-1"
+                disabled={isSending}
+                maxLength={1000}
+              />
                   <Button
                     onClick={handleSendMessage}
                     size="icon"
@@ -688,11 +795,11 @@ export function ChatsInterface() {
                     {isSending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Send className="h-4 w-4" />
+                <Send className="h-4 w-4" />
                     )}
-                  </Button>
-                </div>
-              </div>
+              </Button>
+            </div>
+          </div>
             </>
           ) : (
             <div className="flex h-full items-center justify-center">

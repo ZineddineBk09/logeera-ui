@@ -30,48 +30,38 @@ export default function LoginPage() {
     <AuthRedirectHandler>
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 dark:from-gray-900 dark:to-gray-800">
         <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Sign in to your Logeera account
-          </p>
-        </div>
+          {/* Header */}
+          <div className="space-y-2 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Welcome Back
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Sign in to your Logeera account
+            </p>
+          </div>
 
-        {/* Login Form */}
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-center text-2xl">Sign In</CardTitle>
-            <CardDescription className="text-center">
-              Enter your email and password to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LoginForm />
-          </CardContent>
-        </Card>
+          {/* Login Form */}
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-center text-2xl">Sign In</CardTitle>
+              <CardDescription className="text-center">
+                Enter your email and password to access your account
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LoginForm />
+            </CardContent>
+          </Card>
 
-        {/* Footer */}
-        <div className="space-y-4 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
-            <Link
-              href={ROUTES.REGISTER}
-              className="text-primary font-medium hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
-
-          <div className="text-xs text-gray-500 dark:text-gray-500">
-            <Link href={ROUTES.HELP} className="hover:underline">
-              Need help?
-            </Link>
+          {/* Footer */}
+          <div className="space-y-4 text-center">
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              <Link href={ROUTES.HELP} className="hover:underline">
+                Need help?
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </AuthRedirectHandler>
   );

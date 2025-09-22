@@ -104,6 +104,17 @@ export function PublishWizard() {
       return;
     }
 
+    // Validate date is tomorrow or later
+    const selectedDate = new Date(tripData.date);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < tomorrow) {
+      toast.error('Please select a date from tomorrow onwards');
+      return;
+    }
+
     setIsPublishing(true);
 
     try {
@@ -177,8 +188,16 @@ export function PublishWizard() {
           placeData.destinationPlace
         );
       case 2:
+        // Check if date is valid (tomorrow or later)
+        const selectedDate = new Date(tripData.date);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        const isDateValid = tripData.date && selectedDate >= tomorrow;
+        
         return (
-          tripData.date &&
+          isDateValid &&
           tripData.time &&
           tripData.vehicleType &&
           tripData.capacity &&
@@ -316,6 +335,11 @@ export function PublishWizard() {
                         type="date"
                         className="pl-10"
                         value={tripData.date}
+                        min={(() => {
+                          const tomorrow = new Date();
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          return tomorrow.toISOString().split('T')[0];
+                        })()}
                         onChange={(e) =>
                           setTripData((prev) => ({
                             ...prev,
@@ -324,6 +348,21 @@ export function PublishWizard() {
                         }
                       />
                     </div>
+                    {tripData.date && (() => {
+                      const selectedDate = new Date(tripData.date);
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      tomorrow.setHours(0, 0, 0, 0);
+                      
+                      if (selectedDate < tomorrow) {
+                        return (
+                          <p className="text-destructive text-sm">
+                            Please select a date from tomorrow onwards
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div className="space-y-2">
                     <Label>Departure time</Label>

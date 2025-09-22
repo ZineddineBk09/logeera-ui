@@ -16,12 +16,14 @@ import {
   X,
   MessageCircle,
   Star,
+  Loader2,
 } from 'lucide-react';
 import { RequestsService, ChatService } from '@/lib/services';
 import { toast } from 'sonner';
 import { TripRating } from './trip-rating';
 import { api } from '@/lib/api';
 import useSWR from 'swr';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 interface RequestIncoming {
   id: string;
@@ -68,9 +70,11 @@ interface RequestOutgoing {
 export function RequestsManagement() {
   const [activeTab, setActiveTab] = useState('incoming');
   const router = useRouter();
+  const { user } = useAuth();
   const [incoming, setIncoming] = useState<RequestIncoming[]>([]);
   const [outgoing, setOutgoing] = useState<RequestOutgoing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
 
   // Fetch trips that can be rated
   const {
@@ -103,26 +107,85 @@ export function RequestsManagement() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAccept = (requestId: string) => {
-    RequestsService.setStatus(requestId, 'accepted').then(async (r) => {
-      if (r.ok) toast.success('Request accepted');
-      else toast.error('Failed to accept');
-    });
+  const handleAccept = async (requestId: string) => {
+    // Prevent multiple clicks
+    if (processingRequests.has(requestId)) return;
+    
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    
+    try {
+      const response = await RequestsService.setStatus(requestId, 'accepted');
+      if (response.ok) {
+        toast.success('Request accepted');
+        // Update the local state to reflect the change
+        setIncoming(prev => prev.map(req => 
+          req.id === requestId ? { ...req, status: 'ACCEPTED' } : req
+        ));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to accept request');
+      }
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+    }
   };
 
-  const handleDecline = (requestId: string) => {
-    RequestsService.setStatus(requestId, 'rejected').then(async (r) => {
-      if (r.ok) toast.success('Request rejected');
-      else toast.error('Failed to reject');
-    });
+  const handleDecline = async (requestId: string) => {
+    // Prevent multiple clicks
+    if (processingRequests.has(requestId)) return;
+    
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    
+    try {
+      const response = await RequestsService.setStatus(requestId, 'rejected');
+      if (response.ok) {
+        toast.success('Request rejected');
+        // Update the local state to reflect the change
+        setIncoming(prev => prev.map(req => 
+          req.id === requestId ? { ...req, status: 'REJECTED' } : req
+        ));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to reject request');
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+    }
   };
 
   const handleMessage = async (otherUserId: string, userName: string) => {
+    if (!user?.id) {
+      toast.error('Please log in to start a conversation');
+      return;
+    }
+
     try {
-      // We need to get the current user's ID from auth context
-      // For now, let's just navigate to chats page
-      router.push(`/chats`);
-      toast.success(`Opening chat with ${userName}`);
+      // Create or find the chat between current user and the other user
+      const response = await ChatService.between(user.id, otherUserId, true);
+      
+      if (response.ok) {
+        const chatData = await response.json();
+        // Navigate to the specific chat
+        router.push(`/chats?chatId=${chatData.id}`);
+        toast.success(`Opening chat with ${userName}`);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to start conversation');
+      }
     } catch (error) {
       console.error('Error creating chat:', error);
       toast.error('Failed to start conversation');
@@ -218,7 +281,7 @@ export function RequestsManagement() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs">
                           {new Date(request.createdAt).toLocaleDateString()}
                         </Badge>
                         <Badge
@@ -231,8 +294,8 @@ export function RequestsManagement() {
                           }
                           className="text-xs capitalize"
                         >
-                          {request.status.toLowerCase()}
-                        </Badge>
+                          {processingRequests.has(request.id) ? 'Processing...' : request.status.toLowerCase()}
+                    </Badge>
                       </div>
                   </div>
                 </CardHeader>
@@ -280,16 +343,26 @@ export function RequestsManagement() {
                       <Button
                         onClick={() => handleAccept(request.id)}
                         className="flex-1"
+                        disabled={processingRequests.has(request.id)}
                       >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
                           <Check className="mr-2 h-4 w-4" />
+                        )}
                         Accept
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => handleDecline(request.id)}
                         className="flex-1"
+                        disabled={processingRequests.has(request.id)}
                       >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
                           <X className="mr-2 h-4 w-4" />
+                        )}
                         Decline
                       </Button>
                       <Button
@@ -301,6 +374,7 @@ export function RequestsManagement() {
                               request.applicant.name,
                             )
                           }
+                        disabled={processingRequests.has(request.id)}
                       >
                         <MessageCircle className="h-4 w-4" />
                       </Button>
@@ -365,7 +439,7 @@ export function RequestsManagement() {
                               {request.trip.publisher.averageRating.toFixed(1)}{' '}
                               ({request.trip.publisher.ratingCount} reviews)
                           </span>
-                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

@@ -4,7 +4,7 @@ import type React from 'react';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const schema = z.object({
     name: z.string().min(2, 'Enter your full name'),
@@ -75,7 +76,9 @@ export function RegisterForm() {
     });
 
     if (ok) {
-      router.push(ROUTES.DASHBOARD);
+      // Preserve redirect URL if it exists, otherwise go to dashboard
+      const redirectUrl = searchParams?.get('redirect');
+      router.push(redirectUrl || ROUTES.DASHBOARD);
     }
   };
 
@@ -250,13 +253,6 @@ export function RegisterForm() {
             </p>
           )}
         </div>
-
-        <div className="bg-muted/50 rounded-lg p-3">
-          <div className="flex items-center space-x-2 text-sm">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-            <span>Simple captcha verification (UI placeholder)</span>
-          </div>
-        </div>
       </div>
 
       <Button
@@ -276,7 +272,10 @@ export function RegisterForm() {
 
       <p className="text-muted-foreground text-center text-sm">
         Already have an account?{' '}
-        <Link href="/auth/login" className="text-primary hover:underline">
+        <Link 
+          href={`/login${searchParams?.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`} 
+          className="text-primary hover:underline"
+        >
           Sign in
         </Link>
       </p>

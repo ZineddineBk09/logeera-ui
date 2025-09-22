@@ -201,7 +201,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
   const handleRequestToJoin = () => {
     if (!isAuthenticated) {
       // Redirect to login with current trip page as redirect URL
-      const currentUrl = window.location.pathname;
+      const currentUrl = window.location.pathname + window.location.search;
       router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }
@@ -211,7 +211,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
   const handleMessage = async () => {
     if (!isAuthenticated) {
       // Redirect to login with current trip page as redirect URL
-      const currentUrl = window.location.pathname;
+      const currentUrl = window.location.pathname + window.location.search;
       router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }
@@ -241,7 +241,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
   const handleCall = () => {
     if (!isAuthenticated) {
       // Redirect to login with current trip page as redirect URL
-      const currentUrl = window.location.pathname;
+      const currentUrl = window.location.pathname + window.location.search;
       router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }

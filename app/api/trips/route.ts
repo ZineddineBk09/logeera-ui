@@ -112,8 +112,18 @@ async function getTrips(req: NextRequest) {
       searchParams.get('publisherId') || searchParams.get('driver');
     const searchMode = searchParams.get('searchMode') || 'browse';
 
+    // Progressive search strategy to ensure no empty results
+    const searchStrategy = {
+      hasCoordinates: !!(originLat && originLng) || !!(destinationLat && destinationLng),
+      hasTextSearch: !!(q || origin || destination),
+      hasFilters: !!(departureDate || vehicleType || capacity),
+    };
+
     const where: any = {
       status: 'PUBLISHED',
+      departureAt: {
+        gte: new Date(), // Only future trips
+      },
     };
 
     // Filter by publisher/driver
@@ -121,8 +131,9 @@ async function getTrips(req: NextRequest) {
       where.publisherId = publisherId;
     }
 
-    // Enhanced text-based search
-    if (q || origin || destination) {
+    // Enhanced text-based search with fuzzy matching
+    // Only apply text search if we don't have coordinates (coordinate search takes priority)
+    if (searchStrategy.hasTextSearch && !searchStrategy.hasCoordinates) {
       const searchTerms = [];
       if (q) searchTerms.push(q);
       if (origin) searchTerms.push(origin);
@@ -133,6 +144,13 @@ async function getTrips(req: NextRequest) {
       where.OR = [
         { originName: { contains: searchQuery, mode: 'insensitive' } },
         { destinationName: { contains: searchQuery, mode: 'insensitive' } },
+        // Add partial matching for better results
+        ...searchTerms.map(term => ({
+          originName: { contains: term, mode: 'insensitive' }
+        })),
+        ...searchTerms.map(term => ({
+          destinationName: { contains: term, mode: 'insensitive' }
+        })),
       ];
     }
 
@@ -159,18 +177,11 @@ async function getTrips(req: NextRequest) {
       };
     }
 
-    // For coordinate-based search, we'll fetch all trips and then filter
-    // This is more flexible than complex SQL queries
-    if ((originLat && originLng) || (destinationLat && destinationLng)) {
-      // Only filter for trips with valid geometry
+    // For coordinate-based search, ensure we have valid geometry
+    if (searchStrategy.hasCoordinates) {
       where.originGeom = { not: '' };
       where.destinationGeom = { not: '' };
     }
-
-    // date is after today
-    where.departureAt = {
-      gte: new Date(),
-    };
 
     let trips = await prisma.trip.findMany({
       where,
@@ -190,8 +201,8 @@ async function getTrips(req: NextRequest) {
       },
     });
 
-    // Enhanced geospatial filtering with distance scoring
-    if ((originLat && originLng) || (destinationLat && destinationLng)) {
+    // Progressive geospatial search algorithm to ensure no empty results
+    if (searchStrategy.hasCoordinates) {
       const searchOrigin =
         originLat && originLng
           ? { lat: parseFloat(originLat), lng: parseFloat(originLng) }
@@ -201,128 +212,27 @@ async function getTrips(req: NextRequest) {
           ? { lat: parseFloat(destinationLat), lng: parseFloat(destinationLng) }
           : null;
 
-      trips = trips
-        .map((trip) => {
-          const tripOrigin = parseWKTPoint(trip.originGeom);
-          const tripDestination = parseWKTPoint(trip.destinationGeom);
+      // Progressive search with multiple radius levels
+      const searchLevels = [
+        { name: 'exact', originRadius: 10, destRadius: 10, weight: 100 },
+        { name: 'close', originRadius: 25, destRadius: 25, weight: 80 },
+        { name: 'nearby', originRadius: 50, destRadius: 50, weight: 60 },
+        { name: 'regional', originRadius: 100, destRadius: 100, weight: 40 },
+        { name: 'broad', originRadius: 200, destRadius: 200, weight: 20 },
+        { name: 'extended', originRadius: 500, destRadius: 500, weight: 10 },
+      ];
 
-          let originDistance = Infinity;
-          let destinationDistance = Infinity;
-          let relevanceScore = 0;
+      let bestMatches: any[] = [];
+      let searchMetadata = {
+        searchMode: 'proximity',
+        searchLevel: 'exact',
+        isBroadSearch: false,
+        totalResults: 0,
+      };
 
-          // Calculate origin proximity
-          if (searchOrigin && tripOrigin) {
-            originDistance = calculateDistance(searchOrigin, tripOrigin);
-          }
-
-          // Calculate destination proximity
-          if (searchDestination && tripDestination) {
-            destinationDistance = calculateDistance(
-              searchDestination,
-              tripDestination,
-            );
-          }
-
-          // Enhanced scoring logic for trip relevance
-          if (searchOrigin && searchDestination) {
-            // Both origin and destination specified
-            const maxOriginDistance = 100; // km
-            const maxDestinationDistance = 100; // km
-
-            if (
-              originDistance <= maxOriginDistance &&
-              destinationDistance <= maxDestinationDistance
-            ) {
-              // Perfect match bonus if both are very close
-              const originScore = Math.max(
-                0,
-                50 - (originDistance / maxOriginDistance) * 50,
-              );
-              const destinationScore = Math.max(
-                0,
-                50 - (destinationDistance / maxDestinationDistance) * 50,
-              );
-              relevanceScore = originScore + destinationScore;
-
-              // Bonus for exact route matches
-              if (originDistance <= 10 && destinationDistance <= 10) {
-                relevanceScore += 20;
-              }
-            }
-          } else if (searchOrigin) {
-            // Only origin specified - find trips starting nearby
-            const maxDistance = 200; // Increased radius for single-point search
-            if (originDistance <= maxDistance) {
-              relevanceScore = Math.max(
-                0,
-                100 - (originDistance / maxDistance) * 100,
-              );
-
-              // Bonus for very close origins
-              if (originDistance <= 25) {
-                relevanceScore += 20;
-              }
-            }
-          } else if (searchDestination) {
-            // Only destination specified - find trips going there
-            const maxDistance = 200; // Increased radius for single-point search
-            if (destinationDistance <= maxDistance) {
-              relevanceScore = Math.max(
-                0,
-                100 - (destinationDistance / maxDistance) * 100,
-              );
-
-              // Bonus for very close destinations
-              if (destinationDistance <= 25) {
-                relevanceScore += 20;
-              }
-            }
-          }
-
-          return {
-            ...trip,
-            _relevanceScore: relevanceScore,
-            _originDistance: originDistance,
-            _destinationDistance: destinationDistance,
-          };
-        })
-        .filter((trip) => trip._relevanceScore > 0)
-        .sort((a, b) => b._relevanceScore - a._relevanceScore); // Sort by relevance
-
-      // If no trips found with strict proximity, try a broader search
-      if (trips.length === 0 && searchMode === 'proximity') {
-        console.log(
-          'No trips found with proximity search, trying broader search...',
-        );
-
-        // Fetch all trips and apply very broad distance filtering
-        const allTrips = await prisma.trip.findMany({
-          where: {
-            status: 'PUBLISHED',
-            originGeom: { not: '' },
-            destinationGeom: { not: '' },
-            departureAt: {
-              gte: new Date(),
-            }, // date is after today
-          },
-          include: {
-            publisher: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                averageRating: true,
-                ratingCount: true,
-              },
-            },
-          },
-          orderBy: {
-            departureAt: 'asc',
-          },
-        });
-
-        // Apply very broad distance filtering (up to 500km)
-        trips = allTrips
+      // Try each search level until we find results
+      for (const level of searchLevels) {
+        const levelMatches = trips
           .map((trip) => {
             const tripOrigin = parseWKTPoint(trip.originGeom);
             const tripDestination = parseWKTPoint(trip.destinationGeom);
@@ -330,29 +240,65 @@ async function getTrips(req: NextRequest) {
             let originDistance = Infinity;
             let destinationDistance = Infinity;
             let relevanceScore = 0;
+            let matchQuality = 'none';
 
+            // Calculate distances
             if (searchOrigin && tripOrigin) {
               originDistance = calculateDistance(searchOrigin, tripOrigin);
             }
-
             if (searchDestination && tripDestination) {
-              destinationDistance = calculateDistance(
-                searchDestination,
-                tripDestination,
-              );
+              destinationDistance = calculateDistance(searchDestination, tripDestination);
             }
 
-            // Broader matching criteria
+            // Determine match quality and score
             if (searchOrigin && searchDestination) {
-              if (originDistance <= 300 && destinationDistance <= 300) {
-                relevanceScore =
-                  Math.max(0, 50 - originDistance / 10) +
-                  Math.max(0, 50 - destinationDistance / 10);
+              // Both origin and destination specified
+              if (originDistance <= level.originRadius && destinationDistance <= level.destRadius) {
+                const originScore = Math.max(0, level.weight - (originDistance / level.originRadius) * level.weight);
+                const destinationScore = Math.max(0, level.weight - (destinationDistance / level.destRadius) * level.weight);
+                relevanceScore = (originScore + destinationScore) / 2;
+                
+                // Bonus for exact matches
+                if (originDistance <= 5 && destinationDistance <= 5) {
+                  relevanceScore += 20;
+                  matchQuality = 'exact';
+                } else if (originDistance <= 15 && destinationDistance <= 15) {
+                  relevanceScore += 10;
+                  matchQuality = 'very_close';
+                } else {
+                  matchQuality = 'close';
+                }
               }
-            } else if (searchOrigin && originDistance <= 500) {
-              relevanceScore = Math.max(0, 100 - originDistance / 5);
-            } else if (searchDestination && destinationDistance <= 500) {
-              relevanceScore = Math.max(0, 100 - destinationDistance / 5);
+            } else if (searchOrigin) {
+              // Only origin specified
+              if (originDistance <= level.originRadius) {
+                relevanceScore = Math.max(0, level.weight - (originDistance / level.originRadius) * level.weight);
+                
+                if (originDistance <= 5) {
+                  relevanceScore += 20;
+                  matchQuality = 'exact';
+                } else if (originDistance <= 15) {
+                  relevanceScore += 10;
+                  matchQuality = 'very_close';
+                } else {
+                  matchQuality = 'close';
+                }
+              }
+            } else if (searchDestination) {
+              // Only destination specified
+              if (destinationDistance <= level.destRadius) {
+                relevanceScore = Math.max(0, level.weight - (destinationDistance / level.destRadius) * level.weight);
+                
+                if (destinationDistance <= 5) {
+                  relevanceScore += 20;
+                  matchQuality = 'exact';
+                } else if (destinationDistance <= 15) {
+                  relevanceScore += 10;
+                  matchQuality = 'very_close';
+                } else {
+                  matchQuality = 'close';
+                }
+              }
             }
 
             return {
@@ -360,28 +306,108 @@ async function getTrips(req: NextRequest) {
               _relevanceScore: relevanceScore,
               _originDistance: originDistance,
               _destinationDistance: destinationDistance,
-              _isBroadSearch: true,
+              _matchQuality: matchQuality,
+              _searchLevel: level.name,
             };
           })
           .filter((trip) => trip._relevanceScore > 0)
-          .sort((a, b) => b._relevanceScore - a._relevanceScore)
-          .slice(0, 20); // Limit results for broad search
+          .sort((a, b) => b._relevanceScore - a._relevanceScore);
+
+        // If we found matches at this level, use them
+        if (levelMatches.length > 0) {
+          bestMatches = levelMatches.map(trip => ({
+            ...trip,
+            _searchMetadata: {
+              searchMode: 'proximity',
+              searchLevel: level.name,
+              isBroadSearch: level.name === 'broad' || level.name === 'extended',
+              totalResults: levelMatches.length,
+            }
+          }));
+          break; // Stop at first successful level
+        }
       }
+
+      // If still no matches, fall back to text-based search or show all trips
+      if (bestMatches.length === 0) {
+        console.log('No proximity matches found, falling back to text search or all trips');
+        
+        if (searchStrategy.hasTextSearch && !searchStrategy.hasCoordinates) {
+          // Keep the original text-based results (only if no coordinates)
+          bestMatches = trips.map(trip => ({
+            ...trip,
+            _searchMetadata: {
+              searchMode: 'text',
+              searchLevel: 'text_fallback',
+              isBroadSearch: true,
+              totalResults: trips.length,
+            }
+          }));
+        } else {
+          // Show all available trips as last resort
+          const allTrips = await prisma.trip.findMany({
+            where: {
+              status: 'PUBLISHED',
+              departureAt: { gte: new Date() },
+            },
+            include: {
+              publisher: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  averageRating: true,
+                  ratingCount: true,
+                },
+              },
+            },
+            orderBy: { departureAt: 'asc' },
+            take: 20, // Limit to prevent overwhelming results
+          });
+          
+          bestMatches = allTrips.map(trip => ({
+            ...trip,
+            _relevanceScore: 1,
+            _originDistance: Infinity,
+            _destinationDistance: Infinity,
+            _matchQuality: 'fallback',
+            _searchLevel: 'all_trips',
+            _searchMetadata: {
+              searchMode: 'fallback',
+              searchLevel: 'all_trips',
+              isBroadSearch: true,
+              totalResults: allTrips.length,
+            }
+          }));
+        }
+      }
+
+      trips = bestMatches;
     }
 
     // Add search metadata to help frontend understand the results
-    const searchMetadata = {
-      searchMode,
-      hasCoordinates:
-        !!(originLat && originLng) || !!(destinationLat && destinationLng),
-      hasDate: !!departureDate,
-      isBroadSearch: trips.some((trip: any) => trip._isBroadSearch),
-      totalResults: trips.length,
-    };
+    const finalMetadata = searchStrategy.hasCoordinates ? 
+      (trips.length > 0 ? (trips[0] as any)._searchMetadata : {
+        searchMode: 'proximity',
+        searchLevel: 'no_matches',
+        isBroadSearch: true,
+        totalResults: 0,
+      }) : {
+        searchMode: searchStrategy.hasTextSearch ? 'text' : 'browse',
+        searchLevel: 'standard',
+        isBroadSearch: false,
+        totalResults: trips.length,
+      };
 
     return NextResponse.json({
       trips,
-      metadata: searchMetadata,
+      metadata: {
+        ...finalMetadata,
+        hasCoordinates: searchStrategy.hasCoordinates,
+        hasTextSearch: searchStrategy.hasTextSearch,
+        hasFilters: searchStrategy.hasFilters,
+        hasDate: !!departureDate,
+      },
     });
   } catch (error) {
     console.error('Error fetching trips:', error);

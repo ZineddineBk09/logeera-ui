@@ -3,9 +3,42 @@ import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/database';
 import { z } from 'zod';
 
+// Simple HTML sanitization function
+function sanitizeMessage(content: string): string {
+  return content
+    .replace(/&/g, '&amp;')  // Must be first to avoid double encoding
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
 const createMessageSchema = z.object({
   senderId: z.string().uuid(),
-  content: z.string().min(1),
+  content: z.string()
+    .min(1, 'Message cannot be empty')
+    .max(1000, 'Message cannot exceed 1000 characters')
+    .refine(
+      (content) => {
+        // Check for basic XSS patterns
+        const xssPatterns = [
+          /<script[^>]*>.*?<\/script>/gi,
+          /javascript:/gi,
+          /on\w+\s*=/gi,
+          /<iframe[^>]*>/gi,
+          /<object[^>]*>/gi,
+          /<embed[^>]*>/gi,
+          /<link[^>]*>/gi,
+          /<meta[^>]*>/gi,
+          /<style[^>]*>.*?<\/style>/gi,
+          /<form[^>]*>/gi,
+          /<input[^>]*>/gi,
+        ];
+        return !xssPatterns.some(pattern => pattern.test(content));
+      },
+      'Message contains potentially harmful content'
+    ),
 });
 
 async function getMessages(req: AuthenticatedRequest) {
@@ -23,7 +56,10 @@ async function getMessages(req: AuthenticatedRequest) {
 
     const messages = await prisma.message.findMany({
       where: { chatId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [
+        { createdAt: 'asc' },
+        { id: 'asc' }, // Secondary sort by ID for consistent ordering
+      ],
     });
 
     return NextResponse.json(messages);
@@ -55,11 +91,22 @@ async function createMessage(req: AuthenticatedRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Sanitize the content to remove any remaining harmful HTML
+    const sanitizedContent = sanitizeMessage(content);
+
+    // Additional validation: ensure content is not empty after sanitization
+    if (!sanitizedContent.trim()) {
+      return NextResponse.json(
+        { error: 'Message content is invalid after sanitization' },
+        { status: 400 }
+      );
+    }
+
     const savedMessage = await prisma.message.create({
       data: {
         chatId,
         senderId,
-        content,
+        content: sanitizedContent.trim(),
       },
     });
     return NextResponse.json(savedMessage, { status: 201 });

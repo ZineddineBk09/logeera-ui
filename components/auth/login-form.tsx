@@ -4,7 +4,7 @@ import type React from 'react';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const schema = z.object({
     email: z.string().email('Enter a valid email'),
@@ -45,14 +46,8 @@ export function LoginForm() {
     const ok = await login({ email: values.email, password: values.password });
     if (ok) {
       // Get redirect URL from query params or default to dashboard
-      const redirectUrl =
-        new URLSearchParams(window.location.search).get('redirect') ||
-        ROUTES.DASHBOARD;
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else {
-        router.push(ROUTES.DASHBOARD);
-      }
+      const redirectUrl = searchParams?.get('redirect') || ROUTES.DASHBOARD;
+      router.push(redirectUrl);
     }
   };
 
@@ -149,7 +144,10 @@ export function LoginForm() {
 
       <p className="text-muted-foreground text-center text-sm">
         Don't have an account?{' '}
-        <Link href="/register" className="text-primary hover:underline">
+        <Link 
+          href={`/register${searchParams?.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`} 
+          className="text-primary hover:underline"
+        >
           Sign up
         </Link>
       </p>

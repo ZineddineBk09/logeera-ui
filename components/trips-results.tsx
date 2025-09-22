@@ -101,15 +101,33 @@ export function TripsResults() {
   };
 
   const getSearchDescription = () => {
-    const searchMode = searchParams?.get('searchMode');
+    const searchMode = searchMetadata?.searchMode;
+    const searchLevel = searchMetadata?.searchLevel;
     const isBroadSearch = searchMetadata?.isBroadSearch;
 
-    if (isBroadSearch) {
-      return ' • Showing trips within 500km radius';
-    } else if (searchMode === 'proximity') {
-      return ' • Showing trips within 200km radius';
+    if (searchMode === 'proximity') {
+      switch (searchLevel) {
+        case 'exact':
+          return ' • Showing exact matches within 10km';
+        case 'close':
+          return ' • Showing close matches within 25km';
+        case 'nearby':
+          return ' • Showing nearby trips within 50km';
+        case 'regional':
+          return ' • Showing regional trips within 100km';
+        case 'broad':
+          return ' • Showing trips within 200km radius';
+        case 'extended':
+          return ' • Showing trips within 500km radius';
+        default:
+          return ' • Proximity-based search results';
+      }
     } else if (searchMode === 'text') {
       return ' • Text-based search results';
+    } else if (searchMode === 'fallback') {
+      return ' • Showing available trips (no specific matches found)';
+    } else if (searchMode === 'browse') {
+      return ' • Browsing all available trips';
     }
     return '';
   };
@@ -348,7 +366,9 @@ export function TripsResults() {
                   <MapPin className="mx-auto mb-4 h-12 w-12" />
                   <h3 className="mb-2 text-lg font-semibold">No trips found</h3>
                   <p className="mb-4 text-sm">
-                    {searchMetadata?.isBroadSearch
+                    {searchMetadata?.searchMode === 'fallback'
+                      ? "No trips match your exact criteria, but we're showing available trips."
+                      : searchMetadata?.isBroadSearch
                       ? "We searched within 500km but couldn't find matching trips."
                       : 'Try adjusting your search criteria or expanding the search area.'}
                   </p>
@@ -444,7 +464,9 @@ export function TripsResults() {
                       No trips found
                     </h3>
                     <p className="mb-4 text-sm">
-                      {searchMetadata?.isBroadSearch
+                      {searchMetadata?.searchMode === 'fallback'
+                        ? "No trips match your exact criteria, but we're showing available trips."
+                        : searchMetadata?.isBroadSearch
                         ? "We searched within 500km but couldn't find matching trips."
                         : 'Try adjusting your search criteria or expanding the search area.'}
                     </p>
