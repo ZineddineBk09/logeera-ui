@@ -20,15 +20,20 @@ import { GooglePlacesService } from '@/lib/services/google-places';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { swrKeys } from '@/lib/swr-config';
+import { RequestJoinDialog } from '@/components/request-join-dialog';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export function TripsResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isAuthenticated, user } = useAuth();
   const [activeView, setActiveView] = useState<'list' | 'map'>('list');
   const [sortBy, setSortBy] = useState('departure');
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [driverName, setDriverName] = useState<string | null>(null);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [selectedTripForBooking, setSelectedTripForBooking] = useState<any>(null);
   const [filters, setFilters] = useState<FilterState>({
     date: '',
     vehicleType: 'any',
@@ -239,6 +244,64 @@ export function TripsResults() {
     router.push('/trips');
   };
 
+  // Handle book trip
+  const handleBookTrip = (tripId: string) => {
+    if (!isAuthenticated) {
+      // Redirect to login with current page as redirect URL
+      const currentUrl = window.location.pathname + window.location.search;
+      router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
+
+    // Find the trip data
+    const trip = trips.find((t: any) => t.id === tripId);
+    if (!trip) {
+      toast.error('Trip not found');
+      return;
+    }
+
+    // Check if user is trying to book their own trip
+    if (user?.id === trip.publisher.id) {
+      const isParcelTrip = trip.payloadType === 'PARCEL';
+      toast.error(isParcelTrip ? 'You cannot book your own delivery service' : 'You cannot book your own trip');
+      return;
+    }
+
+    // Check if trip is in the past
+    const isPastTrip = new Date(trip.departureAt) < new Date();
+    if (isPastTrip) {
+      const isParcelTrip = trip.payloadType === 'PARCEL';
+      toast.error(isParcelTrip ? 'Cannot book deliveries that have already departed' : 'Cannot book trips that have already departed');
+      return;
+    }
+
+    // Check if trip is full
+    const availableSeats = trip.capacity - (trip.bookedSeats || 0);
+    if (availableSeats <= 0) {
+      const isParcelTrip = trip.payloadType === 'PARCEL';
+      toast.error(isParcelTrip ? 'This delivery service is at capacity' : 'This trip is full');
+      return;
+    }
+
+    // Set up the trip data for booking
+    setSelectedTripForBooking({
+      id: trip.id,
+      originName: trip.originName,
+      destinationName: trip.destinationName,
+      price: trip.pricePerSeat,
+      availableSeats: availableSeats,
+      departureAt: trip.departureAt,
+      payloadType: trip.payloadType,
+      parcelWeight: trip.parcelWeight,
+      passengerCount: trip.passengerCount,
+      publisher: {
+        name: trip.publisher.name,
+      },
+    });
+
+    setShowRequestDialog(true);
+  };
+
   // Handle filter changes and update URL
   const handleFilterChange = async (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -393,6 +456,7 @@ export function TripsResults() {
                   trip={trip}
                   isSelected={selectedTrip === trip.id}
                   onSelect={() => setSelectedTrip(trip.id)}
+                  onBookTrip={handleBookTrip}
                 />
               ))
             )}
@@ -486,7 +550,11 @@ export function TripsResults() {
                 </div>
               ) : (
                 visibleTrips.map((trip) => (
-                  <TripCard key={trip.id} trip={trip} />
+                  <TripCard 
+                    key={trip.id} 
+                    trip={trip} 
+                    onBookTrip={handleBookTrip}
+                  />
                 ))
               )}
               <div className="pt-2">
@@ -521,6 +589,16 @@ export function TripsResults() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Request Join Dialog */}
+      {selectedTripForBooking && (
+        <RequestJoinDialog
+          open={showRequestDialog}
+          onOpenChange={setShowRequestDialog}
+          mutate={() => {}} // No need to mutate in this context
+          trip={selectedTripForBooking}
+        />
+      )}
     </div>
   );
 }

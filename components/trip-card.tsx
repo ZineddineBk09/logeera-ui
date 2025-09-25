@@ -1,7 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Clock, Car, Users, Star, Shield, Calendar } from 'lucide-react';
+import {
+  MapPin,
+  Clock,
+  Car,
+  Users,
+  Star,
+  Shield,
+  Calendar,
+  SquareArrowOutUpRight,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -17,9 +26,12 @@ interface TripCardProps {
     destinationName: string;
     departureAt: string;
     vehicleType: 'CAR' | 'VAN' | 'TRUCK' | 'BIKE';
+    payloadType: 'PARCEL' | 'PASSENGER';
     capacity: number;
     bookedSeats?: number;
     pricePerSeat?: number;
+    parcelWeight?: number;
+    passengerCount?: number;
     status: string;
     publisher: {
       id: string;
@@ -35,6 +47,7 @@ interface TripCardProps {
   };
   isSelected?: boolean;
   onSelect?: () => void;
+  onBookTrip?: (tripId: string) => void;
 }
 
 const vehicleIcons = {
@@ -44,7 +57,12 @@ const vehicleIcons = {
   BIKE: Car,
 };
 
-export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
+export function TripCard({
+  trip,
+  isSelected,
+  onSelect,
+  onBookTrip,
+}: TripCardProps) {
   const VehicleIcon = useMemo(
     () => vehicleIcons[trip.vehicleType as keyof typeof vehicleIcons] || Car,
     [trip.vehicleType],
@@ -125,7 +143,12 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
                     {trip.vehicleType}
                   </Badge>
                   <span>•</span>
-                  <span>{trip.capacity} seats</span>
+                  <span>
+                    {trip.payloadType === 'PARCEL' 
+                      ? `${trip.parcelWeight || trip.capacity}kg capacity`
+                      : `${trip.capacity} seats`
+                    }
+                  </span>
                   {showDistanceInfo && (
                     <>
                       <span>•</span>
@@ -195,16 +218,37 @@ export function TripCard({ trip, isSelected, onSelect }: TripCardProps) {
                 </div>
                 <div className="text-muted-foreground flex items-center space-x-2 text-sm">
                   <Users className="h-4 w-4" />
-                  <span>{trip.capacity} seats</span>
+                  <span>
+                    {trip.payloadType === 'PARCEL' 
+                      ? `${trip.parcelWeight || trip.capacity}kg capacity`
+                      : `${trip.capacity} seats`
+                    }
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Action Button */}
-            <div className="mt-auto">
+            {/* Action Buttons */}
+            <div className="mt-auto flex gap-2">
+              {onBookTrip ? (
+                <Button
+                  className="flex-1"
+                  size="lg"
+                  onClick={() => onBookTrip(trip.id)}
+                >
+                  {trip.payloadType === 'PARCEL' ? 'Book Delivery' : 'Book Trip'}
+                </Button>
+              ) : (
+                <Link href={`/trips/${trip.id}`} className="flex-1">
+                  <Button className="w-full" size="lg">
+                    View Details
+                  </Button>
+                </Link>
+              )}
               <Link href={`/trips/${trip.id}`}>
-                <Button className="w-full" size="lg">
-                  View Details
+                <Button variant="outline" size="lg">
+                  {trip.payloadType === 'PARCEL' ? 'View Delivery' : 'View Trip'}
+                  <SquareArrowOutUpRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>

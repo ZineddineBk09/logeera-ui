@@ -34,6 +34,11 @@ enum VehicleType {
   BIKE
 }
 
+enum PayloadType {
+  PARCEL
+  PASSENGER
+}
+
 enum TripStatus {
   PUBLISHED
   COMPLETED
@@ -44,6 +49,10 @@ enum RequestStatus {
   PENDING
   ACCEPTED
   REJECTED
+  IN_TRANSIT
+  DELIVERED
+  COMPLETED
+  CANCELLED
 }
 
 enum ContactCategory {
@@ -106,9 +115,12 @@ model Trip {
   destinationName String
   departureAt     DateTime
   vehicleType     VehicleType
+  payloadType     PayloadType @default(PARCEL)
   capacity        Int
   bookedSeats     Int        @default(0)
   pricePerSeat    Float      @default(45.0)
+  parcelWeight    Float?     // Weight in kg for parcels
+  passengerCount  Int?       // Number of passengers
   status          TripStatus @default(PUBLISHED)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -126,6 +138,10 @@ model Request {
   tripId      String
   applicantId String
   status      RequestStatus @default(PENDING)
+  acceptedAt  DateTime?     // When request was accepted
+  receivedAt  DateTime?     // When parcel/passenger was received
+  deliveredAt DateTime?     // When delivery was completed
+  cancelledAt DateTime?     // When request was cancelled
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 

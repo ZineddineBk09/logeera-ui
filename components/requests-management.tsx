@@ -17,6 +17,10 @@ import {
   MessageCircle,
   Star,
   Loader2,
+  Package,
+  Truck,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { RequestsService, ChatService } from '@/lib/services';
 import { toast } from 'sonner';
@@ -24,6 +28,14 @@ import { TripRating } from './trip-rating';
 import { api } from '@/lib/api';
 import useSWR from 'swr';
 import { useAuth } from '@/lib/hooks/use-auth';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface RequestIncoming {
   id: string;
@@ -41,6 +53,9 @@ interface RequestIncoming {
     departureAt: string;
     capacity: number;
     vehicleType: string;
+    payloadType: 'PARCEL' | 'PASSENGER';
+    parcelWeight?: number;
+    passengerCount?: number;
   };
   status: string;
   createdAt: string;
@@ -55,6 +70,9 @@ interface RequestOutgoing {
     departureAt: string;
     capacity: number;
     vehicleType: string;
+    payloadType: 'PARCEL' | 'PASSENGER';
+    parcelWeight?: number;
+    passengerCount?: number;
       publisher: {
       id: string;
       name: string;
@@ -75,6 +93,9 @@ export function RequestsManagement() {
   const [outgoing, setOutgoing] = useState<RequestOutgoing[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
+  const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<RequestIncoming | null>(null);
 
   // Fetch trips that can be rated
   const {
@@ -107,20 +128,46 @@ export function RequestsManagement() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAccept = async (requestId: string) => {
+  const handleAccept = (request: RequestIncoming) => {
+    setSelectedRequest(request);
+    setShowAcceptDialog(true);
+  };
+
+  const confirmAccept = async () => {
+    if (!selectedRequest) return;
+    
+    const requestId = selectedRequest.id;
     // Prevent multiple clicks
     if (processingRequests.has(requestId)) return;
     
     setProcessingRequests(prev => new Set(prev).add(requestId));
+    setShowAcceptDialog(false);
     
     try {
       const response = await RequestsService.setStatus(requestId, 'accepted');
       if (response.ok) {
+        const acceptedRequest = await response.json();
         toast.success('Request accepted');
+        
         // Update the local state to reflect the change
         setIncoming(prev => prev.map(req => 
           req.id === requestId ? { ...req, status: 'ACCEPTED' } : req
         ));
+
+        // Automatically open chat with the accepted user
+        if (user?.id) {
+          try {
+            const chatResponse = await ChatService.between(user.id, acceptedRequest.applicant.id, true);
+            if (chatResponse.ok) {
+              const chatData = await chatResponse.json();
+              router.push(`/chats?chatId=${chatData.id}`);
+              toast.success(`Chat opened with ${acceptedRequest.applicant.name}`);
+            }
+          } catch (chatError) {
+            console.error('Error opening chat:', chatError);
+            // Don't show error for chat opening, just log it
+          }
+        }
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to accept request');
@@ -134,14 +181,24 @@ export function RequestsManagement() {
         newSet.delete(requestId);
         return newSet;
       });
+      setSelectedRequest(null);
     }
   };
 
-  const handleDecline = async (requestId: string) => {
+  const handleDecline = (request: RequestIncoming) => {
+    setSelectedRequest(request);
+    setShowDeclineDialog(true);
+  };
+
+  const confirmDecline = async () => {
+    if (!selectedRequest) return;
+    
+    const requestId = selectedRequest.id;
     // Prevent multiple clicks
     if (processingRequests.has(requestId)) return;
     
     setProcessingRequests(prev => new Set(prev).add(requestId));
+    setShowDeclineDialog(false);
     
     try {
       const response = await RequestsService.setStatus(requestId, 'rejected');
@@ -164,6 +221,7 @@ export function RequestsManagement() {
         newSet.delete(requestId);
         return newSet;
       });
+      setSelectedRequest(null);
     }
   };
 
@@ -189,6 +247,45 @@ export function RequestsManagement() {
     } catch (error) {
       console.error('Error creating chat:', error);
       toast.error('Failed to start conversation');
+    }
+  };
+
+  const handleStatusUpdate = async (requestId: string, newStatus: string) => {
+    if (processingRequests.has(requestId)) return;
+    
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    
+    try {
+      const response = await RequestsService.setStatus(requestId, newStatus.toLowerCase() as 'accepted' | 'rejected' | 'in_transit' | 'delivered' | 'completed' | 'cancelled');
+      if (response.ok) {
+        const statusMessages = {
+          'in_transit': 'Request marked as in transit',
+          'delivered': 'Request marked as delivered',
+          'completed': 'Request completed',
+          'cancelled': 'Request cancelled',
+        };
+        toast.success(statusMessages[newStatus.toLowerCase() as keyof typeof statusMessages] || 'Status updated');
+        
+        // Update the local state
+        setIncoming(prev => prev.map(req => 
+          req.id === requestId ? { ...req, status: newStatus } : req
+        ));
+        setOutgoing(prev => prev.map(req => 
+          req.id === requestId ? { ...req, status: newStatus } : req
+        ));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
     }
   };
 
@@ -290,11 +387,17 @@ export function RequestsManagement() {
                               ? 'secondary'
                               : request.status === 'ACCEPTED'
                                 ? 'default'
-                                : 'destructive'
+                                : request.status === 'IN_TRANSIT'
+                                  ? 'default'
+                                  : request.status === 'DELIVERED'
+                                    ? 'default'
+                                    : request.status === 'COMPLETED'
+                                      ? 'default'
+                                      : 'destructive'
                           }
                           className="text-xs capitalize"
                         >
-                          {processingRequests.has(request.id) ? 'Processing...' : request.status.toLowerCase()}
+                          {processingRequests.has(request.id) ? 'Processing...' : request.status.toLowerCase().replace('_', ' ')}
                     </Badge>
                       </div>
                   </div>
@@ -326,22 +429,24 @@ export function RequestsManagement() {
                     <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
                       <span>
-                          {request.trip.capacity} seat
-                          {request.trip.capacity > 1 ? 's' : ''}
+                          {request.trip.payloadType === 'PARCEL' 
+                            ? `${request.trip.parcelWeight || request.trip.capacity}kg capacity`
+                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`
+                          }
                       </span>
                     </div>
                   </div>
 
                   <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
-                        Request to join this trip
+                        Request to {request.trip.payloadType === 'PARCEL' ? 'use this delivery service' : 'join this trip'}
                       </p>
                   </div>
 
                     {request.status === 'PENDING' && (
                     <div className="flex gap-2 pt-2">
                       <Button
-                        onClick={() => handleAccept(request.id)}
+                        onClick={() => handleAccept(request)}
                         className="flex-1"
                         disabled={processingRequests.has(request.id)}
                       >
@@ -354,7 +459,7 @@ export function RequestsManagement() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => handleDecline(request.id)}
+                        onClick={() => handleDecline(request)}
                         className="flex-1"
                         disabled={processingRequests.has(request.id)}
                       >
@@ -365,6 +470,140 @@ export function RequestsManagement() {
                         )}
                         Decline
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                          onClick={() =>
+                            handleMessage(
+                              request.applicant.id,
+                              request.applicant.name,
+                            )
+                          }
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {request.status === 'ACCEPTED' && (
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => handleStatusUpdate(request.id, 'IN_TRANSIT')}
+                        className="flex-1"
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Package className="mr-2 h-4 w-4" />
+                        )}
+                        Received
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleStatusUpdate(request.id, 'CANCELLED')}
+                        className="flex-1"
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Cancel Request
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                          onClick={() =>
+                            handleMessage(
+                              request.applicant.id,
+                              request.applicant.name,
+                            )
+                          }
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {request.status === 'IN_TRANSIT' && (
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => handleStatusUpdate(request.id, 'DELIVERED')}
+                        className="flex-1"
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Truck className="mr-2 h-4 w-4" />
+                        )}
+                        Delivered
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleStatusUpdate(request.id, 'CANCELLED')}
+                        className="flex-1"
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Cancel Request
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                          onClick={() =>
+                            handleMessage(
+                              request.applicant.id,
+                              request.applicant.name,
+                            )
+                          }
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {request.status === 'DELIVERED' && (
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={() => handleStatusUpdate(request.id, 'COMPLETED')}
+                        className="flex-1"
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        {processingRequests.has(request.id) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Complete
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                          onClick={() =>
+                            handleMessage(
+                              request.applicant.id,
+                              request.applicant.name,
+                            )
+                          }
+                        disabled={processingRequests.has(request.id)}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {(request.status === 'REJECTED' || request.status === 'CANCELLED' || request.status === 'COMPLETED') && (
+                    <div className="flex gap-2 pt-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -488,15 +727,17 @@ export function RequestsManagement() {
                     <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
                       <span>
-                          {request.trip.capacity} seat
-                          {request.trip.capacity > 1 ? 's' : ''}
+                          {request.trip.payloadType === 'PARCEL' 
+                            ? `${request.trip.parcelWeight || request.trip.capacity}kg capacity`
+                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`
+                          }
                       </span>
                     </div>
                   </div>
 
                   <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
-                        Your request to join this trip
+                        Your request to {request.trip.payloadType === 'PARCEL' ? 'use this delivery service' : 'join this trip'}
                       </p>
                   </div>
 
@@ -570,6 +811,161 @@ export function RequestsManagement() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Accept Confirmation Dialog */}
+      <Dialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Accept Request</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to accept this request from {selectedRequest?.applicant.name}?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={selectedRequest.applicant.name}
+                    />
+                    <AvatarFallback>
+                      {selectedRequest.applicant.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <Check className="h-5 w-5 text-blue-600" />
+                  <p className="text-sm text-blue-800">
+                    This will automatically open a chat with {selectedRequest.applicant.name} and mark the request as accepted.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAcceptDialog(false);
+                setSelectedRequest(null);
+              }}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmAccept}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              {processingRequests.has(selectedRequest?.id || '') ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Accepting...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Accept Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Decline Confirmation Dialog */}
+      <Dialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Decline Request</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to decline this request from {selectedRequest?.applicant.name}?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={selectedRequest.applicant.name}
+                    />
+                    <AvatarFallback>
+                      {selectedRequest.applicant.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <X className="h-5 w-5 text-orange-600" />
+                  <p className="text-sm text-orange-800">
+                    This action cannot be undone. The applicant will be notified that their request was declined.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeclineDialog(false);
+                setSelectedRequest(null);
+              }}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDecline}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              {processingRequests.has(selectedRequest?.id || '') ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Declining...
+                </>
+              ) : (
+                <>
+                  <X className="mr-2 h-4 w-4" />
+                  Decline Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

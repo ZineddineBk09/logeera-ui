@@ -12,6 +12,8 @@ import {
   Phone,
   Share2,
   Copy,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +57,8 @@ interface TripDetailsProps {
 export function TripDetails({ tripId }: TripDetailsProps) {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [distanceData, setDistanceData] = useState<{
     distance: string;
     duration: string;
@@ -153,36 +157,52 @@ export function TripDetails({ tripId }: TripDetailsProps) {
     hour12: true,
   });
 
-  // Calculate seat progress with accepted and pending requests
+  // Calculate capacity progress with accepted and pending requests
   const acceptedSeats = trip.acceptedRequests || 0;
   const pendingSeats = trip.pendingRequests || 0;
   const acceptedProgress = (acceptedSeats / trip.capacity) * 100;
   const pendingProgress = (pendingSeats / trip.capacity) * 100;
+  
+  // Determine if this is a parcel or passenger trip
+  const isParcelTrip = trip.payloadType === 'PARCEL';
 
   // Use real data from the backend
   const tripData = {
     originAddress: `${trip.originName}`,
     destinationAddress: `${trip.destinationName}`,
     vehicleMake: `${trip.vehicleType} Vehicle`,
-    availableSeats: trip.capacity - acceptedSeats, // Real available seats
+    availableSeats: trip.capacity - acceptedSeats, // Real available capacity
     price: trip.pricePerSeat, // Real price from database
     duration: distanceData?.duration || 'Calculating...', // Real duration from Google
     distance: distanceData?.distance || 'Calculating...', // Real distance from Google
-    description: `Comfortable ride in a clean, well-maintained ${trip.vehicleType.toLowerCase()}. Safe driver with experience. Non-smoking vehicle.`,
-    rules: [
+    description: isParcelTrip 
+      ? `Secure parcel delivery service in a clean, well-maintained ${trip.vehicleType.toLowerCase()}. Professional driver with experience in package handling.`
+      : `Comfortable ride in a clean, well-maintained ${trip.vehicleType.toLowerCase()}. Safe driver with experience. Non-smoking vehicle.`,
+    rules: isParcelTrip ? [
+      'Fragile items must be properly packaged',
+      'No hazardous materials',
+      'Maximum weight per parcel: 20kg',
+      'Please be on time for pickup',
+    ] : [
       'No smoking',
       'No pets (allergies)',
       'Maximum 1 bag per person',
       'Please be on time',
     ],
-    amenities: [
+    amenities: isParcelTrip ? [
+      'Secure storage',
+      'Temperature controlled',
+      'Package tracking',
+      'Insurance coverage',
+    ] : [
       'Air conditioning',
       'Phone chargers',
       'Water bottles',
       'Music requests welcome',
     ],
-    pickupNotes:
-      "I'll wait up to 10 minutes at the pickup location. Please be ready!",
+    pickupNotes: isParcelTrip 
+      ? "I'll wait up to 10 minutes at the pickup location. Please have your parcel ready and properly packaged!"
+      : "I'll wait up to 10 minutes at the pickup location. Please be ready!",
     // Use real coordinates from the database
     route: [
       {
@@ -263,6 +283,36 @@ export function TripDetails({ tripId }: TripDetailsProps) {
     } catch (error) {
       console.error('Failed to copy phone number:', error);
       toast.error('Failed to copy phone number');
+    }
+  };
+
+  const handleCancelTrip = async () => {
+    if (!trip) return;
+    
+    setIsCancelling(true);
+    try {
+      const response = await fetch(`/api/trips/${trip.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+
+      if (response.ok) {
+        toast.success('Trip cancelled successfully');
+        setShowCancelDialog(false);
+        mutate(); // Refresh trip data
+        router.push('/dashboard');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to cancel trip');
+      }
+    } catch (error) {
+      console.error('Error cancelling trip:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -433,7 +483,12 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   </div>
                   <div>
                     <div className="text-muted-foreground">Capacity</div>
-                    <div className="font-medium">{trip.capacity} seats</div>
+                    <div className="font-medium">
+                      {isParcelTrip 
+                        ? `${trip.parcelWeight || trip.capacity}kg capacity`
+                        : `${trip.capacity} seats`
+                      }
+                    </div>
                   </div>
                 </div>
 
@@ -471,12 +526,13 @@ export function TripDetails({ tripId }: TripDetailsProps) {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Available seats
+                    {isParcelTrip ? 'Available capacity' : 'Available seats'}
                   </span>
                   <div className="flex items-center space-x-2">
                     <Users className="text-muted-foreground h-4 w-4" />
                     <span className="font-medium">
                       {tripData.availableSeats} of {trip.capacity}
+                      {isParcelTrip ? 'kg' : ' seats'}
                     </span>
                   </div>
                 </div>
@@ -486,6 +542,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                     <span>Booking Status</span>
                     <span>
                       {acceptedSeats} confirmed, {pendingSeats} pending
+                      {isParcelTrip ? ' deliveries' : ' bookings'}
                     </span>
                   </div>
 
@@ -569,20 +626,31 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   size="lg"
                         onClick={handleRequestToJoin}
                 >
-                        Request to Join
+                        {isParcelTrip ? 'Request Delivery' : 'Request to Join'}
                 </Button>
                     );
                   })()
                 ) : (
-                  <div className="py-4 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      This is your trip
+                  <div className="py-4 space-y-3">
+                    <p className="text-muted-foreground text-center text-sm">
+                      This is your {isParcelTrip ? 'delivery service' : 'trip'}
                     </p>
+                    {trip.status === 'PUBLISHED' && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setShowCancelDialog(true)}
+                        className="w-full"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel {isParcelTrip ? 'Delivery' : 'Trip'}
+                      </Button>
+                    )}
                   </div>
                 )}
 
                 <p className="text-muted-foreground text-center text-xs">
-                  You won't be charged until your request is accepted
+                  You won't be charged until your {isParcelTrip ? 'delivery' : 'booking'} request is accepted
                 </p>
               </CardContent>
             </Card>
@@ -616,6 +684,9 @@ export function TripDetails({ tripId }: TripDetailsProps) {
           price: trip.pricePerSeat,
           availableSeats: tripData.availableSeats,
           departureAt: trip.departureAt,
+          payloadType: trip.payloadType,
+          parcelWeight: trip.parcelWeight,
+          passengerCount: trip.passengerCount,
           publisher: {
             name: trip.publisher.name,
           },
@@ -655,6 +726,60 @@ export function TripDetails({ tripId }: TripDetailsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPhoneDialog(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Trip Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Trip</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this trip? This action will cancel all pending and accepted requests and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <X className="h-5 w-5 text-destructive" />
+                <p className="text-destructive font-medium">
+                  This will cancel all active requests
+                </p>
+              </div>
+            </div>
+
+            <p className="text-muted-foreground text-sm">
+              All passengers with pending or accepted requests will be notified that the trip has been cancelled.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCancelDialog(false)}
+              disabled={isCancelling}
+            >
+              Keep Trip
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleCancelTrip}
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel Trip
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

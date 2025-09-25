@@ -41,11 +41,12 @@ interface TripData {
   time: string;
   vehicleType: string;
   vehicleMake: string;
-  capacity: string;
-  price: string;
   description: string;
   rules: string[];
   amenities: string[];
+  payloadType: 'PARCEL' | 'PASSENGER';
+  parcelWeight: string;
+  passengerCount: string;
 }
 
 interface PlaceData {
@@ -72,11 +73,12 @@ export function PublishWizard() {
     time: '',
     vehicleType: '',
     vehicleMake: '',
-    capacity: '',
-    price: '',
     description: '',
     rules: [],
     amenities: [],
+    payloadType: 'PARCEL',
+    parcelWeight: '',
+    passengerCount: '',
   });
 
   const [placeData, setPlaceData] = useState<PlaceData>({
@@ -148,8 +150,11 @@ export function PublishWizard() {
           | 'VAN'
           | 'TRUCK'
           | 'BIKE',
-        capacity: Number(tripData.capacity || 0),
-        pricePerSeat: Number(tripData.price || 0),
+        payloadType: tripData.payloadType,
+        capacity: tripData.payloadType === 'PARCEL' ? Number(tripData.parcelWeight || 10) : Number(tripData.passengerCount || 4),
+        pricePerSeat: 0, // Default price, can be set later
+        parcelWeight: tripData.payloadType === 'PARCEL' ? Number(tripData.parcelWeight || 10) : null,
+        passengerCount: tripData.payloadType === 'PASSENGER' ? Number(tripData.passengerCount || 4) : null,
       };
 
       const response = await TripsService.create(payload);
@@ -200,8 +205,7 @@ export function PublishWizard() {
           isDateValid &&
           tripData.time &&
           tripData.vehicleType &&
-          tripData.capacity &&
-          tripData.price
+          (tripData.payloadType === 'PARCEL' ? tripData.parcelWeight : tripData.passengerCount)
         );
       case 3:
         return true;
@@ -402,47 +406,6 @@ export function PublishWizard() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Available seats</Label>
-                    <Select
-                      value={tripData.capacity}
-                      onValueChange={(value) =>
-                        setTripData((prev) => ({ ...prev, capacity: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seats" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 seat</SelectItem>
-                        <SelectItem value="2">2 seats</SelectItem>
-                        <SelectItem value="3">3 seats</SelectItem>
-                        <SelectItem value="4">4 seats</SelectItem>
-                        <SelectItem value="5">5 seats</SelectItem>
-                        <SelectItem value="6">6 seats</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Price per seat</Label>
-                    <div className="relative">
-                      <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2">
-                        $
-                      </span>
-                      <Input
-                        type="number"
-                        placeholder="0"
-                        className="pl-8"
-                        value={tripData.price}
-                        onChange={(e) =>
-                          setTripData((prev) => ({
-                            ...prev,
-                            price: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -457,6 +420,116 @@ export function PublishWizard() {
                       }))
                     }
                   />
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Payload Type</Label>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div
+                      className={`cursor-pointer rounded-lg border-2 p-4 transition-colors ${
+                        tripData.payloadType === 'PARCEL'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() =>
+                        setTripData((prev) => ({
+                          ...prev,
+                          payloadType: 'PARCEL',
+                          passengerCount: '', // Clear passenger count when switching
+                        }))
+                      }
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`h-4 w-4 rounded-full border-2 ${
+                            tripData.payloadType === 'PARCEL'
+                              ? 'border-primary bg-primary'
+                              : 'border-muted-foreground'
+                          }`}
+                        />
+                        <div>
+                          <div className="font-medium">Parcel Delivery</div>
+                          <div className="text-muted-foreground text-sm">
+                            Transport packages and items
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`cursor-pointer rounded-lg border-2 p-4 transition-colors ${
+                        tripData.payloadType === 'PASSENGER'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() =>
+                        setTripData((prev) => ({
+                          ...prev,
+                          payloadType: 'PASSENGER',
+                          parcelWeight: '', // Clear parcel weight when switching
+                        }))
+                      }
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`h-4 w-4 rounded-full border-2 ${
+                            tripData.payloadType === 'PASSENGER'
+                              ? 'border-primary bg-primary'
+                              : 'border-muted-foreground'
+                          }`}
+                        />
+                        <div>
+                          <div className="font-medium">Passenger Transport</div>
+                          <div className="text-muted-foreground text-sm">
+                            Transport people
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {tripData.payloadType === 'PARCEL' && (
+                    <div className="space-y-2">
+                      <Label>Parcel Weight (kg)</Label>
+                      <Input
+                        type="number"
+                        placeholder="Enter weight in kilograms"
+                        value={tripData.parcelWeight}
+                        onChange={(e) =>
+                          setTripData((prev) => ({
+                            ...prev,
+                            parcelWeight: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {tripData.payloadType === 'PASSENGER' && (
+                    <div className="space-y-2">
+                      <Label>Number of Passengers</Label>
+                      <Select
+                        value={tripData.passengerCount}
+                        onValueChange={(value) =>
+                          setTripData((prev) => ({
+                            ...prev,
+                            passengerCount: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select passenger count" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 passenger</SelectItem>
+                          <SelectItem value="2">2 passengers</SelectItem>
+                          <SelectItem value="3">3 passengers</SelectItem>
+                          <SelectItem value="4">4 passengers</SelectItem>
+                          <SelectItem value="5">5 passengers</SelectItem>
+                          <SelectItem value="6">6 passengers</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -533,22 +606,6 @@ export function PublishWizard() {
                     </div>
 
                     <div className="space-y-3">
-                      <div>
-                        <div className="text-muted-foreground text-sm">
-                          Available Seats
-                        </div>
-                        <div className="font-medium">
-                          {tripData.capacity} seats
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground text-sm">
-                          Price per Seat
-                        </div>
-                        <div className="text-primary text-xl font-medium">
-                          ${tripData.price}
-                        </div>
-                      </div>
                     </div>
                   </div>
 

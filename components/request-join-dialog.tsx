@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MessageCircle } from 'lucide-react';
+import { Users, MessageCircle, Package } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,9 @@ interface RequestJoinDialogProps {
     price: number;
     availableSeats: number;
     departureAt?: string;
+    payloadType?: 'PARCEL' | 'PASSENGER';
+    parcelWeight?: number;
+    passengerCount?: number;
     publisher: {
       name: string;
     };
@@ -52,6 +55,9 @@ export function RequestJoinDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  
+  // Determine if this is a parcel or passenger trip
+  const isParcelTrip = trip.payloadType === 'PARCEL';
 
   const handleSubmit = async () => {
     // Double-check authentication before submitting
@@ -64,14 +70,14 @@ export function RequestJoinDialog({
 
     // Check if trip date has passed
     if (trip.departureAt && new Date(trip.departureAt) < new Date()) {
-      toast.error('This trip has already departed');
+      toast.error(isParcelTrip ? 'This delivery service has already departed' : 'This trip has already departed');
       onOpenChange(false);
       return;
     }
 
     // Check if trip is full
     if (trip.availableSeats === 0) {
-      toast.error('This trip is full');
+      toast.error(isParcelTrip ? 'This delivery service is at capacity' : 'This trip is full');
       onOpenChange(false);
       return;
     }
@@ -80,7 +86,7 @@ export function RequestJoinDialog({
     try {
       const response = await RequestsService.create(trip.id);
       if (response.ok) {
-        toast.success('Request sent successfully!');
+        toast.success(isParcelTrip ? 'Delivery request sent successfully!' : 'Request sent successfully!');
         onOpenChange(false);
         // Reset form
         setSeats('1');
@@ -98,13 +104,14 @@ export function RequestJoinDialog({
     }
   };
 
-  const totalPrice = Number.parseInt(seats) * trip.price + 2; // Including service fee
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Request to Join Trip</DialogTitle>
+          <DialogTitle>
+            {isParcelTrip ? 'Request Delivery Service' : 'Request to Join Trip'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -114,26 +121,40 @@ export function RequestJoinDialog({
               {trip.originName} → {trip.destinationName}
             </div>
             <div className="text-muted-foreground text-sm">
-              with {trip.publisher.name}
+              {isParcelTrip ? 'Delivery service by' : 'with'} {trip.publisher.name}
             </div>
+            {isParcelTrip && trip.parcelWeight && (
+              <div className="text-muted-foreground text-xs">
+                Capacity: {trip.parcelWeight}kg
+              </div>
+            )}
           </div>
 
-          {/* Number of Seats */}
+          {/* Number of Seats/Weight */}
           <div className="space-y-2">
-            <Label>Number of seats</Label>
+            <Label>
+              {isParcelTrip ? 'Parcel weight (kg)' : 'Number of seats'}
+            </Label>
             <Select value={seats} onValueChange={setSeats}>
               <SelectTrigger>
                 <div className="flex items-center">
-                  <Users className="text-muted-foreground mr-2 h-4 w-4" />
+                  {isParcelTrip ? (
+                    <Package className="text-muted-foreground mr-2 h-4 w-4" />
+                  ) : (
+                    <Users className="text-muted-foreground mr-2 h-4 w-4" />
+                  )}
                   <SelectValue />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 {Array.from(
-                  { length: Math.min(trip.availableSeats, 4) },
+                  { length: Math.min(trip.availableSeats, isParcelTrip ? 20 : 4) },
                   (_, i) => (
                     <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {i + 1} seat{i > 0 ? 's' : ''}
+                      {isParcelTrip 
+                        ? `${i + 1}kg`
+                        : `${i + 1} seat${i > 0 ? 's' : ''}`
+                      }
                     </SelectItem>
                   ),
                 )}
@@ -143,43 +164,45 @@ export function RequestJoinDialog({
 
           {/* Message */}
           <div className="space-y-2">
-            <Label>Message to driver (optional)</Label>
+            <Label>
+              Message to {isParcelTrip ? 'delivery service provider' : 'driver'} (optional)
+            </Label>
             <Textarea
-              placeholder="Introduce yourself and let the driver know any important details..."
+              placeholder={
+                isParcelTrip 
+                  ? "Describe your parcel and any special delivery instructions..."
+                  : "Introduce yourself and let the driver know any important details..."
+              }
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="min-h-20"
             />
             <div className="text-muted-foreground flex items-center space-x-1 text-xs">
               <MessageCircle className="h-3 w-3" />
-              <span>This helps drivers get to know you better</span>
+              <span>
+                {isParcelTrip 
+                  ? 'This helps the provider understand your delivery needs'
+                  : 'This helps drivers get to know you better'
+                }
+              </span>
             </div>
           </div>
 
-          {/* Price Breakdown */}
-          <div className="space-y-3">
-            <Separator />
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>
-                  {seats} seat{Number.parseInt(seats) > 1 ? 's' : ''} × $
-                  {trip.price}
-                </span>
-                <span>${Number.parseInt(seats) * trip.price}</span>
-              </div>
-              <div className="text-muted-foreground flex justify-between text-sm">
-                <span>Service fee</span>
-                <span>$2</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>${totalPrice}</span>
-              </div>
+          {/* Pricing Note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              {isParcelTrip ? (
+                <Package className="h-5 w-5 text-blue-600" />
+              ) : (
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+              )}
+              <p className="text-sm text-blue-800">
+                {isParcelTrip 
+                  ? 'You can discuss pricing and delivery details directly with the service provider once your request is accepted.'
+                  : 'You can discuss pricing and trip details directly with the driver once your request is accepted.'
+                }
+              </p>
             </div>
-            <p className="text-muted-foreground text-xs">
-              You won't be charged until your request is accepted
-            </p>
           </div>
 
           {/* Actions */}
@@ -196,7 +219,12 @@ export function RequestJoinDialog({
               disabled={isSubmitting}
               className="flex-1"
             >
-              {isSubmitting ? 'Sending...' : 'Send Request'}
+              {isSubmitting 
+                ? 'Sending...' 
+                : isParcelTrip 
+                  ? 'Request Delivery' 
+                  : 'Send Request'
+              }
             </Button>
           </div>
         </div>

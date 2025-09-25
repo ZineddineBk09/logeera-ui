@@ -4,7 +4,7 @@ import { prisma } from '@/lib/database';
 import { z } from 'zod';
 
 const updateStatusSchema = z.object({
-  status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED']),
+  status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED', 'CANCELLED']),
 });
 
 async function handler(req: AuthenticatedRequest) {
@@ -35,7 +35,7 @@ async function handler(req: AuthenticatedRequest) {
       );
     }
 
-    // If accepting a request, check if there are available seats
+    // Handle different status updates
     if (status === 'ACCEPTED') {
       const availableSeats =
         request.trip.capacity - (request.trip.bookedSeats || 0);
@@ -46,12 +46,15 @@ async function handler(req: AuthenticatedRequest) {
         );
       }
 
-      // Update both request and trip in a transaction
+      // Update both request and trip in a transaction with increased timeout
       const result = await prisma.$transaction(async (tx) => {
-        // Update request status
+        // Update request status with acceptedAt timestamp
         const updatedRequest = await tx.request.update({
           where: { id: requestId },
-          data: { status },
+          data: { 
+            status,
+            acceptedAt: new Date(),
+          },
           include: {
             trip: true,
             applicant: true,
@@ -59,7 +62,7 @@ async function handler(req: AuthenticatedRequest) {
         });
 
         // Increment booked seats
-        await tx.trip.update({
+        const updatedTrip = await tx.trip.update({
           where: { id: request.tripId },
           data: {
             bookedSeats: {
@@ -68,12 +71,135 @@ async function handler(req: AuthenticatedRequest) {
           },
         });
 
+        // Check if trip is now at full capacity
+        if (updatedTrip.bookedSeats >= updatedTrip.capacity) {
+          // Cancel all remaining pending requests for this trip
+          await tx.request.updateMany({
+            where: {
+              tripId: request.tripId,
+              status: 'PENDING',
+              id: {
+                not: requestId, // Don't cancel the one we just accepted
+              },
+            },
+            data: {
+              status: 'CANCELLED',
+              cancelledAt: new Date(),
+            },
+          });
+        }
+
         return updatedRequest;
+      }, {
+        timeout: 10000, // Increase timeout to 10 seconds
+      });
+
+      return NextResponse.json(result);
+    } else if (status === 'IN_TRANSIT') {
+      // Only allow IN_TRANSIT if current status is ACCEPTED
+      if (request.status !== 'ACCEPTED') {
+        return NextResponse.json(
+          { error: 'Request must be accepted before marking as in transit' },
+          { status: 400 },
+        );
+      }
+
+      const updatedRequest = await prisma.request.update({
+        where: { id: requestId },
+        data: { 
+          status,
+          receivedAt: new Date(),
+        },
+        include: {
+          trip: true,
+          applicant: true,
+        },
+      });
+
+      return NextResponse.json(updatedRequest);
+    } else if (status === 'DELIVERED') {
+      // Only allow DELIVERED if current status is IN_TRANSIT
+      if (request.status !== 'IN_TRANSIT') {
+        return NextResponse.json(
+          { error: 'Request must be in transit before marking as delivered' },
+          { status: 400 },
+        );
+      }
+
+      const updatedRequest = await prisma.request.update({
+        where: { id: requestId },
+        data: { 
+          status,
+          deliveredAt: new Date(),
+        },
+        include: {
+          trip: true,
+          applicant: true,
+        },
+      });
+
+      return NextResponse.json(updatedRequest);
+    } else if (status === 'COMPLETED') {
+      // Only allow COMPLETED if current status is DELIVERED
+      if (request.status !== 'DELIVERED') {
+        return NextResponse.json(
+          { error: 'Request must be delivered before marking as completed' },
+          { status: 400 },
+        );
+      }
+
+      const updatedRequest = await prisma.request.update({
+        where: { id: requestId },
+        data: { status },
+        include: {
+          trip: true,
+          applicant: true,
+        },
+      });
+
+      return NextResponse.json(updatedRequest);
+    } else if (status === 'CANCELLED') {
+      // Allow cancellation from any status except COMPLETED
+      if (request.status === 'COMPLETED') {
+        return NextResponse.json(
+          { error: 'Cannot cancel a completed request' },
+          { status: 400 },
+        );
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updatedRequest = await tx.request.update({
+          where: { id: requestId },
+          data: { 
+            status,
+            cancelledAt: new Date(),
+          },
+          include: {
+            trip: true,
+            applicant: true,
+          },
+        });
+
+        // If the request was accepted, decrement booked seats
+        if (request.status === 'ACCEPTED') {
+          await tx.trip.update({
+            where: { id: request.tripId },
+            data: {
+              bookedSeats: {
+                decrement: 1,
+              },
+            },
+          });
+        }
+
+        return updatedRequest;
+      }, {
+        timeout: 10000, // Increase timeout to 10 seconds
       });
 
       return NextResponse.json(result);
     } else {
-      // For rejection or other status changes, just update the request
+      // For PENDING, REJECTED, or other status changes, just update the request
       const updatedRequest = await prisma.request.update({
         where: { id: requestId },
         data: { status },
