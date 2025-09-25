@@ -157,7 +157,7 @@ export function RequestsManagement() {
         // Automatically open chat with the accepted user
         if (user?.id) {
           try {
-            const chatResponse = await ChatService.between(user.id, acceptedRequest.applicant.id, true);
+            const chatResponse = await ChatService.between(user.id, acceptedRequest.applicant.id, true, acceptedRequest.trip.id);
             if (chatResponse.ok) {
               const chatData = await chatResponse.json();
               router.push(`/chats?chatId=${chatData.id}`);
@@ -225,7 +225,7 @@ export function RequestsManagement() {
     }
   };
 
-  const handleMessage = async (otherUserId: string, userName: string) => {
+  const handleMessage = async (otherUserId: string, userName: string, tripId?: string) => {
     if (!user?.id) {
       toast.error('Please log in to start a conversation');
       return;
@@ -233,7 +233,7 @@ export function RequestsManagement() {
 
     try {
       // Create or find the chat between current user and the other user
-      const response = await ChatService.between(user.id, otherUserId, true);
+      const response = await ChatService.between(user.id, otherUserId, true, tripId);
       
       if (response.ok) {
         const chatData = await response.json();
@@ -477,6 +477,7 @@ export function RequestsManagement() {
                             handleMessage(
                               request.applicant.id,
                               request.applicant.name,
+                              request.trip.id,
                             )
                           }
                         disabled={processingRequests.has(request.id)}
@@ -520,6 +521,7 @@ export function RequestsManagement() {
                             handleMessage(
                               request.applicant.id,
                               request.applicant.name,
+                              request.trip.id,
                             )
                           }
                         disabled={processingRequests.has(request.id)}
@@ -563,6 +565,7 @@ export function RequestsManagement() {
                             handleMessage(
                               request.applicant.id,
                               request.applicant.name,
+                              request.trip.id,
                             )
                           }
                         disabled={processingRequests.has(request.id)}
@@ -593,6 +596,7 @@ export function RequestsManagement() {
                             handleMessage(
                               request.applicant.id,
                               request.applicant.name,
+                              request.trip.id,
                             )
                           }
                         disabled={processingRequests.has(request.id)}
@@ -611,6 +615,7 @@ export function RequestsManagement() {
                             handleMessage(
                               request.applicant.id,
                               request.applicant.name,
+                              request.trip.id,
                             )
                           }
                         disabled={processingRequests.has(request.id)}
@@ -749,6 +754,7 @@ export function RequestsManagement() {
                           handleMessage(
                             request.trip.publisher.id,
                             request.trip.publisher.name,
+                            request.trip.id,
                           )
                         }
                       className="ml-auto"

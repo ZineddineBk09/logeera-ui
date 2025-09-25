@@ -45,10 +45,17 @@ export const RatingsService = {
 
 export const ChatService = {
   list: () => api('/api/chat'),
-  between: (userAId: string, userBId: string, create = true) =>
-    api(
-      `/api/chat/between?userAId=${userAId}&userBId=${userBId}&create=${create ? 1 : 0}`,
-    ),
+  between: (userAId: string, userBId: string, create = true, tripId?: string) => {
+    const params = new URLSearchParams({
+      userAId,
+      userBId,
+      create: create ? '1' : '0',
+    });
+    if (tripId) {
+      params.append('tripId', tripId);
+    }
+    return api(`/api/chat/between?${params.toString()}`);
+  },
   messages: (chatId: string) => api(`/api/chat/${chatId}/messages`),
   postMessage: (chatId: string, payload: any) =>
     api(`/api/chat/${chatId}/messages`, {

@@ -82,4 +82,63 @@ async function createRequest(req: AuthenticatedRequest) {
   }
 }
 
+async function getRequests(req: AuthenticatedRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const tripId = searchParams.get('tripId');
+    const userId = req.user!.userId;
+
+    let whereClause: any = {};
+    
+    if (tripId) {
+      whereClause.tripId = tripId;
+    }
+
+    const requests = await prisma.request.findMany({
+      where: whereClause,
+      include: {
+        trip: {
+          select: {
+            id: true,
+            originName: true,
+            destinationName: true,
+            departureAt: true,
+            publisherId: true,
+            payloadType: true,
+            parcelWeight: true,
+            passengerCount: true,
+            status: true,
+          },
+        },
+        applicant: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            averageRating: true,
+            ratingCount: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Filter to only show requests where user is either the applicant or trip publisher
+    const filteredRequests = requests.filter((request) => 
+      request.applicantId === userId || request.trip.publisherId === userId
+    );
+
+    return NextResponse.json(filteredRequests);
+  } catch (error) {
+    console.error('Error fetching requests:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
+  }
+}
+
 export const POST = withAuth(createRequest);
+export const GET = withAuth(getRequests);

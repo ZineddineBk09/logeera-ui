@@ -15,9 +15,16 @@ import {
   Video,
   MoreVertical,
   Loader2,
+  X,
+  Package,
+  Truck,
+  CheckCircle,
+  Users,
+  Calendar,
+  Clock,
 } from 'lucide-react';
 import { useSocket } from '@/components/socket/SocketProvider';
-import { ChatService } from '@/lib/services';
+import { ChatService, RequestsService } from '@/lib/services';
 import { longPollingService } from '@/lib/services/long-polling';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { swrKeys } from '@/lib/swr-config';
@@ -49,6 +56,16 @@ interface Chat {
     name: string;
     email: string;
   };
+  trip?: {
+    id: string;
+    originName: string;
+    destinationName: string;
+    departureAt: string;
+    payloadType: 'PARCEL' | 'PASSENGER';
+    parcelWeight?: number;
+    passengerCount?: number;
+    status: string;
+  };
   lastMessage: {
     id: string;
     content: string;
@@ -67,6 +84,12 @@ interface Message {
   createdAt: string;
 }
 
+interface ActiveRequest {
+  id: string;
+  status: string;
+  isPublisher: boolean; // Whether current user is the trip publisher
+}
+
 export function ChatsInterface() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -75,6 +98,8 @@ export function ChatsInterface() {
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [userToBlock, setUserToBlock] = useState<{ id: string; name: string } | null>(null);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
+  const [isUpdatingRequest, setIsUpdatingRequest] = useState(false);
   const { socket, isConnected, connectionError } = useSocket();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -169,7 +194,11 @@ export function ChatsInterface() {
   const filteredChats = chats.filter(
     (chat: Chat) =>
       chat.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.otherUser.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      chat.otherUser.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (chat.trip && (
+        chat.trip.originName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.trip.destinationName.toLowerCase().includes(searchQuery.toLowerCase())
+      )),
   );
 
   // Auto-select first chat if none selected and no URL parameter
@@ -184,6 +213,44 @@ export function ChatsInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Fetch active request when chat with trip is selected
+  useEffect(() => {
+    const fetchActiveRequest = async () => {
+      if (!selectedChat?.trip || !user?.id) {
+        setActiveRequest(null);
+        return;
+      }
+
+      try {
+        // Fetch requests for this trip
+        const response = await api(`/api/requests?tripId=${selectedChat.trip.id}`);
+        if (response.ok) {
+          const requests = await response.json();
+          // Find the active request between current user and the other user
+          const activeReq = requests.find((req: any) => 
+            (req.applicantId === user.id && req.trip.publisherId === selectedChat.otherUser.id) ||
+            (req.applicantId === selectedChat.otherUser.id && req.trip.publisherId === user.id)
+          );
+          
+          if (activeReq) {
+            setActiveRequest({
+              id: activeReq.id,
+              status: activeReq.status,
+              isPublisher: activeReq.trip.publisherId === user.id,
+            });
+          } else {
+            setActiveRequest(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching active request:', error);
+        setActiveRequest(null);
+      }
+    };
+
+    fetchActiveRequest();
+  }, [selectedChat, user?.id]);
 
   // Socket.IO message handling (only if socket is enabled and connected)
   useEffect(() => {
@@ -448,6 +515,39 @@ export function ChatsInterface() {
     }
   };
 
+  const handleRequestStatusUpdate = async (newStatus: string) => {
+    if (!activeRequest || isUpdatingRequest) return;
+
+    setIsUpdatingRequest(true);
+    try {
+      const response = await RequestsService.setStatus(activeRequest.id, newStatus.toLowerCase() as any);
+      
+      if (response.ok) {
+        const updatedRequest = await response.json();
+        setActiveRequest({
+          ...activeRequest,
+          status: updatedRequest.status,
+        });
+        
+        const statusMessages = {
+          'cancelled': 'Request cancelled',
+          'in_transit': 'Request marked as in transit',
+          'delivered': 'Request marked as delivered',
+          'completed': 'Request completed',
+        };
+        toast.success(statusMessages[newStatus.toLowerCase() as keyof typeof statusMessages] || 'Status updated');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      toast.error('Failed to update status');
+    } finally {
+      setIsUpdatingRequest(false);
+    }
+  };
+
   const handleBlockUser = (userId: string, userName: string) => {
     setUserToBlock({ id: userId, name: userName });
     setShowBlockDialog(true);
@@ -532,14 +632,14 @@ export function ChatsInterface() {
       <div className="mb-8">
         <h1 className="text-foreground mb-2 text-3xl font-bold">Messages</h1>
         <p className="text-muted-foreground">Chat with your trip companions</p>
-        {connectionError && (
+        {/* {connectionError && (
           <div className="mt-2 flex items-center gap-2 text-sm text-amber-600">
             <div className="h-2 w-2 rounded-full bg-amber-500"></div>
             {connectionError} - Messages will be saved but not delivered in
             real-time
           </div>
-        )}
-        {!connectionError && !isConnected && process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && (
+        )} */}
+        {/* {!connectionError && !isConnected && process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && (
           <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
             Connecting to real-time chat...
@@ -556,7 +656,7 @@ export function ChatsInterface() {
             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
             Using polling mode for message updates
           </div>
-        )}
+        )} */}
       </div>
 
       <div className="grid h-[calc(100vh-200px)] grid-cols-1 gap-6 lg:grid-cols-3">
@@ -627,17 +727,31 @@ export function ChatsInterface() {
                             : formatTimestamp(chat.updatedAt)}
                       </span>
                     </div>
-                      <div className="mb-1 flex items-center gap-1">
-                        <span className="text-muted-foreground truncate text-xs">
-                          {chat.otherUser.email}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
+                      {chat.trip ? (
+                        <div className="mb-1 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-muted-foreground truncate text-xs">
+                            {chat.trip.originName} → {chat.trip.destinationName}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mb-1 flex items-center gap-1">
+                          <span className="text-muted-foreground truncate text-xs">
+                            {chat.otherUser.email}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
                         <p className="text-muted-foreground truncate text-sm">
                           {chat.lastMessage
                             ? chat.lastMessage.content
                             : 'No messages yet'}
                         </p>
+                        {chat.trip && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {chat.trip.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -707,6 +821,171 @@ export function ChatsInterface() {
               </div>
             </div>
           </CardHeader>
+
+          {/* Trip Information Header */}
+          {selectedChat.trip && (
+            <div className="border-b bg-muted/30 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">
+                      {selectedChat.trip.originName} → {selectedChat.trip.destinationName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {new Date(selectedChat.trip.departureAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        {new Date(selectedChat.trip.departureAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {selectedChat.trip.payloadType === 'PARCEL' ? (
+                        <Package className="h-3 w-3" />
+                      ) : (
+                        <Users className="h-3 w-3" />
+                      )}
+                      <span>
+                        {selectedChat.trip.payloadType === 'PARCEL' 
+                          ? `${selectedChat.trip.parcelWeight || 'N/A'}kg`
+                          : `${selectedChat.trip.passengerCount || 'N/A'} passengers`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {selectedChat.trip.status}
+                </Badge>
+              </div>
+              
+              {/* Action Buttons */}
+              {activeRequest && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeRequest.status === 'PENDING' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRequestStatusUpdate('CANCELLED')}
+                        disabled={isUpdatingRequest}
+                      >
+                        {isUpdatingRequest ? (
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <X className="mr-2 h-3 w-3" />
+                        )}
+                        Cancel Request
+                      </Button>
+                    </>
+                  )}
+
+                  {activeRequest.status === 'ACCEPTED' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRequestStatusUpdate('CANCELLED')}
+                        disabled={isUpdatingRequest}
+                      >
+                        {isUpdatingRequest ? (
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <X className="mr-2 h-3 w-3" />
+                        )}
+                        Cancel Request
+                      </Button>
+                      {activeRequest.isPublisher && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleRequestStatusUpdate('IN_TRANSIT')}
+                          disabled={isUpdatingRequest}
+                        >
+                          {isUpdatingRequest ? (
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Package className="mr-2 h-3 w-3" />
+                          )}
+                          {selectedChat.trip?.payloadType === 'PARCEL' ? 'Received' : 'Passenger Onboard'}
+                        </Button>
+                      )}
+                    </>
+                  )}
+
+                  {activeRequest.status === 'IN_TRANSIT' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRequestStatusUpdate('CANCELLED')}
+                        disabled={isUpdatingRequest}
+                      >
+                        {isUpdatingRequest ? (
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <X className="mr-2 h-3 w-3" />
+                        )}
+                        Cancel Request
+                      </Button>
+                      {activeRequest.isPublisher && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleRequestStatusUpdate('DELIVERED')}
+                          disabled={isUpdatingRequest}
+                        >
+                          {isUpdatingRequest ? (
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          ) : selectedChat.trip?.payloadType === 'PARCEL' ? (
+                            <Truck className="mr-2 h-3 w-3" />
+                          ) : (
+                            <CheckCircle className="mr-2 h-3 w-3" />
+                          )}
+                          {selectedChat.trip?.payloadType === 'PARCEL' ? 'Delivered' : 'Arrived at Destination'}
+                        </Button>
+                      )}
+                    </>
+                  )}
+
+                  {activeRequest.status === 'DELIVERED' && activeRequest.isPublisher && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleRequestStatusUpdate('COMPLETED')}
+                      disabled={isUpdatingRequest}
+                    >
+                      {isUpdatingRequest ? (
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      ) : (
+                        <CheckCircle className="mr-2 h-3 w-3" />
+                      )}
+                      Complete Trip
+                    </Button>
+                  )}
+
+                  {activeRequest.status === 'COMPLETED' && (
+                    <Badge variant="secondary" className="text-xs">
+                      Trip Completed
+                    </Badge>
+                  )}
+
+                  {(activeRequest.status === 'REJECTED' || activeRequest.status === 'CANCELLED') && (
+                    <Badge variant="destructive" className="text-xs">
+                      {activeRequest.status === 'REJECTED' ? 'Request Rejected' : 'Request Cancelled'}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Messages */}
           <CardContent className="flex-1 p-0">

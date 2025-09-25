@@ -26,6 +26,18 @@ async function getChats(req: AuthenticatedRequest) {
             email: true,
           },
         },
+        trip: {
+          select: {
+            id: true,
+            originName: true,
+            destinationName: true,
+            departureAt: true,
+            payloadType: true,
+            parcelWeight: true,
+            passengerCount: true,
+            status: true,
+          },
+        },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1, // Get the last message
@@ -48,6 +60,16 @@ async function getChats(req: AuthenticatedRequest) {
           name: otherUser.name,
           email: otherUser.email,
         },
+        trip: chat.trip ? {
+          id: chat.trip.id,
+          originName: chat.trip.originName,
+          destinationName: chat.trip.destinationName,
+          departureAt: chat.trip.departureAt,
+          payloadType: chat.trip.payloadType,
+          parcelWeight: chat.trip.parcelWeight,
+          passengerCount: chat.trip.passengerCount,
+          status: chat.trip.status,
+        } : undefined,
         lastMessage: lastMessage
           ? {
               id: lastMessage.id,
