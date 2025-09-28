@@ -83,7 +83,7 @@ model User {
   email           String     @unique
   phoneNumber     String
   passwordHash    String
-  type            UserType   @default(INDIVIDUAL)
+  type            UserType   @default(PERSON)
   officialIdNumber String?
   status          UserStatus @default(PENDING)
   role            UserRole   @default(USER)
