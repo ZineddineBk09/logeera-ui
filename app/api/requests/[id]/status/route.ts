@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/database';
 import { z } from 'zod';
+import { NotificationService } from '@/lib/services/notifications';
 
 const updateStatusSchema = z.object({
   status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED', 'CANCELLED']),
@@ -94,6 +95,19 @@ async function handler(req: AuthenticatedRequest) {
         timeout: 10000, // Increase timeout to 10 seconds
       });
 
+      // Send notification to the applicant
+      try {
+        await NotificationService.createRequestNotification(
+          'REQUEST_ACCEPTED',
+          requestId,
+          request.applicantId,
+          req.user!.userId
+        );
+      } catch (error) {
+        console.error('Error creating request notification:', error);
+        // Don't fail the request update if notification fails
+      }
+
       return NextResponse.json(result);
     } else if (status === 'IN_TRANSIT') {
       // Only allow IN_TRANSIT if current status is ACCEPTED
@@ -115,6 +129,19 @@ async function handler(req: AuthenticatedRequest) {
           applicant: true,
         },
       });
+
+      // Send notification to the applicant
+      try {
+        await NotificationService.createRequestNotification(
+          'REQUEST_IN_TRANSIT',
+          requestId,
+          request.applicantId,
+          req.user!.userId
+        );
+      } catch (error) {
+        console.error('Error creating request notification:', error);
+        // Don't fail the request update if notification fails
+      }
 
       return NextResponse.json(updatedRequest);
     } else if (status === 'DELIVERED') {
@@ -138,6 +165,19 @@ async function handler(req: AuthenticatedRequest) {
         },
       });
 
+      // Send notification to the applicant
+      try {
+        await NotificationService.createRequestNotification(
+          'REQUEST_DELIVERED',
+          requestId,
+          request.applicantId,
+          req.user!.userId
+        );
+      } catch (error) {
+        console.error('Error creating request notification:', error);
+        // Don't fail the request update if notification fails
+      }
+
       return NextResponse.json(updatedRequest);
     } else if (status === 'COMPLETED') {
       // Only allow COMPLETED if current status is DELIVERED
@@ -156,6 +196,19 @@ async function handler(req: AuthenticatedRequest) {
           applicant: true,
         },
       });
+
+      // Send notification to the applicant
+      try {
+        await NotificationService.createRequestNotification(
+          'REQUEST_COMPLETED',
+          requestId,
+          request.applicantId,
+          req.user!.userId
+        );
+      } catch (error) {
+        console.error('Error creating request notification:', error);
+        // Don't fail the request update if notification fails
+      }
 
       return NextResponse.json(updatedRequest);
     } else if (status === 'CANCELLED') {
@@ -196,6 +249,19 @@ async function handler(req: AuthenticatedRequest) {
       }, {
         timeout: 10000, // Increase timeout to 10 seconds
       });
+
+      // Send notification to the applicant
+      try {
+        await NotificationService.createRequestNotification(
+          'REQUEST_CANCELLED',
+          requestId,
+          request.applicantId,
+          req.user!.userId
+        );
+      } catch (error) {
+        console.error('Error creating request notification:', error);
+        // Don't fail the request update if notification fails
+      }
 
       return NextResponse.json(result);
     } else {

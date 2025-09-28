@@ -100,7 +100,7 @@ async function createTrip(req: AuthenticatedRequest) {
   }
 }
 
-async function getTrips(req: AuthenticatedRequest) {
+async function getTrips(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q');
@@ -117,6 +117,21 @@ async function getTrips(req: AuthenticatedRequest) {
     const publisherId =
       searchParams.get('publisherId') || searchParams.get('driver');
     const searchMode = searchParams.get('searchMode') || 'browse';
+
+    // Try to get user info from auth token (optional)
+    let currentUserId: string | null = null;
+    try {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const { verifyAccessToken } = await import('@/lib/auth/jwt');
+        const user = await verifyAccessToken(token);
+        currentUserId = user.userId;
+      }
+    } catch (error) {
+      // User not authenticated or invalid token - continue without user context
+      console.log('No valid auth token, proceeding without user context');
+    }
 
     // Progressive search strategy to ensure no empty results
     const searchStrategy = {
@@ -136,10 +151,10 @@ async function getTrips(req: AuthenticatedRequest) {
     // Filter by publisher/driver
     if (publisherId) {
       where.publisherId = publisherId;
-    } else if (req.user?.userId) {
+    } else if (currentUserId) {
       // Exclude user's own trips from search results (unless specifically viewing their trips)
       where.publisherId = {
-        not: req.user.userId,
+        not: currentUserId,
       };
     }
 
@@ -464,4 +479,4 @@ async function getTrips(req: AuthenticatedRequest) {
 }
 
 export const POST = withAuth(createTrip);
-export const GET = withAuth(getTrips);
+export const GET = getTrips;

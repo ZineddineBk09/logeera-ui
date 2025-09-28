@@ -102,6 +102,8 @@ model User {
   sentMessages    Message[]
   blockedUsers    BlockedUser[] @relation("BlockerUser")
   blockedByUsers  BlockedUser[] @relation("BlockedUser")
+  notifications   Notification[] @relation("NotificationUser")
+  sentNotifications Notification[] @relation("NotificationFromUser")
 
   @@map("users")
 }
@@ -130,6 +132,7 @@ model Trip {
   requests        Request[]
   ratings         Rating[]
   chats           Chat[]
+  notifications   Notification[]
 
   @@map("trips")
 }
@@ -149,6 +152,7 @@ model Request {
   // Relations
   trip        Trip          @relation(fields: [tripId], references: [id])
   applicant   User          @relation(fields: [applicantId], references: [id])
+  notifications Notification[]
 
   @@map("requests")
 }
@@ -166,6 +170,7 @@ model Chat {
   userB     User      @relation("ChatUserB", fields: [userBId], references: [id])
   trip      Trip?     @relation(fields: [tripId], references: [id])
   messages  Message[]
+  notifications Notification[]
 
   @@unique([userAId, userBId, tripId]) // Allow multiple chats between same users for different trips
   @@map("chats")
@@ -234,4 +239,39 @@ model ContactSubmission {
   updatedAt   DateTime        @updatedAt
 
   @@map("contact_submissions")
+}
+
+enum NotificationType {
+  CHAT_MESSAGE
+  REQUEST_SENT
+  REQUEST_ACCEPTED
+  REQUEST_REJECTED
+  REQUEST_CANCELLED
+  REQUEST_IN_TRANSIT
+  REQUEST_DELIVERED
+  REQUEST_COMPLETED
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  type        NotificationType
+  title       String
+  message     String
+  userId      String           // User who receives the notification
+  fromUserId  String           // User who triggered the notification
+  tripId      String?          // Related trip (optional)
+  requestId   String?          // Related request (optional)
+  chatId      String?          // Related chat (optional)
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  user        User             @relation("NotificationUser", fields: [userId], references: [id])
+  fromUser    User             @relation("NotificationFromUser", fields: [fromUserId], references: [id])
+  trip        Trip?            @relation(fields: [tripId], references: [id])
+  request     Request?         @relation(fields: [requestId], references: [id])
+  chat        Chat?            @relation(fields: [chatId], references: [id])
+
+  @@map("notifications")
 }

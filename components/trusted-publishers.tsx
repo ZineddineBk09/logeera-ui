@@ -95,6 +95,14 @@ export function TrustedPublishers() {
     return vehicleMap[vehicleType] || vehicleType;
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (errorMessage || drivers.length === 0) {
+    return null;
+  }
+
   return (
     <section className="space-y-12">
       <div className="space-y-4 text-center">

@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { ROUTES } from '@/constants';
+import { Notifications } from '@/components/notifications';
 
 const baseNavigation = [
   { name: 'Home', href: '/', icon: Search },
@@ -144,12 +145,7 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
-                    3
-                  </Badge>
-                </Button>
+                <Notifications />
 
                 {/* User Menu */}
                 <DropdownMenu>

@@ -152,9 +152,18 @@ export function PublishWizard() {
           | 'BIKE',
         payloadType: tripData.payloadType,
         capacity: tripData.payloadType === 'PARCEL' ? Number(tripData.parcelWeight || 10) : Number(tripData.passengerCount || 4),
-        pricePerSeat: 0, // Default price, can be set later
-        parcelWeight: tripData.payloadType === 'PARCEL' ? Number(tripData.parcelWeight || 10) : null,
-        passengerCount: tripData.payloadType === 'PASSENGER' ? Number(tripData.passengerCount || 4) : null,
+        pricePerSeat: 1, // Set to 1 as minimum positive value, can be updated later
+        // Only include parcelWeight for parcel trips
+        ...(tripData.payloadType === 'PARCEL' && {
+          parcelWeight: Number(tripData.parcelWeight || 10),
+        }),
+        // Only include passengerCount for passenger trips
+        ...(tripData.payloadType === 'PASSENGER' && {
+          passengerCount: Number(tripData.passengerCount || 4),
+        }),
+        // Always send empty strings for addresses to avoid backend issues
+        originAddress: '',
+        destinationAddress: '',
       };
 
       const response = await TripsService.create(payload);
@@ -186,13 +195,6 @@ export function PublishWizard() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return (
-          tripData.origin &&
-          tripData.destination &&
-          placeData.originPlace &&
-          placeData.destinationPlace
-        );
-      case 2:
         // Check if date is valid (tomorrow or later)
         const selectedDate = new Date(tripData.date);
         const tomorrow = new Date();
@@ -202,8 +204,15 @@ export function PublishWizard() {
         const isDateValid = tripData.date && selectedDate >= tomorrow;
         
         return (
+          tripData.origin &&
+          tripData.destination &&
+          placeData.originPlace &&
+          placeData.destinationPlace &&
           isDateValid &&
-          tripData.time &&
+          tripData.time
+        );
+      case 2:
+        return (
           tripData.vehicleType &&
           (tripData.payloadType === 'PARCEL' ? tripData.parcelWeight : tripData.passengerCount)
         );
@@ -270,8 +279,8 @@ export function PublishWizard() {
                   <div className="space-y-2">
                     <Label>From</Label>
                     <AutocompleteInput
-                      placeholder="Origin city"
-                      value={tripData.origin}
+                        placeholder="Origin city"
+                        value={tripData.origin}
                       onChange={(value) =>
                         setTripData((prev) => ({
                           ...prev,
@@ -297,39 +306,6 @@ export function PublishWizard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Pickup address (optional)</Label>
-                    <Input
-                      placeholder="Specific pickup location"
-                      value={tripData.originAddress}
-                      onChange={(e) =>
-                        setTripData((prev) => ({
-                          ...prev,
-                          originAddress: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Drop-off address (optional)</Label>
-                    <Input
-                      placeholder="Specific drop-off location"
-                      value={tripData.destinationAddress}
-                      onChange={(e) =>
-                        setTripData((prev) => ({
-                          ...prev,
-                          destinationAddress: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {currentStep === 2 && (
-              <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Date</Label>
@@ -382,7 +358,11 @@ export function PublishWizard() {
                     />
                   </div>
                 </div>
+              </div>
+            )}
 
+            {currentStep === 2 && (
+              <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label>Vehicle type</Label>
@@ -673,8 +653,8 @@ export function PublishWizard() {
                 </>
               ) : (
                 <>
-                  <span>Publish Trip</span>
-                  <Check className="h-4 w-4" />
+              <span>Publish Trip</span>
+              <Check className="h-4 w-4" />
                 </>
               )}
             </Button>

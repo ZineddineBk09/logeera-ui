@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/database';
 import { z } from 'zod';
+import { NotificationService } from '@/lib/services/notifications';
 
 // Simple HTML sanitization function
 function sanitizeMessage(content: string): string {
@@ -109,6 +110,21 @@ async function createMessage(req: AuthenticatedRequest) {
         content: sanitizedContent.trim(),
       },
     });
+
+    // Send notification to the other user in the chat
+    const receiverId = chat.userAId === senderId ? chat.userBId : chat.userAId;
+    try {
+      await NotificationService.createChatMessageNotification(
+        chatId,
+        senderId,
+        receiverId,
+        sanitizedContent.trim()
+      );
+    } catch (error) {
+      console.error('Error creating chat notification:', error);
+      // Don't fail the message creation if notification fails
+    }
+
     return NextResponse.json(savedMessage, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

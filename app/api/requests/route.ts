@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware';
 import { prisma } from '@/lib/database';
 import { z } from 'zod';
+import { NotificationService } from '@/lib/services/notifications';
 
 const createRequestSchema = z.object({
   tripId: z.string().uuid(),
@@ -67,6 +68,20 @@ async function createRequest(req: AuthenticatedRequest) {
         status: 'PENDING',
       },
     });
+
+    // Send notification to the trip publisher
+    try {
+      await NotificationService.createRequestNotification(
+        'REQUEST_SENT',
+        savedRequest.id,
+        trip.publisherId,
+        req.user!.userId
+      );
+    } catch (error) {
+      console.error('Error creating request notification:', error);
+      // Don't fail the request creation if notification fails
+    }
+
     return NextResponse.json(savedRequest, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
