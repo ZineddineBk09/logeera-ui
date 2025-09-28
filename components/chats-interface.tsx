@@ -22,6 +22,7 @@ import {
   Users,
   Calendar,
   Clock,
+  Navigation,
 } from 'lucide-react';
 import { useSocket } from '@/components/socket/SocketProvider';
 import { ChatService, RequestsService } from '@/lib/services';
@@ -100,6 +101,13 @@ export function ChatsInterface() {
   const [isBlocking, setIsBlocking] = useState(false);
   const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
   const [isUpdatingRequest, setIsUpdatingRequest] = useState(false);
+  const [hasLocationAccess, setHasLocationAccess] = useState<boolean | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showCancelPendingDialog, setShowCancelPendingDialog] = useState(false);
+  const [showCancelAcceptedDialog, setShowCancelAcceptedDialog] = useState(false);
+  const [showReceivedDialog, setShowReceivedDialog] = useState(false);
+  const [showDeliveredDialog, setShowDeliveredDialog] = useState(false);
+  const [showCompletedDialog, setShowCompletedDialog] = useState(false);
   const { socket, isConnected, connectionError } = useSocket();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -410,6 +418,20 @@ export function ChatsInterface() {
     mutateChats,
   ]);
 
+  // Check for location access permission
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.permissions?.query({ name: 'geolocation' as PermissionName }).then((result) => {
+        setHasLocationAccess(result.state === 'granted');
+      }).catch(() => {
+        // If permissions API is not supported, we'll check when user tries to use it
+        setHasLocationAccess(null);
+      });
+    } else {
+      setHasLocationAccess(false);
+    }
+  }, []);
+
   // Simple client-side validation
   const validateMessage = (content: string): string | null => {
     if (!content.trim()) {
@@ -515,6 +537,93 @@ export function ChatsInterface() {
     }
   };
 
+  const handleSendLocation = async () => {
+    if (!selectedChat || !user || isGettingLocation) return;
+
+    setIsGettingLocation(true);
+    try {
+      if (!navigator.geolocation) {
+        toast.error('Geolocation is not supported by this browser');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const locationMessage = `📍 My location: https://www.google.com/maps/@${latitude},${longitude},14z`;
+          
+          // Send location as a message
+          const response = await ChatService.postMessage(selectedChat.id, {
+            content: locationMessage,
+            senderId: user.id,
+          });
+
+          if (response.ok) {
+            const newMessageData = await response.json();
+            
+            // Add message to UI immediately for better UX
+            mutateMessages((currentMessages: Message[] = []) => {
+              return [...currentMessages, newMessageData];
+            }, false);
+
+            // Update chat list with new last message
+            mutateChats((currentChats: Chat[] = []) => {
+              return currentChats.map((chat: Chat) => {
+                if (chat.id === selectedChat.id) {
+                  return {
+                    ...chat,
+                    lastMessage: {
+                      id: newMessageData.id,
+                      content: newMessageData.content,
+                      senderId: newMessageData.senderId,
+                      createdAt: newMessageData.createdAt,
+                    },
+                    updatedAt: newMessageData.createdAt,
+                  };
+                }
+                return chat;
+              });
+            }, false);
+
+            setHasLocationAccess(true);
+            toast.success('Location sent successfully!');
+          } else {
+            throw new Error('Failed to send location');
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setHasLocationAccess(false);
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              toast.error('Location access denied. Please enable location permissions.');
+              break;
+            case error.POSITION_UNAVAILABLE:
+              toast.error('Location information unavailable.');
+              break;
+            case error.TIMEOUT:
+              toast.error('Location request timed out.');
+              break;
+            default:
+              toast.error('An unknown error occurred while retrieving location.');
+              break;
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000, // 5 minutes
+        }
+      );
+    } catch (error) {
+      console.error('Error sending location:', error);
+      toast.error('Failed to send location');
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
   const handleRequestStatusUpdate = async (newStatus: string) => {
     if (!activeRequest || isUpdatingRequest) return;
 
@@ -546,6 +655,53 @@ export function ChatsInterface() {
     } finally {
       setIsUpdatingRequest(false);
     }
+  };
+
+  // Handler functions for confirmation dialogs
+  const handleCancelPending = () => {
+    setShowCancelPendingDialog(true);
+  };
+
+  const handleCancelAccepted = () => {
+    setShowCancelAcceptedDialog(true);
+  };
+
+  const handleReceived = () => {
+    setShowReceivedDialog(true);
+  };
+
+  const handleDelivered = () => {
+    setShowDeliveredDialog(true);
+  };
+
+  const handleCompleted = () => {
+    setShowCompletedDialog(true);
+  };
+
+  // Confirmation functions
+  const confirmCancelPending = async () => {
+    setShowCancelPendingDialog(false);
+    await handleRequestStatusUpdate('CANCELLED');
+  };
+
+  const confirmCancelAccepted = async () => {
+    setShowCancelAcceptedDialog(false);
+    await handleRequestStatusUpdate('CANCELLED');
+  };
+
+  const confirmReceived = async () => {
+    setShowReceivedDialog(false);
+    await handleRequestStatusUpdate('IN_TRANSIT');
+  };
+
+  const confirmDelivered = async () => {
+    setShowDeliveredDialog(false);
+    await handleRequestStatusUpdate('DELIVERED');
+  };
+
+  const confirmCompleted = async () => {
+    setShowCompletedDialog(false);
+    await handleRequestStatusUpdate('COMPLETED');
   };
 
   const handleBlockUser = (userId: string, userName: string) => {
@@ -612,6 +768,31 @@ export function ChatsInterface() {
     });
   };
 
+  // Function to detect URLs and render them as clickable links
+  const renderMessageContent = (content: string) => {
+    // URL regex pattern to match http/https URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
+    const parts = content.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+  return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:no-underline text-blue-400 hover:text-blue-300"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   if (chatsError || messagesError) {
     return (
       <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -674,7 +855,7 @@ export function ChatsInterface() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-full max-h-[calc(100vh-400px)] overflow-y-auto">
               {chatsLoading ? (
                 <div className="flex items-center justify-center p-8">
                   <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
@@ -695,11 +876,11 @@ export function ChatsInterface() {
                 <div
                   key={chat.id}
                   onClick={() => setSelectedChat(chat)}
-                    className={`hover:bg-muted/50 flex cursor-pointer items-center gap-3 border-b p-4 transition-colors ${
+                    className={`h-full hover:bg-muted/50 flex cursor-pointer items-start gap-3 border-b p-4 transition-colors ${
                       selectedChat?.id === chat.id ? 'bg-muted/50' : ''
                   }`}
                 >
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <Avatar className="h-12 w-12">
                       <AvatarImage
                           src="/placeholder.svg"
@@ -716,45 +897,45 @@ export function ChatsInterface() {
                         <div className="border-background absolute -right-1 -bottom-1 h-4 w-4 rounded-full border-2 bg-green-500" />
                     )}
                   </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center justify-between">
-                        <h3 className="truncate text-sm font-semibold">
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-semibold leading-tight truncate flex-1 min-w-0">
                           {chat.otherUser.name}
                       </h3>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-muted-foreground text-xs flex-shrink-0">
                           {chat.lastMessage
                             ? formatTimestamp(chat.lastMessage.createdAt)
                             : formatTimestamp(chat.updatedAt)}
                       </span>
                     </div>
                       {chat.trip ? (
-                        <div className="mb-1 flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-muted-foreground truncate text-xs">
+                        <div className="mb-1 flex items-start gap-1 min-w-0">
+                      <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground text-xs leading-relaxed truncate flex-1 min-w-0">
                             {chat.trip.originName} → {chat.trip.destinationName}
-                          </span>
+                      </span>
                         </div>
                       ) : (
-                        <div className="mb-1 flex items-center gap-1">
-                          <span className="text-muted-foreground truncate text-xs">
+                        <div className="mb-1 flex items-start gap-1 min-w-0">
+                          <span className="text-muted-foreground text-xs leading-relaxed truncate flex-1 min-w-0">
                             {chat.otherUser.email}
-                          </span>
-                        </div>
+                      </span>
+                    </div>
                       )}
-                      <div className="flex items-center justify-between">
-                        <p className="text-muted-foreground truncate text-sm">
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                        <p className="text-muted-foreground text-sm leading-relaxed flex-1 min-w-0 truncate">
                           {chat.lastMessage
                             ? chat.lastMessage.content
                             : 'No messages yet'}
                         </p>
                         {chat.trip && (
-                          <Badge variant="outline" className="ml-2 text-xs">
+                          <Badge variant="outline" className="ml-2 text-xs flex-shrink-0">
                             {chat.trip.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
-                          </Badge>
-                        )}
-                      </div>
+                        </Badge>
+                      )}
                     </div>
                   </div>
+                </div>
                 ))
               )}
             </ScrollArea>
@@ -810,6 +991,24 @@ export function ChatsInterface() {
                         >
                           View Profile
                         </DropdownMenuItem>
+                        {hasLocationAccess !== false && (
+                          <DropdownMenuItem
+                            onClick={handleSendLocation}
+                            disabled={isGettingLocation}
+                          >
+                            {isGettingLocation ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Getting Location...
+                              </>
+                            ) : (
+                              <>
+                                <Navigation className="mr-2 h-4 w-4" />
+                                Share My Location
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                           className="text-red-600"
                           onClick={() => handleBlockUser(selectedChat.otherUser.id, selectedChat.otherUser.name)}
@@ -877,7 +1076,7 @@ export function ChatsInterface() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRequestStatusUpdate('CANCELLED')}
+                        onClick={handleCancelPending}
                         disabled={isUpdatingRequest}
                       >
                         {isUpdatingRequest ? (
@@ -895,7 +1094,7 @@ export function ChatsInterface() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRequestStatusUpdate('CANCELLED')}
+                        onClick={handleCancelAccepted}
                         disabled={isUpdatingRequest}
                       >
                         {isUpdatingRequest ? (
@@ -908,7 +1107,7 @@ export function ChatsInterface() {
                       {activeRequest.isPublisher && (
                         <Button
                           size="sm"
-                          onClick={() => handleRequestStatusUpdate('IN_TRANSIT')}
+                          onClick={handleReceived}
                           disabled={isUpdatingRequest}
                         >
                           {isUpdatingRequest ? (
@@ -924,23 +1123,10 @@ export function ChatsInterface() {
 
                   {activeRequest.status === 'IN_TRANSIT' && (
                     <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRequestStatusUpdate('CANCELLED')}
-                        disabled={isUpdatingRequest}
-                      >
-                        {isUpdatingRequest ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        ) : (
-                          <X className="mr-2 h-3 w-3" />
-                        )}
-                        Cancel Request
-                      </Button>
                       {activeRequest.isPublisher && (
                         <Button
                           size="sm"
-                          onClick={() => handleRequestStatusUpdate('DELIVERED')}
+                          onClick={handleDelivered}
                           disabled={isUpdatingRequest}
                         >
                           {isUpdatingRequest ? (
@@ -959,7 +1145,7 @@ export function ChatsInterface() {
                   {activeRequest.status === 'DELIVERED' && activeRequest.isPublisher && (
                     <Button
                       size="sm"
-                      onClick={() => handleRequestStatusUpdate('COMPLETED')}
+                      onClick={handleCompleted}
                       disabled={isUpdatingRequest}
                     >
                       {isUpdatingRequest ? (
@@ -1021,7 +1207,9 @@ export function ChatsInterface() {
                                   : 'bg-muted text-foreground'
                               }`}
                             >
-                              <p className="text-sm">{message.content}</p>
+                              <p className="text-sm break-words whitespace-pre-wrap">
+                                {renderMessageContent(message.content)}
+                              </p>
                       <span
                                 className={`mt-1 block text-xs ${
                                   isMe
@@ -1066,7 +1254,7 @@ export function ChatsInterface() {
                 disabled={isSending}
                 maxLength={1000}
               />
-                  <Button
+              <Button
                     onClick={handleSendMessage}
                     size="icon"
                     disabled={isSending || !newMessage.trim()}
@@ -1123,6 +1311,174 @@ export function ChatsInterface() {
                 </>
               ) : (
                 'Block User'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Pending Request Confirmation Dialog */}
+      <AlertDialog open={showCancelPendingDialog} onOpenChange={setShowCancelPendingDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this pending request? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCancelPendingDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancelPending}
+              disabled={isUpdatingRequest}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isUpdatingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                'Cancel Request'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Accepted Request Confirmation Dialog */}
+      <AlertDialog open={showCancelAcceptedDialog} onOpenChange={setShowCancelAcceptedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this accepted request? This will notify the other party and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCancelAcceptedDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancelAccepted}
+              disabled={isUpdatingRequest}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isUpdatingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                'Cancel Request'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Received Confirmation Dialog */}
+      <AlertDialog open={showReceivedDialog} onOpenChange={setShowReceivedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Received</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this {selectedChat?.trip?.payloadType === 'PARCEL' ? 'parcel' : 'passenger'} as received? This will change the status to "In Transit".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowReceivedDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmReceived}
+              disabled={isUpdatingRequest}
+            >
+              {isUpdatingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Package className="mr-2 h-4 w-4" />
+                  Mark as Received
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delivered Confirmation Dialog */}
+      <AlertDialog open={showDeliveredDialog} onOpenChange={setShowDeliveredDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedChat?.trip?.payloadType === 'PARCEL' ? 'Mark as Delivered' : 'Mark as Arrived'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this {selectedChat?.trip?.payloadType === 'PARCEL' ? 'parcel as delivered' : 'passenger as arrived at destination'}? This will change the status to "Delivered".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeliveredDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelivered}
+              disabled={isUpdatingRequest}
+            >
+              {isUpdatingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : selectedChat?.trip?.payloadType === 'PARCEL' ? (
+                <>
+                  <Truck className="mr-2 h-4 w-4" />
+                  Mark as Delivered
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Mark as Arrived
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Completed Confirmation Dialog */}
+      <AlertDialog open={showCompletedDialog} onOpenChange={setShowCompletedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Trip</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to complete this trip? This will finalize the {selectedChat?.trip?.payloadType === 'PARCEL' ? 'delivery' : 'passenger transport'} and enable rating.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCompletedDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCompleted}
+              disabled={isUpdatingRequest}
+            >
+              {isUpdatingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Complete Trip
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

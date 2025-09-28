@@ -95,6 +95,8 @@ export function RequestsManagement() {
   const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [showReceivedDialog, setShowReceivedDialog] = useState(false);
+  const [showCancelAcceptedDialog, setShowCancelAcceptedDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestIncoming | null>(null);
 
   // Fetch trips that can be rated
@@ -190,6 +192,16 @@ export function RequestsManagement() {
     setShowDeclineDialog(true);
   };
 
+  const handleReceived = (request: RequestIncoming) => {
+    setSelectedRequest(request);
+    setShowReceivedDialog(true);
+  };
+
+  const handleCancelAccepted = (request: RequestIncoming) => {
+    setSelectedRequest(request);
+    setShowCancelAcceptedDialog(true);
+  };
+
   const confirmDecline = async () => {
     if (!selectedRequest) return;
     
@@ -214,6 +226,76 @@ export function RequestsManagement() {
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+      setSelectedRequest(null);
+    }
+  };
+
+  const confirmReceived = async () => {
+    if (!selectedRequest) return;
+    
+    const requestId = selectedRequest.id;
+    // Prevent multiple clicks
+    if (processingRequests.has(requestId)) return;
+    
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    setShowReceivedDialog(false);
+    
+    try {
+      const response = await RequestsService.setStatus(requestId, 'in_transit');
+      if (response.ok) {
+        toast.success('Request marked as received');
+        // Update the local state to reflect the change
+        setIncoming(prev => prev.map(req => 
+          req.id === requestId ? { ...req, status: 'IN_TRANSIT' } : req
+        ));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to mark as received');
+      }
+    } catch (error) {
+      console.error('Error marking as received:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+      setSelectedRequest(null);
+    }
+  };
+
+  const confirmCancelAccepted = async () => {
+    if (!selectedRequest) return;
+    
+    const requestId = selectedRequest.id;
+    // Prevent multiple clicks
+    if (processingRequests.has(requestId)) return;
+    
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    setShowCancelAcceptedDialog(false);
+    
+    try {
+      const response = await RequestsService.setStatus(requestId, 'cancelled');
+      if (response.ok) {
+        toast.success('Request cancelled');
+        // Update the local state to reflect the change
+        setIncoming(prev => prev.map(req => 
+          req.id === requestId ? { ...req, status: 'CANCELLED' } : req
+        ));
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to cancel request');
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error);
       toast.error('Network error. Please try again.');
     } finally {
       setProcessingRequests(prev => {
@@ -490,7 +572,7 @@ export function RequestsManagement() {
                   {request.status === 'ACCEPTED' && (
                     <div className="flex gap-2 pt-2">
                       <Button
-                        onClick={() => handleStatusUpdate(request.id, 'IN_TRANSIT')}
+                        onClick={() => handleReceived(request)}
                         className="flex-1"
                         disabled={processingRequests.has(request.id)}
                       >
@@ -503,7 +585,7 @@ export function RequestsManagement() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => handleStatusUpdate(request.id, 'CANCELLED')}
+                        onClick={() => handleCancelAccepted(request)}
                         className="flex-1"
                         disabled={processingRequests.has(request.id)}
                       >
@@ -966,6 +1048,161 @@ export function RequestsManagement() {
                 <>
                   <X className="mr-2 h-4 w-4" />
                   Decline Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Received Confirmation Dialog */}
+      <Dialog open={showReceivedDialog} onOpenChange={setShowReceivedDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mark as Received</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to mark this request as received from {selectedRequest?.applicant.name}?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={selectedRequest.applicant.name}
+                    />
+                    <AvatarFallback>
+                      {selectedRequest.applicant.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-green-600" />
+                  <p className="text-sm text-green-800">
+                    This will mark the {selectedRequest.trip.payloadType === 'PARCEL' ? 'parcel' : 'passenger'} as received and change the status to "In Transit".
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReceivedDialog(false);
+                setSelectedRequest(null);
+              }}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmReceived}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              {processingRequests.has(selectedRequest?.id || '') ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Marking as Received...
+                </>
+              ) : (
+                <>
+                  <Package className="mr-2 h-4 w-4" />
+                  Mark as Received
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Accepted Request Confirmation Dialog */}
+      <Dialog open={showCancelAcceptedDialog} onOpenChange={setShowCancelAcceptedDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Request</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this accepted request from {selectedRequest?.applicant.name}?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={selectedRequest.applicant.name}
+                    />
+                    <AvatarFallback>
+                      {selectedRequest.applicant.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-sm text-red-800">
+                    This action cannot be undone. The applicant will be notified that their accepted request was cancelled.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelAcceptedDialog(false);
+                setSelectedRequest(null);
+              }}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancelAccepted}
+              disabled={processingRequests.has(selectedRequest?.id || '')}
+            >
+              {processingRequests.has(selectedRequest?.id || '') ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Cancel Request
                 </>
               )}
             </Button>

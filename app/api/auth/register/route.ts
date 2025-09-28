@@ -9,7 +9,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   phoneNumber: z.string().regex(/^\+?[0-9]{7,15}$/),
   password: z.string().min(8).max(128),
-  type: z.enum(['INDIVIDUAL', 'COMPANY']).default('INDIVIDUAL'),
+  type: z.enum(['PERSON', 'BUSINESS']).default('PERSON'),
   officialIdNumber: z.string().min(1),
 });
 

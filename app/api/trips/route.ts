@@ -142,7 +142,9 @@ async function getTrips(req: NextRequest) {
     };
 
     const where: any = {
-      status: 'PUBLISHED',
+      status: {
+        in: ['PUBLISHED'], // Only show published trips, exclude completed/cancelled
+      },
       departureAt: {
         gte: new Date(), // Only future trips
       },

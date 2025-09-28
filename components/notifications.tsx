@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { NotificationType } from '@prisma/client';
 
 interface Notification {
   id: string;
@@ -119,12 +120,39 @@ export function Notifications() {
     await markAsRead(notification.id);
 
     // Navigate based on notification type
-    if (notification.chatId) {
-      router.push(`/chats?chatId=${notification.chatId}`);
-    } else if (notification.tripId) {
-      router.push(`/trips/${notification.tripId}`);
-    } else if (notification.requestId) {
-      router.push('/requests');
+    // if (notification.chatId) {
+    //   router.push(`/chats?chatId=${notification.chatId}`);
+    // } else if (notification.tripId) {
+    //   router.push(`/trips/${notification.tripId}`);
+    // } else if (notification.requestId) {
+    //   router.push('/requests');
+    // }
+
+    switch (notification.type) {
+      case 'CHAT_MESSAGE':
+        router.push(`/chats?chatId=${notification.chatId}`);
+        break;
+      case 'REQUEST_SENT':
+        router.push(`/requests?requestId=${notification.requestId}`);
+
+      case 'REQUEST_ACCEPTED':
+        router.push(`/requests?requestId=${notification.requestId}`);
+        break;
+      case 'REQUEST_REJECTED':
+        router.push(`/requests?requestId=${notification.requestId}`);
+        break;
+      case 'REQUEST_CANCELLED':
+        router.push(`/requests?requestId=${notification.requestId}`);
+        break;
+      case 'REQUEST_IN_TRANSIT':
+        router.push(`/requests?requestId=${notification.requestId}`);
+        break;
+      case 'REQUEST_DELIVERED':
+        router.push(`/requests?requestId=${notification.requestId}`);
+        break;
+      case 'REQUEST_COMPLETED':
+        router.push(`/requests?requestId=${notification.requestId}`);
+        break;
     }
 
     setIsOpen(false);
@@ -256,21 +284,6 @@ export function Notifications() {
             </div>
           )}
         </ScrollArea>
-
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="justify-center text-center"
-              onClick={() => {
-                router.push('/notifications');
-                setIsOpen(false);
-              }}
-            >
-              View all notifications
-            </DropdownMenuItem>
-          </>
-        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

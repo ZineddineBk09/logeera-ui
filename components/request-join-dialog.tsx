@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MessageCircle, Package } from 'lucide-react';
+import { MessageCircle, Package } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,14 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { RequestsService } from '@/lib/services';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -50,7 +42,6 @@ export function RequestJoinDialog({
   trip,
   mutate,
 }: RequestJoinDialogProps) {
-  const [seats, setSeats] = useState('1');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -89,7 +80,6 @@ export function RequestJoinDialog({
         toast.success(isParcelTrip ? 'Delivery request sent successfully!' : 'Request sent successfully!');
         onOpenChange(false);
         // Reset form
-        setSeats('1');
         setMessage('');
         mutate();
       } else {
@@ -130,37 +120,6 @@ export function RequestJoinDialog({
             )}
           </div>
 
-          {/* Number of Seats/Weight */}
-          <div className="space-y-2">
-            <Label>
-              {isParcelTrip ? 'Parcel weight (kg)' : 'Number of seats'}
-            </Label>
-            <Select value={seats} onValueChange={setSeats}>
-              <SelectTrigger>
-                <div className="flex items-center">
-                  {isParcelTrip ? (
-                    <Package className="text-muted-foreground mr-2 h-4 w-4" />
-                  ) : (
-                    <Users className="text-muted-foreground mr-2 h-4 w-4" />
-                  )}
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from(
-                  { length: Math.min(trip.availableSeats, isParcelTrip ? 20 : 4) },
-                  (_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {isParcelTrip 
-                        ? `${i + 1}kg`
-                        : `${i + 1} seat${i > 0 ? 's' : ''}`
-                      }
-                    </SelectItem>
-                  ),
-                )}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Message */}
           <div className="space-y-2">

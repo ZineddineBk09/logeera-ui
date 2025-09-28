@@ -11,8 +11,8 @@ datasource db {
 }
 
 enum UserType {
-  INDIVIDUAL
-  COMPANY
+  PERSON
+  BUSINESS
 }
 
 enum UserStatus {

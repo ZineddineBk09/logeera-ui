@@ -29,18 +29,23 @@ export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const schema = z.object({
     name: z.string().min(2, 'Enter your full name'),
     email: z.string().email('Enter a valid email'),
     phone: z.string().regex(/^\+?[0-9]{7,15}$/, 'Enter a valid phone'),
     password: z.string().min(8, 'At least 8 characters').max(128),
-    userType: z.enum(['individual', 'company'], {
+    confirmPassword: z.string().min(8, 'At least 8 characters').max(128),
+    userType: z.enum(['person', 'business'], {
       message: 'Select an account type',
     }),
     idNumber: z.string().min(1, 'Required').optional().or(z.literal('')),
     agreeToTerms: z.literal(true, {
       message: 'You must accept the terms',
     }),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
   });
   type FormValues = z.infer<typeof schema>;
 
@@ -57,6 +62,7 @@ export function RegisterForm() {
       email: '',
       phone: '',
       password: '',
+      confirmPassword: '',
       userType: undefined as unknown as any,
       idNumber: '',
       agreeToTerms: true,
@@ -71,7 +77,7 @@ export function RegisterForm() {
       email: formData.email,
       phoneNumber: formData.phone,
       password: formData.password,
-      type: formData.userType.toUpperCase() as 'INDIVIDUAL' | 'COMPANY',
+      type: formData.userType.toUpperCase() as 'PERSON' | 'BUSINESS',
       officialIdNumber: formData.idNumber || 'ID-UNKNOWN',
     });
 
@@ -156,32 +162,73 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Create a strong password"
-              className="pr-10 pl-10"
-              aria-invalid={!!errors.password}
-              {...register('password')}
-              value={watch('password')}
-              onChange={(e) => setValue('password', e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Create a strong password"
+                className="pr-10 pl-10"
+                aria-invalid={!!errors.password}
+                {...register('password')}
+                value={watch('password')}
+                onChange={(e) => setValue('password', e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm your password"
+                className="pr-10 pl-10"
+                aria-invalid={!!errors.confirmPassword}
+                {...register('confirmPassword')}
+                value={watch('confirmPassword')}
+                onChange={(e) => setValue('confirmPassword', e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
         </div>
 
@@ -199,8 +246,8 @@ export function RegisterForm() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="individual">Individual</SelectItem>
-                <SelectItem value="company">Company</SelectItem>
+                <SelectItem value="person">Person</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
               </SelectContent>
             </Select>
             {errors.userType && (
