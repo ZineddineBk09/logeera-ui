@@ -30,7 +30,7 @@ export interface RegisterData {
   email: string;
   phoneNumber: string;
   password: string;
-  type: 'INDIVIDUAL' | 'COMPANY';
+  type: 'PERSON' | 'BUSINESS';
   officialIdNumber: string;
 }
 

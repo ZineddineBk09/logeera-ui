@@ -82,7 +82,7 @@ async function testAuthentication() {
       email: user.email,
       phoneNumber: `+123456789${Math.random().toString().slice(-3)}`,
       password: user.password,
-      type: 'INDIVIDUAL',
+      type: 'PERSON',
       officialIdNumber: `ID${Math.random().toString().slice(-6)}`,
     };
 

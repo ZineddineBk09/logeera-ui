@@ -33,7 +33,8 @@ export function TripsResults() {
   const [page, setPage] = useState(1);
   const [driverName, setDriverName] = useState<string | null>(null);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
-  const [selectedTripForBooking, setSelectedTripForBooking] = useState<any>(null);
+  const [selectedTripForBooking, setSelectedTripForBooking] =
+    useState<any>(null);
   const [filters, setFilters] = useState<FilterState>({
     date: '',
     vehicleType: 'any',
@@ -209,7 +210,13 @@ export function TripsResults() {
   );
 
   // Handle both old and new API response formats
-  const trips = useMemo(() => tripsData?.trips || tripsData || [], [tripsData]);
+  const trips = useMemo(
+    () =>
+      (tripsData?.trips || tripsData || []).filter(
+        (trip: any) => trip.status !== 'COMPLETED',
+      ),
+    [tripsData],
+  );
   const searchMetadata = useMemo(() => tripsData?.metadata || {}, [tripsData]);
   const pageSize = useMemo(() => 5, []);
 
@@ -263,7 +270,11 @@ export function TripsResults() {
     // Check if user is trying to book their own trip
     if (user?.id === trip.publisher.id) {
       const isParcelTrip = trip.payloadType === 'PARCEL';
-      toast.error(isParcelTrip ? 'You cannot book your own delivery service' : 'You cannot book your own trip');
+      toast.error(
+        isParcelTrip
+          ? 'You cannot book your own delivery service'
+          : 'You cannot book your own trip',
+      );
       return;
     }
 
@@ -271,7 +282,11 @@ export function TripsResults() {
     const isPastTrip = new Date(trip.departureAt) < new Date();
     if (isPastTrip) {
       const isParcelTrip = trip.payloadType === 'PARCEL';
-      toast.error(isParcelTrip ? 'Cannot book deliveries that have already departed' : 'Cannot book trips that have already departed');
+      toast.error(
+        isParcelTrip
+          ? 'Cannot book deliveries that have already departed'
+          : 'Cannot book trips that have already departed',
+      );
       return;
     }
 
@@ -279,7 +294,11 @@ export function TripsResults() {
     const availableSeats = trip.capacity - (trip.bookedSeats || 0);
     if (availableSeats <= 0) {
       const isParcelTrip = trip.payloadType === 'PARCEL';
-      toast.error(isParcelTrip ? 'This delivery service is at capacity' : 'This trip is full');
+      toast.error(
+        isParcelTrip
+          ? 'This delivery service is at capacity'
+          : 'This trip is full',
+      );
       return;
     }
 
@@ -432,8 +451,8 @@ export function TripsResults() {
                     {searchMetadata?.searchMode === 'fallback'
                       ? "No trips match your exact criteria, but we're showing available trips."
                       : searchMetadata?.isBroadSearch
-                      ? "We searched within 500km but couldn't find matching trips."
-                      : 'Try adjusting your search criteria or expanding the search area.'}
+                        ? "We searched within 500km but couldn't find matching trips."
+                        : 'Try adjusting your search criteria or expanding the search area.'}
                   </p>
                   <div className="space-y-2 text-xs">
                     <p>• Try different dates or locations</p>
@@ -531,8 +550,8 @@ export function TripsResults() {
                       {searchMetadata?.searchMode === 'fallback'
                         ? "No trips match your exact criteria, but we're showing available trips."
                         : searchMetadata?.isBroadSearch
-                        ? "We searched within 500km but couldn't find matching trips."
-                        : 'Try adjusting your search criteria or expanding the search area.'}
+                          ? "We searched within 500km but couldn't find matching trips."
+                          : 'Try adjusting your search criteria or expanding the search area.'}
                     </p>
                     <div className="space-y-2 text-xs">
                       <p>• Try different dates or locations</p>
@@ -550,9 +569,9 @@ export function TripsResults() {
                 </div>
               ) : (
                 visibleTrips.map((trip) => (
-                  <TripCard 
-                    key={trip.id} 
-                    trip={trip} 
+                  <TripCard
+                    key={trip.id}
+                    trip={trip}
                     onBookTrip={handleBookTrip}
                   />
                 ))

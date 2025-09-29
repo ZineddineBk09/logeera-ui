@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "public"."UserType" AS ENUM ('INDIVIDUAL', 'COMPANY');
+CREATE TYPE "public"."UserType" AS ENUM ('PERSON', 'BUSINESS');
 
 -- CreateEnum
 CREATE TYPE "public"."UserStatus" AS ENUM ('PENDING', 'TRUSTED');
@@ -23,7 +23,7 @@ CREATE TABLE "public"."users" (
     "email" TEXT NOT NULL,
     "phoneNumber" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
-    "type" "public"."UserType" NOT NULL DEFAULT 'INDIVIDUAL',
+    "type" "public"."UserType" NOT NULL DEFAULT 'PERSON',
     "officialIdNumber" TEXT,
     "status" "public"."UserStatus" NOT NULL DEFAULT 'PENDING',
     "role" "public"."UserRole" NOT NULL DEFAULT 'USER',

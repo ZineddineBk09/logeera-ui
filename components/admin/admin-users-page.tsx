@@ -69,7 +69,7 @@ interface User {
   name: string;
   email: string;
   phoneNumber: string;
-  type: 'INDIVIDUAL' | 'COMPANY';
+  type: 'PERSON' | 'BUSINESS';
   status: 'PENDING' | 'TRUSTED' | 'BLOCKED';
   role: 'USER' | 'MODERATOR' | 'ADMIN';
   averageRating: number;
@@ -102,7 +102,7 @@ export function AdminUsersPage() {
     email: '',
     phoneNumber: '',
     password: '',
-    type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'COMPANY',
+    type: 'PERSON' as 'PERSON' | 'BUSINESS',
     role: 'USER' as 'USER' | 'MODERATOR' | 'ADMIN',
     status: 'PENDING' as 'PENDING' | 'TRUSTED' | 'BLOCKED',
   });
@@ -226,7 +226,7 @@ export function AdminUsersPage() {
         email: '',
         phoneNumber: '',
         password: '',
-        type: 'INDIVIDUAL',
+        type: 'PERSON',
         role: 'USER',
         status: 'PENDING',
       });
@@ -375,7 +375,7 @@ export function AdminUsersPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {user.type === 'INDIVIDUAL' ? 'Individual' : 'Company'}
+                        {user.type === 'PERSON' ? 'Individual' : 'Company'}
                       </Badge>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
@@ -554,7 +554,7 @@ export function AdminUsersPage() {
               </Label>
               <Select
                 value={newUser.type}
-                onValueChange={(value: 'INDIVIDUAL' | 'COMPANY') => 
+                onValueChange={(value: 'PERSON' | 'BUSINESS') => 
                   setNewUser({ ...newUser, type: value })
                 }
               >
@@ -562,8 +562,8 @@ export function AdminUsersPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="INDIVIDUAL">Individual</SelectItem>
-                  <SelectItem value="COMPANY">Company</SelectItem>
+                  <SelectItem value="PERSON">Person</SelectItem>
+                  <SelectItem value="BUSINESS">Business</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -30,23 +30,25 @@ export function RegisterForm() {
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const schema = z.object({
-    name: z.string().min(2, 'Enter your full name'),
-    email: z.string().email('Enter a valid email'),
-    phone: z.string().regex(/^\+?[0-9]{7,15}$/, 'Enter a valid phone'),
-    password: z.string().min(8, 'At least 8 characters').max(128),
-    confirmPassword: z.string().min(8, 'At least 8 characters').max(128),
-    userType: z.enum(['person', 'business'], {
-      message: 'Select an account type',
-    }),
-    idNumber: z.string().min(1, 'Required').optional().or(z.literal('')),
-    agreeToTerms: z.literal(true, {
-      message: 'You must accept the terms',
-    }),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+  const schema = z
+    .object({
+      name: z.string().min(2, 'Enter your full name'),
+      email: z.string().email('Enter a valid email'),
+      phone: z.string().regex(/^\+?[0-9]{7,15}$/, 'Enter a valid phone'),
+      password: z.string().min(8, 'At least 8 characters').max(128),
+      confirmPassword: z.string().min(8, 'At least 8 characters').max(128),
+      userType: z.enum(['PERSON', 'BUSINESS'], {
+        message: 'Select an account type',
+      }),
+      idNumber: z.string().min(1, 'Required').optional().or(z.literal('')),
+      agreeToTerms: z.literal(true, {
+        message: 'You must accept the terms',
+      }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ['confirmPassword'],
+    });
   type FormValues = z.infer<typeof schema>;
 
   const {
@@ -91,6 +93,49 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
+        {/* <div className="grid grid-cols-2 gap-4 md:grid-cols-2"> */}
+        <div className="space-y-2">
+          <Label>Account type</Label>
+          <Select
+            value={watch('userType') || ''}
+            onValueChange={(v) => setValue('userType', v as any)}
+          >
+            <SelectTrigger className="w-full">
+              <div className="flex items-center">
+                <Building className="text-muted-foreground mr-2 h-4 w-4" />
+                <SelectValue placeholder="Select type" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PERSON">Person</SelectItem>
+              <SelectItem value="BUSINESS">Business</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.userType && (
+            <p className="text-destructive mt-1 text-xs">
+              {errors.userType.message}
+            </p>
+          )}
+        </div>
+
+        {/* <div className="space-y-2">
+            <Label htmlFor="idNumber">ID number (optional)</Label>
+            <Input
+              id="idNumber"
+              type="text"
+              placeholder="Driver's license or ID"
+              {...register('idNumber')}
+              value={watch('idNumber')}
+              onChange={(e) => setValue('idNumber', e.target.value)}
+            />
+            {errors.idNumber && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.idNumber.message}
+              </p>
+            )}
+          </div> */}
+        {/* </div> */}
+
         <div className="space-y-2">
           <Label htmlFor="name">Full name</Label>
           <div className="relative">
@@ -114,53 +159,53 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email address</Label>
-            <div className="relative">
-              <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                className="pl-10"
-                aria-invalid={!!errors.email}
-                {...register('email')}
-                value={watch('email')}
-                onChange={(e) => setValue('email', e.target.value)}
-                required
-              />
-              {errors.email && (
-                <p className="text-destructive mt-1 text-xs">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone number</Label>
-            <div className="relative">
-              <Phone className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter your phone"
-                className="pl-10"
-                aria-invalid={!!errors.phone}
-                {...register('phone')}
-                value={watch('phone')}
-                onChange={(e) => setValue('phone', e.target.value)}
-                required
-              />
-              {errors.phone && (
-                <p className="text-destructive mt-1 text-xs">
-                  {errors.phone.message}
-                </p>
-              )}
-            </div>
+        {/* <div className="grid grid-cols-2 gap-4 md:grid-cols-2"> */}
+        <div className="space-y-2">
+          <Label htmlFor="email">Email address</Label>
+          <div className="relative">
+            <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className="pl-10"
+              aria-invalid={!!errors.email}
+              {...register('email')}
+              value={watch('email')}
+              onChange={(e) => setValue('email', e.target.value)}
+              required
+            />
+            {errors.email && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.email.message}
+              </p>
+            )}
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone number</Label>
+          <div className="relative">
+            <Phone className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="Enter your phone"
+              className="pl-10"
+              aria-invalid={!!errors.phone}
+              {...register('phone')}
+              value={watch('phone')}
+              onChange={(e) => setValue('phone', e.target.value)}
+              required
+            />
+            {errors.phone && (
+              <p className="text-destructive mt-1 text-xs">
+                {errors.phone.message}
+              </p>
+            )}
+          </div>
+        </div>
+        {/* </div> */}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -231,52 +276,9 @@ export function RegisterForm() {
             )}
           </div>
         </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Account type</Label>
-            <Select
-              value={watch('userType') || ''}
-              onValueChange={(v) => setValue('userType', v as any)}
-            >
-              <SelectTrigger>
-                <div className="flex items-center">
-                  <Building className="text-muted-foreground mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Select type" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="person">Person</SelectItem>
-                <SelectItem value="business">Business</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.userType && (
-              <p className="text-destructive mt-1 text-xs">
-                {errors.userType.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="idNumber">ID number (optional)</Label>
-            <Input
-              id="idNumber"
-              type="text"
-              placeholder="Driver's license or ID"
-              {...register('idNumber')}
-              value={watch('idNumber')}
-              onChange={(e) => setValue('idNumber', e.target.value)}
-            />
-            {errors.idNumber && (
-              <p className="text-destructive mt-1 text-xs">
-                {errors.idNumber.message}
-              </p>
-            )}
-          </div>
-        </div>
       </div>
 
-      <div className="space-y-4">
+      {/* <div className="space-y-4">
         <div className="flex items-start space-x-2">
           <Checkbox
             id="terms"
@@ -300,7 +302,7 @@ export function RegisterForm() {
             </p>
           )}
         </div>
-      </div>
+      </div> */}
 
       <Button
         type="submit"
@@ -319,8 +321,8 @@ export function RegisterForm() {
 
       <p className="text-muted-foreground text-center text-sm">
         Already have an account?{' '}
-        <Link 
-          href={`/login${searchParams?.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`} 
+        <Link
+          href={`/login${searchParams?.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`}
           className="text-primary hover:underline"
         >
           Sign in

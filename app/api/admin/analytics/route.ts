@@ -134,7 +134,7 @@ async function getAnalytics(req: AuthenticatedRequest) {
     });
 
     const userTypesData = userTypes.map((item: any) => ({
-      name: item.type === 'INDIVIDUAL' ? 'Individual' : 'Company',
+      name: item.type.toUpperCase() === 'PERSON' ? 'Person' : 'Business',
       value: item._count.type,
     }));
 

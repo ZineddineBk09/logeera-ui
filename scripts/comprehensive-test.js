@@ -141,7 +141,7 @@ async function testAuthentication() {
     email: `testuser${timestamp}@example.com`,
     phoneNumber: `+1234567${timestamp.toString().slice(-3)}`,
     password: 'password123',
-    type: 'INDIVIDUAL',
+    type: 'PERSON',
     officialIdNumber: `TEST${timestamp}`,
   };
 

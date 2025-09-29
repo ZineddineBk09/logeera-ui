@@ -55,7 +55,7 @@ export class AdminService {
     email: string;
     phoneNumber: string;
     password: string;
-    type?: 'INDIVIDUAL' | 'COMPANY';
+    type?: 'PERSON' | 'BUSINESS';
     role?: 'USER' | 'MODERATOR' | 'ADMIN';
     status?: 'PENDING' | 'TRUSTED' | 'BLOCKED';
   }) {

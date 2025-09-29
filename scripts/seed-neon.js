@@ -23,7 +23,7 @@ const africanCities = [
 ];
 
 const vehicleTypes = ['CAR', 'VAN', 'TRUCK', 'BIKE'];
-const userTypes = ['INDIVIDUAL', 'COMPANY'];
+const userTypes = ['PERSON', 'BUSINESS'];
 
 // Helper function to get random element from array
 function getRandomElement(array) {
@@ -56,7 +56,7 @@ function generateUser(isAdmin = false) {
 
   const name = isAdmin ? 'Admin User' : getRandomElement(names);
   const email = isAdmin ? 'admin@logeera.com' : `${name.toLowerCase().replace(/\s+/g, '.')}${Math.floor(Math.random() * 1000)}@logeera.com`;
-  const userType = isAdmin ? 'INDIVIDUAL' : getRandomElement(userTypes);
+  const userType = isAdmin ? 'PERSON' : getRandomElement(userTypes);
   
   return {
     name,

@@ -82,7 +82,7 @@ const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  type: z.enum(['INDIVIDUAL', 'COMPANY']).default('INDIVIDUAL'),
+  type: z.enum(['PERSON', 'BUSINESS']).default('PERSON'),
   role: z.enum(['USER', 'MODERATOR', 'ADMIN']).default('USER'),
   status: z.enum(['PENDING', 'TRUSTED', 'BLOCKED']).default('PENDING'),
 });

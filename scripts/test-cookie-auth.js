@@ -54,7 +54,7 @@ async function testCookieAuth() {
     email: `cookietest${timestamp}@example.com`,
     phoneNumber: `+1234567${timestamp.toString().slice(-3)}`,
     password: 'password123',
-    type: 'INDIVIDUAL',
+    type: 'PERSON',
     officialIdNumber: `COOKIE${timestamp}`,
   };
 

@@ -22,7 +22,7 @@ const africanCities = [
 ];
 
 const vehicleTypes = ['CAR', 'VAN', 'TRUCK', 'BIKE'];
-const userTypes = ['INDIVIDUAL', 'COMPANY'];
+const userTypes = ['PERSON', 'BUSINESS'];
 
 // Helper function to make API requests
 async function apiRequest(endpoint, options = {}) {
@@ -116,7 +116,7 @@ function generateUser(index, isAdmin = false) {
     email,
     phoneNumber: phone,
     password: 'Password123!',
-    type: isAdmin ? 'INDIVIDUAL' : getRandomElement(userTypes),
+    type: isAdmin ? 'PERSON' : getRandomElement(userTypes),
     officialIdNumber: `ID${Math.floor(Math.random() * 1000000)
       .toString()
       .padStart(6, '0')}`,

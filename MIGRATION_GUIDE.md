@@ -140,8 +140,8 @@ import { Request } from './Request';
 import { Rating } from './Rating';
 
 export enum UserType {
-  INDIVIDUAL = 'individual',
-  COMPANY = 'company',
+  PERSON = 'person',
+  BUSINESS = 'business',
 }
 
 export enum UserStatus {
@@ -172,7 +172,7 @@ export class User {
   @Column()
   passwordHash: string;
 
-  @Column({ type: 'enum', enum: UserType, default: UserType.INDIVIDUAL })
+  @Column({ type: 'enum', enum: UserType, default: UserType.PERSON })
   type: UserType;
 
   @Column({ nullable: true })
@@ -449,7 +449,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   phoneNumber: z.string().min(10),
   password: z.string().min(8),
-  type: z.nativeEnum(UserType).default(UserType.INDIVIDUAL),
+  type: z.nativeEnum(UserType).default(UserType.PERSON),
   officialIdNumber: z.string().optional(),
 });
 

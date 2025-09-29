@@ -119,8 +119,8 @@ export const APP_CONFIG = {
 
   // User types
   USER_TYPES: {
-    INDIVIDUAL: 'INDIVIDUAL',
-    COMPANY: 'COMPANY',
+    PERSON: 'PERSON',
+    BUSINESS: 'BUSINESS',
   },
 
   // Vehicle types
