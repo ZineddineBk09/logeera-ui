@@ -155,12 +155,12 @@ export function ChatsInterface() {
           // Chat not found in the list, try to fetch it directly
           // This might be a chat that exists but isn't in the current user's chat list
           // We'll show an error for now, but in the future we could try to fetch it
-          toast.error('Chat not found or you no longer have access to this conversation');
+          // toast.error('Chat not found or you no longer have access to this conversation');
           router.push('/chats');
         }
       } else {
         // No chats available, but we have a chatId - this might be an invalid chat
-        toast.error('Chat not found or you no longer have access to this conversation');
+        // toast.error('Chat not found or you no longer have access to this conversation');
         router.push('/chats');
       }
     }

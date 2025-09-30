@@ -24,6 +24,8 @@ const updateTripSchema = z.object({
 async function updateTrip(req: AuthenticatedRequest) {
   try {
     const body = await req.json();
+    console.log('=========================')
+    console.log('body', body);
     const { status } = updateTripSchema.parse(body);
     const tripId = req.nextUrl.pathname.split('/')[3];
 

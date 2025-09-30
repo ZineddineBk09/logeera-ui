@@ -205,7 +205,7 @@ export function RelatedTrips({
       <CardContent>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {relatedTrips.map((trip: any) => (
-            <TripCard key={trip.id} trip={trip} />
+            <TripCard key={trip.id} trip={trip} onCancelTrip={() => {}} />
           ))}
         </div>
       </CardContent>

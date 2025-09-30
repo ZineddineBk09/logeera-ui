@@ -153,12 +153,8 @@ async function getTrips(req: NextRequest) {
     // Filter by publisher/driver
     if (publisherId) {
       where.publisherId = publisherId;
-    } else if (currentUserId) {
-      // Exclude user's own trips from search results (unless specifically viewing their trips)
-      where.publisherId = {
-        not: currentUserId,
-      };
     }
+    // Note: We now include user's own trips to allow them to manage/cancel them from the trips page
 
     // Enhanced text-based search with fuzzy matching
     // Only apply text search if we don't have coordinates (coordinate search takes priority)

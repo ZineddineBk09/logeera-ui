@@ -10,6 +10,7 @@ import {
   Shield,
   Calendar,
   SquareArrowOutUpRight,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
@@ -18,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCallback, useMemo } from 'react';
+import { useAuth } from './auth/AuthProvider';
 
 interface TripCardProps {
   trip: {
@@ -48,6 +50,7 @@ interface TripCardProps {
   isSelected?: boolean;
   onSelect?: () => void;
   onBookTrip?: (tripId: string) => void;
+  onCancelTrip?: (tripId: string) => void;
 }
 
 const vehicleIcons = {
@@ -62,6 +65,7 @@ export function TripCard({
   isSelected,
   onSelect,
   onBookTrip,
+  onCancelTrip,
 }: TripCardProps) {
   const VehicleIcon = useMemo(
     () => vehicleIcons[trip.vehicleType as keyof typeof vehicleIcons] || Car,
@@ -106,6 +110,10 @@ export function TripCard({
     [trip._originDistance, trip._destinationDistance],
   );
 
+  const { user } = useAuth();
+
+  const currentUserId = useMemo(() => user?.id, [user]);
+
   return (
     <motion.div
       whileHover={{ y: -2, scale: 1.01 }}
@@ -144,10 +152,9 @@ export function TripCard({
                   </Badge>
                   <span>•</span>
                   <span>
-                    {trip.payloadType === 'PARCEL' 
+                    {trip.payloadType === 'PARCEL'
                       ? `${trip.parcelWeight || trip.capacity}kg capacity`
-                      : `${trip.capacity} seats`
-                    }
+                      : `${trip.capacity} seats`}
                   </span>
                   {showDistanceInfo && (
                     <>
@@ -219,10 +226,9 @@ export function TripCard({
                 <div className="text-muted-foreground flex items-center space-x-2 text-sm">
                   <Users className="h-4 w-4" />
                   <span>
-                    {trip.payloadType === 'PARCEL' 
+                    {trip.payloadType === 'PARCEL'
                       ? `${trip.parcelWeight || trip.capacity}kg capacity`
-                      : `${trip.capacity} seats`
-                    }
+                      : `${trip.capacity} seats`}
                   </span>
                 </div>
               </div>
@@ -230,27 +236,60 @@ export function TripCard({
 
             {/* Action Buttons */}
             <div className="mt-auto flex gap-2">
-              {onBookTrip ? (
-                <Button
-                  className="flex-1"
-                  size="lg"
-                  onClick={() => onBookTrip(trip.id)}
-                >
-                  {trip.payloadType === 'PARCEL' ? 'Book Delivery' : 'Book Trip'}
-                </Button>
+              {currentUserId && trip.publisher.id === currentUserId ? (
+                // User's own trip - show cancel button
+                <>
+                  {onCancelTrip && (
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      size="lg"
+                      onClick={() => onCancelTrip(trip.id)}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Cancel{' '}
+                      {trip.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+                    </Button>
+                  )}
+                  <Link href={`/trips/${trip.id}`}>
+                    <Button variant="outline" size="lg">
+                      {trip.payloadType === 'PARCEL'
+                        ? 'View Delivery'
+                        : 'View Trip'}
+                      <SquareArrowOutUpRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </>
               ) : (
-                <Link href={`/trips/${trip.id}`} className="flex-1">
-                  <Button className="w-full" size="lg">
-                    View Details
-                  </Button>
-                </Link>
+                // Other user's trip - show book button
+                <>
+                  {onBookTrip ? (
+                    <Button
+                      className="flex-1"
+                      size="lg"
+                      onClick={() => onBookTrip(trip.id)}
+                    >
+                      {trip.payloadType === 'PARCEL'
+                        ? 'Book Delivery'
+                        : 'Book Trip'}
+                    </Button>
+                  ) : (
+                    <Link href={`/trips/${trip.id}`} className="flex-1">
+                      <Button className="w-full" size="lg">
+                        View Details
+                      </Button>
+                    </Link>
+                  )}
+                  <Link href={`/trips/${trip.id}`}>
+                    <Button variant="outline" size="lg">
+                      {trip.payloadType === 'PARCEL'
+                        ? 'View Delivery'
+                        : 'View Trip'}
+                      <SquareArrowOutUpRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </>
               )}
-              <Link href={`/trips/${trip.id}`}>
-                <Button variant="outline" size="lg">
-                  {trip.payloadType === 'PARCEL' ? 'View Delivery' : 'View Trip'}
-                  <SquareArrowOutUpRight className="h-4 w-4" />
-                </Button>
-              </Link>
             </div>
           </div>
         </CardContent>

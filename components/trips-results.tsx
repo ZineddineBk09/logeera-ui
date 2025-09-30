@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Map, List, MapPin } from 'lucide-react';
+import { Map, List, MapPin, X, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -18,10 +18,19 @@ import { Button } from '@/components/ui/button';
 import { TripsService } from '@/lib/services';
 import { GooglePlacesService } from '@/lib/services/google-places';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 import useSWR from 'swr';
 import { swrKeys } from '@/lib/swr-config';
 import { RequestJoinDialog } from '@/components/request-join-dialog';
 import { useAuth } from '@/lib/hooks/use-auth';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export function TripsResults() {
   const searchParams = useSearchParams();
@@ -35,6 +44,9 @@ export function TripsResults() {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedTripForBooking, setSelectedTripForBooking] =
     useState<any>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [tripToCancel, setTripToCancel] = useState<any>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     date: '',
     vehicleType: 'any',
@@ -321,6 +333,45 @@ export function TripsResults() {
     setShowRequestDialog(true);
   };
 
+  // Handle cancel trip
+  const handleCancelTrip = (tripId: string) => {
+    const trip = trips.find((t: any) => t.id === tripId);
+    if (!trip) {
+      toast.error('Trip not found');
+      return;
+    }
+    setTripToCancel(trip);
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancelTrip = async () => {
+    if (!tripToCancel) return;
+
+    setIsCancelling(true);
+    try {
+      const response = await api(`/api/trips/${tripToCancel.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+
+      if (response.ok) {
+        toast.success('Trip cancelled successfully');
+        setShowCancelDialog(false);
+        setTripToCancel(null);
+        // Refresh trips data
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to cancel trip');
+      }
+    } catch (error) {
+      console.error('Error cancelling trip:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   // Handle filter changes and update URL
   const handleFilterChange = async (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -476,6 +527,7 @@ export function TripsResults() {
                   isSelected={selectedTrip === trip.id}
                   onSelect={() => setSelectedTrip(trip.id)}
                   onBookTrip={handleBookTrip}
+                  onCancelTrip={handleCancelTrip}
                 />
               ))
             )}
@@ -573,6 +625,7 @@ export function TripsResults() {
                     key={trip.id}
                     trip={trip}
                     onBookTrip={handleBookTrip}
+                    onCancelTrip={handleCancelTrip}
                   />
                 ))
               )}
@@ -618,6 +671,76 @@ export function TripsResults() {
           trip={selectedTripForBooking}
         />
       )}
+
+      {/* Cancel Trip Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Cancel {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this {tripToCancel?.payloadType === 'PARCEL' ? 'delivery' : 'trip'}? This action will cancel all pending and accepted requests and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <X className="h-5 w-5 text-destructive" />
+                <p className="text-destructive font-medium">
+                  This will cancel all active requests
+                </p>
+              </div>
+            </div>
+
+            {tripToCancel && (
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">
+                    {tripToCancel.originName} → {tripToCancel.destinationName}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <p className="text-muted-foreground text-sm">
+              All {tripToCancel?.payloadType === 'PARCEL' ? 'clients' : 'passengers'} with pending or accepted requests will be notified that the {tripToCancel?.payloadType === 'PARCEL' ? 'delivery' : 'trip'} has been cancelled.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setTripToCancel(null);
+              }}
+              disabled={isCancelling}
+            >
+              Keep {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancelTrip}
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

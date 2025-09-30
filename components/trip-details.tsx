@@ -49,6 +49,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { ChatService } from '@/lib/services';
 import { DistanceMatrixService } from '@/lib/services/distance-matrix';
+import { api } from '@/lib/api';
 
 interface TripDetailsProps {
   tripId: string;
@@ -291,11 +292,8 @@ export function TripDetails({ tripId }: TripDetailsProps) {
     
     setIsCancelling(true);
     try {
-      const response = await fetch(`/api/trips/${trip.id}`, {
+      const response = await api(`/api/trips/${trip.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ status: 'CANCELLED' }),
       });
 
