@@ -628,19 +628,6 @@ export function RequestsManagement() {
                         Delivered
                       </Button>
                       <Button
-                        variant="outline"
-                        onClick={() => handleStatusUpdate(request.id, 'CANCELLED')}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <XCircle className="mr-2 h-4 w-4" />
-                        )}
-                        Cancel Request
-                      </Button>
-                      <Button
                         variant="ghost"
                         size="icon"
                           onClick={() =>

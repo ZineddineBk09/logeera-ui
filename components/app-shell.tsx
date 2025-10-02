@@ -51,6 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Hide navbar on auth pages and admin pages
   const isAuthPage = pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER;
   const isAdminPage = pathname?.startsWith('/admin') || false;
+  const isHomePage = pathname === ROUTES.HOME;
 
   return (
     <div className="bg-background flex min-h-screen flex-col items-center">
@@ -61,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="w-full flex-1">{children}</main>
 
       {/* Footer - Hidden on auth pages and admin pages */}
-      {!isAuthPage && !isAdminPage && (
+      {isHomePage && (
         <footer className="bg-background/95 w-full border-t">
           <div className="container mx-auto grid gap-6 px-4 py-8 md:grid-cols-4">
             <div className="space-y-3">
