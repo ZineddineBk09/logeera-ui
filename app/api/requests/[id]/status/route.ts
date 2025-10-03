@@ -5,7 +5,15 @@ import { z } from 'zod';
 import { NotificationService } from '@/lib/services/notifications';
 
 const updateStatusSchema = z.object({
-  status: z.enum(['PENDING', 'ACCEPTED', 'REJECTED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED', 'CANCELLED']),
+  status: z.enum([
+    'PENDING',
+    'ACCEPTED',
+    'REJECTED',
+    'IN_TRANSIT',
+    'DELIVERED',
+    'COMPLETED',
+    'CANCELLED',
+  ]),
 });
 
 async function handler(req: AuthenticatedRequest) {
@@ -23,13 +31,24 @@ async function handler(req: AuthenticatedRequest) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
-    // Only the trip publisher can accept/reject requests
-    if (request.trip.publisherId !== req.user!.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const isPublisher = request.trip.publisherId === req.user!.userId;
+    const isApplicant = request.applicantId === req.user!.userId;
+
+    // Authorization checks based on action
+    if (status === 'CANCELLED') {
+      // Both publisher and applicant can cancel
+      if (!isPublisher && !isApplicant) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    } else {
+      // Only the trip publisher can accept/reject/update other statuses
+      if (!isPublisher) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
-    // Check if trip is still available for booking
-    if (request.trip.status !== 'PUBLISHED') {
+    // Check if trip is still available for booking (except for cancellation)
+    if (status !== 'CANCELLED' && request.trip.status !== 'PUBLISHED') {
       return NextResponse.json(
         { error: 'Trip is no longer available for booking' },
         { status: 400 },
@@ -48,52 +67,55 @@ async function handler(req: AuthenticatedRequest) {
       }
 
       // Update both request and trip in a transaction with increased timeout
-      const result = await prisma.$transaction(async (tx) => {
-        // Update request status with acceptedAt timestamp
-        const updatedRequest = await tx.request.update({
-          where: { id: requestId },
-          data: { 
-            status,
-            acceptedAt: new Date(),
-          },
-          include: {
-            trip: true,
-            applicant: true,
-          },
-        });
-
-        // Increment booked seats
-        const updatedTrip = await tx.trip.update({
-          where: { id: request.tripId },
-          data: {
-            bookedSeats: {
-              increment: 1,
-            },
-          },
-        });
-
-        // Check if trip is now at full capacity
-        if (updatedTrip.bookedSeats >= updatedTrip.capacity) {
-          // Cancel all remaining pending requests for this trip
-          await tx.request.updateMany({
-            where: {
-              tripId: request.tripId,
-              status: 'PENDING',
-              id: {
-                not: requestId, // Don't cancel the one we just accepted
-              },
-            },
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // Update request status with acceptedAt timestamp
+          const updatedRequest = await tx.request.update({
+            where: { id: requestId },
             data: {
-              status: 'CANCELLED',
-              cancelledAt: new Date(),
+              status,
+              acceptedAt: new Date(),
+            },
+            include: {
+              trip: true,
+              applicant: true,
             },
           });
-        }
 
-        return updatedRequest;
-      }, {
-        timeout: 10000, // Increase timeout to 10 seconds
-      });
+          // Increment booked seats
+          const updatedTrip = await tx.trip.update({
+            where: { id: request.tripId },
+            data: {
+              bookedSeats: {
+                increment: 1,
+              },
+            },
+          });
+
+          // Check if trip is now at full capacity
+          if (updatedTrip.bookedSeats >= updatedTrip.capacity) {
+            // Cancel all remaining pending requests for this trip
+            await tx.request.updateMany({
+              where: {
+                tripId: request.tripId,
+                status: 'PENDING',
+                id: {
+                  not: requestId, // Don't cancel the one we just accepted
+                },
+              },
+              data: {
+                status: 'CANCELLED',
+                cancelledAt: new Date(),
+              },
+            });
+          }
+
+          return updatedRequest;
+        },
+        {
+          timeout: 10000, // Increase timeout to 10 seconds
+        },
+      );
 
       // Send notification to the applicant
       try {
@@ -101,7 +123,7 @@ async function handler(req: AuthenticatedRequest) {
           'REQUEST_ACCEPTED',
           requestId,
           request.applicantId,
-          req.user!.userId
+          req.user!.userId,
         );
       } catch (error) {
         console.error('Error creating request notification:', error);
@@ -120,7 +142,7 @@ async function handler(req: AuthenticatedRequest) {
 
       const updatedRequest = await prisma.request.update({
         where: { id: requestId },
-        data: { 
+        data: {
           status,
           receivedAt: new Date(),
         },
@@ -136,7 +158,7 @@ async function handler(req: AuthenticatedRequest) {
           'REQUEST_IN_TRANSIT',
           requestId,
           request.applicantId,
-          req.user!.userId
+          req.user!.userId,
         );
       } catch (error) {
         console.error('Error creating request notification:', error);
@@ -155,7 +177,7 @@ async function handler(req: AuthenticatedRequest) {
 
       const updatedRequest = await prisma.request.update({
         where: { id: requestId },
-        data: { 
+        data: {
           status,
           deliveredAt: new Date(),
         },
@@ -171,7 +193,7 @@ async function handler(req: AuthenticatedRequest) {
           'REQUEST_DELIVERED',
           requestId,
           request.applicantId,
-          req.user!.userId
+          req.user!.userId,
         );
       } catch (error) {
         console.error('Error creating request notification:', error);
@@ -203,7 +225,7 @@ async function handler(req: AuthenticatedRequest) {
           'REQUEST_COMPLETED',
           requestId,
           request.applicantId,
-          req.user!.userId
+          req.user!.userId,
         );
 
         // Also send a rating notification to the applicant
@@ -211,7 +233,7 @@ async function handler(req: AuthenticatedRequest) {
           request.tripId,
           requestId,
           request.applicantId,
-          req.user!.userId
+          req.user!.userId,
         );
       } catch (error) {
         console.error('Error creating notifications:', error);
@@ -228,44 +250,58 @@ async function handler(req: AuthenticatedRequest) {
         );
       }
 
-      const result = await prisma.$transaction(async (tx) => {
-        const updatedRequest = await tx.request.update({
-          where: { id: requestId },
-          data: { 
-            status,
-            cancelledAt: new Date(),
-          },
-          include: {
-            trip: true,
-            applicant: true,
-          },
-        });
-
-        // If the request was accepted, decrement booked seats
-        if (request.status === 'ACCEPTED') {
-          await tx.trip.update({
-            where: { id: request.tripId },
+      const result = await prisma.$transaction(
+        async (tx) => {
+          const updatedRequest = await tx.request.update({
+            where: { id: requestId },
             data: {
-              bookedSeats: {
-                decrement: 1,
-              },
+              status,
+              cancelledAt: new Date(),
+            },
+            include: {
+              trip: true,
+              applicant: true,
             },
           });
-        }
 
-        return updatedRequest;
-      }, {
-        timeout: 10000, // Increase timeout to 10 seconds
-      });
+          // If the request was accepted, decrement booked seats
+          if (request.status === 'ACCEPTED') {
+            await tx.trip.update({
+              where: { id: request.tripId },
+              data: {
+                bookedSeats: {
+                  decrement: 1,
+                },
+              },
+            });
+          }
 
-      // Send notification to the applicant
+          return updatedRequest;
+        },
+        {
+          timeout: 10000, // Increase timeout to 10 seconds
+        },
+      );
+
+      // Send notification to the appropriate party
       try {
-        await NotificationService.createRequestNotification(
-          'REQUEST_CANCELLED',
-          requestId,
-          request.applicantId,
-          req.user!.userId
-        );
+        if (isApplicant) {
+          // Applicant cancelled, notify the publisher
+          await NotificationService.createRequestNotification(
+            'REQUEST_CANCELLED',
+            requestId,
+            request.trip.publisherId,
+            req.user!.userId,
+          );
+        } else {
+          // Publisher cancelled, notify the applicant
+          await NotificationService.createRequestNotification(
+            'REQUEST_CANCELLED',
+            requestId,
+            request.applicantId,
+            req.user!.userId,
+          );
+        }
       } catch (error) {
         console.error('Error creating request notification:', error);
         // Don't fail the request update if notification fails

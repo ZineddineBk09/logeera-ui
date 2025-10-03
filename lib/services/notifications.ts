@@ -1,7 +1,16 @@
 import { prisma } from '@/lib/database';
 
 export interface CreateNotificationData {
-  type: 'CHAT_MESSAGE' | 'REQUEST_SENT' | 'REQUEST_ACCEPTED' | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_IN_TRANSIT' | 'REQUEST_DELIVERED' | 'REQUEST_COMPLETED' | 'RATING_REQUIRED';
+  type:
+    | 'CHAT_MESSAGE'
+    | 'REQUEST_SENT'
+    | 'REQUEST_ACCEPTED'
+    | 'REQUEST_REJECTED'
+    | 'REQUEST_CANCELLED'
+    | 'REQUEST_IN_TRANSIT'
+    | 'REQUEST_DELIVERED'
+    | 'REQUEST_COMPLETED'
+    | 'RATING_REQUIRED';
   title: string;
   message: string;
   userId: string; // User who receives the notification
@@ -37,7 +46,7 @@ export class NotificationService {
     chatId: string,
     senderId: string,
     receiverId: string,
-    messageContent: string
+    messageContent: string,
   ) {
     // Get chat details
     const chat = await prisma.chat.findUnique({
@@ -51,8 +60,11 @@ export class NotificationService {
 
     if (!chat) return;
 
-    const senderName = chat.userAId === senderId ? chat.userA.name : chat.userB.name;
-    const tripInfo = chat.trip ? ` (${chat.trip.originName} → ${chat.trip.destinationName})` : '';
+    const senderName =
+      chat.userAId === senderId ? chat.userA.name : chat.userB.name;
+    const tripInfo = chat.trip
+      ? ` (${chat.trip.originName} → ${chat.trip.destinationName})`
+      : '';
 
     return this.createNotification({
       type: 'CHAT_MESSAGE',
@@ -66,16 +78,29 @@ export class NotificationService {
   }
 
   static async createRequestNotification(
-    type: 'REQUEST_SENT' | 'REQUEST_ACCEPTED' | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_IN_TRANSIT' | 'REQUEST_DELIVERED' | 'REQUEST_COMPLETED',
+    type:
+      | 'REQUEST_SENT'
+      | 'REQUEST_ACCEPTED'
+      | 'REQUEST_REJECTED'
+      | 'REQUEST_CANCELLED'
+      | 'REQUEST_IN_TRANSIT'
+      | 'REQUEST_DELIVERED'
+      | 'REQUEST_COMPLETED',
     requestId: string,
     recipientId: string,
-    senderId: string
+    senderId: string,
   ) {
     // Get request details
     const request = await prisma.request.findUnique({
       where: { id: requestId },
       include: {
-        trip: { select: { originName: true, destinationName: true, payloadType: true } },
+        trip: {
+          select: {
+            originName: true,
+            destinationName: true,
+            payloadType: true,
+          },
+        },
         applicant: { select: { name: true } },
       },
     });
@@ -135,18 +160,18 @@ export class NotificationService {
     tripId: string,
     requestId: string,
     applicantId: string,
-    publisherId: string
+    publisherId: string,
   ) {
     // Get trip and request details
     const request = await prisma.request.findUnique({
       where: { id: requestId },
       include: {
-        trip: { 
-          select: { 
-            originName: true, 
-            destinationName: true, 
+        trip: {
+          select: {
+            originName: true,
+            destinationName: true,
             payloadType: true,
-          } 
+          },
         },
       },
     });

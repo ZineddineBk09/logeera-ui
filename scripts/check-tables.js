@@ -5,19 +5,19 @@ const prisma = new PrismaClient();
 async function checkTables() {
   try {
     console.log('🔍 Checking database tables...');
-    
+
     // Try to query each table to see if it exists
     const tables = [
       'User',
-      'Trip', 
+      'Trip',
       'Request',
       'Chat',
       'Message',
       'Rating',
       'BlockedUser',
-      'ContactSubmission'
+      'ContactSubmission',
     ];
-    
+
     for (const table of tables) {
       try {
         const count = await prisma[table].count();
@@ -26,7 +26,6 @@ async function checkTables() {
         console.log(`❌ ${table}: Table does not exist (${error.message})`);
       }
     }
-    
   } catch (error) {
     console.error('Error checking tables:', error);
   } finally {

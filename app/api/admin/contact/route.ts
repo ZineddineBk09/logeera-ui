@@ -11,7 +11,7 @@ async function getContactSubmissions(req: AuthenticatedRequest) {
 
     const url = new URL(req.url!);
     const searchParams = url.searchParams;
-    
+
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
     const category = searchParams.get('category') || 'all';
@@ -41,10 +41,7 @@ async function getContactSubmissions(req: AuthenticatedRequest) {
     const [submissions, total] = await Promise.all([
       prisma.contactSubmission.findMany({
         where,
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
         skip: offset,
         take: limit,
       }),
@@ -62,7 +59,10 @@ async function getContactSubmissions(req: AuthenticatedRequest) {
     });
   } catch (error) {
     console.error('Error fetching contact submissions:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

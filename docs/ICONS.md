@@ -23,6 +23,7 @@ The script uses the following logo files (in order of preference):
 ## Generated Icons
 
 ### Standard PWA Icons
+
 - `icon-16x16.png` - Browser tab icon
 - `icon-32x32.png` - Browser tab icon
 - `icon-72x72.png` - Android home screen
@@ -35,6 +36,7 @@ The script uses the following logo files (in order of preference):
 - `icon-512x512.png` - Android splash screen
 
 ### Special Icons
+
 - `favicon.ico` - Browser favicon
 - `apple-touch-icon.png` - iOS home screen icon
 - `icon-maskable-512x512.png` - Android adaptive icon with safe zone
@@ -83,18 +85,21 @@ This will regenerate icons and then build the application.
 ## Icon Requirements
 
 ### Logo Symbol (`logo-symbol.png`)
+
 - **Recommended size**: 512x512 or higher
 - **Format**: PNG with transparent background
 - **Content**: Clean symbol/logo without text
 - **Usage**: Best for small icon sizes
 
 ### Logo with White Background (`logo-bg-white.png`)
+
 - **Recommended size**: 512x512 or higher
 - **Format**: PNG with white background
 - **Content**: Logo with sufficient padding
 - **Usage**: Alternative when symbol isn't available
 
 ### Full Logo (`logo.png`)
+
 - **Recommended size**: 512x512 or higher
 - **Format**: PNG (any background)
 - **Content**: Full logo with text
@@ -103,18 +108,21 @@ This will regenerate icons and then build the application.
 ## Technical Details
 
 ### Icon Processing
+
 - **Library**: Sharp (high-performance image processing)
 - **Resize method**: `fit: 'contain'` (maintains aspect ratio)
 - **Background**: Transparent for regular icons, blue for maskable
 - **Format**: PNG for all icons
 
 ### Maskable Icons
+
 - **Purpose**: Android adaptive icons with safe zone
 - **Safe zone**: 51px padding on all sides (512x512 canvas)
 - **Background**: Logeera blue (#2563eb)
 - **Content**: Centered logo at 410x410
 
 ### Open Graph Image
+
 - **Size**: 1200x630 (Facebook/Twitter standard)
 - **Background**: Logeera blue (#2563eb)
 - **Content**: Full logo centered
@@ -123,6 +131,7 @@ This will regenerate icons and then build the application.
 ## Troubleshooting
 
 ### Sharp Installation Issues
+
 If you encounter Sharp installation errors:
 
 ```bash
@@ -132,13 +141,17 @@ pnpm add sharp --force
 ```
 
 ### Missing Source Images
+
 If logo files are missing, the script will:
+
 1. List available logos
 2. Use the best available option
 3. Exit with error if no logos found
 
 ### Icon Quality Issues
+
 For best results:
+
 - Use high-resolution source images (1024x1024 or higher)
 - Ensure logos have good contrast
 - Test icons at small sizes (16x16, 32x32)
@@ -170,12 +183,14 @@ The generated icons are automatically configured in `public/manifest.json`:
 ## Testing
 
 ### PWA Icon Testing
+
 1. Install the PWA on Android/iOS
 2. Check home screen icon quality
 3. Verify adaptive icon behavior (Android)
 4. Test different device sizes
 
 ### Social Media Testing
+
 1. Share a link to your site
 2. Verify OG image appears correctly
 3. Test on Facebook, Twitter, LinkedIn

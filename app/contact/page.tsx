@@ -6,19 +6,29 @@ export const dynamic = 'force-dynamic';
 import { ContactForm } from '@/components/contact-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Phone, MessageCircle, Clock, MapPin, Headphones } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  MessageCircle,
+  Clock,
+  MapPin,
+  Headphones,
+} from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
-  description: 'Get in touch with Logeera support team. We\'re here to help with any questions or issues you may have.',
+  description:
+    "Get in touch with Logeera support team. We're here to help with any questions or issues you may have.",
   openGraph: {
     title: 'Contact Us - Logeera',
-    description: 'Get in touch with Logeera support team. We\'re here to help with any questions or issues.',
+    description:
+      "Get in touch with Logeera support team. We're here to help with any questions or issues.",
     url: '/contact',
   },
   twitter: {
     title: 'Contact Us - Logeera',
-    description: 'Get in touch with Logeera support team. We\'re here to help with any questions or issues.',
+    description:
+      "Get in touch with Logeera support team. We're here to help with any questions or issues.",
   },
 };
 
@@ -26,7 +36,7 @@ const contactMethods = [
   {
     icon: Mail,
     title: 'Email Support',
-    description: 'Send us an email and we\'ll respond within 24 hours',
+    description: "Send us an email and we'll respond within 24 hours",
     contact: 'support@logeera.com',
     badge: 'Most Popular',
   },
@@ -76,8 +86,8 @@ export default function ContactPage() {
       {/* Header */}
       <div className="space-y-4 text-center">
         <div className="flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Headphones className="h-8 w-8 text-primary" />
+          <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
+            <Headphones className="text-primary h-8 w-8" />
           </div>
         </div>
         <h1 className="text-3xl font-bold">Contact Us</h1>
@@ -110,9 +120,12 @@ export default function ContactPage() {
               {contactMethods.map((method, index) => {
                 const Icon = method.icon;
                 return (
-                  <div key={index} className="flex items-start gap-4 rounded-lg border p-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <Icon className="h-5 w-5 text-primary" />
+                  <div
+                    key={index}
+                    className="flex items-start gap-4 rounded-lg border p-4"
+                  >
+                    <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                      <Icon className="text-primary h-5 w-5" />
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
@@ -121,8 +134,12 @@ export default function ContactPage() {
                           {method.badge}
                         </Badge>
                       </div>
-                      <p className="text-muted-foreground text-sm">{method.description}</p>
-                      <p className="font-medium text-primary">{method.contact}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {method.description}
+                      </p>
+                      <p className="text-primary font-medium">
+                        {method.contact}
+                      </p>
                     </div>
                   </div>
                 );
@@ -134,7 +151,7 @@ export default function ContactPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
+                <Clock className="text-primary h-5 w-5" />
                 Support Hours
               </CardTitle>
             </CardHeader>
@@ -143,12 +160,15 @@ export default function ContactPage() {
                 {supportHours.map((schedule, index) => (
                   <div key={index} className="flex justify-between">
                     <span className="font-medium">{schedule.day}</span>
-                    <span className="text-muted-foreground">{schedule.hours}</span>
+                    <span className="text-muted-foreground">
+                      {schedule.hours}
+                    </span>
                   </div>
                 ))}
-                <div className="mt-4 rounded-lg bg-primary/5 p-3">
-                  <p className="text-sm text-primary">
-                    <strong>Emergency Support:</strong> Available 24/7 for safety-related issues
+                <div className="bg-primary/5 mt-4 rounded-lg p-3">
+                  <p className="text-primary text-sm">
+                    <strong>Emergency Support:</strong> Available 24/7 for
+                    safety-related issues
                   </p>
                 </div>
               </div>
@@ -161,7 +181,7 @@ export default function ContactPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" />
+            <MapPin className="text-primary h-5 w-5" />
             Our Offices
           </CardTitle>
         </CardHeader>
@@ -170,8 +190,10 @@ export default function ContactPage() {
             {officeLocations.map((office, index) => (
               <div key={index} className="space-y-2 rounded-lg border p-4">
                 <h3 className="font-semibold">{office.city}</h3>
-                <p className="text-muted-foreground text-sm">{office.address}</p>
-                <p className="font-medium text-primary">{office.phone}</p>
+                <p className="text-muted-foreground text-sm">
+                  {office.address}
+                </p>
+                <p className="text-primary font-medium">{office.phone}</p>
               </div>
             ))}
           </div>
@@ -181,14 +203,17 @@ export default function ContactPage() {
       {/* FAQ Link */}
       <Card className="bg-primary/5">
         <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <h2 className="text-xl font-semibold">Looking for Quick Answers?</h2>
+          <div className="space-y-4 text-center">
+            <h2 className="text-xl font-semibold">
+              Looking for Quick Answers?
+            </h2>
             <p className="text-muted-foreground">
-              Check out our FAQ section for immediate answers to common questions.
+              Check out our FAQ section for immediate answers to common
+              questions.
             </p>
-            <a 
-              href="/faq" 
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+            <a
+              href="/faq"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2"
             >
               Visit FAQ
             </a>

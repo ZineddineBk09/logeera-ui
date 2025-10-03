@@ -124,7 +124,7 @@ export function TripRating({ trip, onRatingSubmitted }: TripRatingProps) {
         </div>
 
         {/* Driver Information */}
-        <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+        <div className="bg-muted/50 flex items-center gap-3 rounded-lg p-3">
           <Avatar className="h-12 w-12">
             <AvatarImage src="/placeholder.svg" alt={trip.publisher.name} />
             <AvatarFallback>
@@ -136,7 +136,7 @@ export function TripRating({ trip, onRatingSubmitted }: TripRatingProps) {
           </Avatar>
           <div>
             <p className="font-medium">{trip.publisher.name}</p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
               {trip.publisher.averageRating && trip.publisher.ratingCount ? (
                 <>
                   <div className="flex items-center gap-1">
@@ -163,7 +163,7 @@ export function TripRating({ trip, onRatingSubmitted }: TripRatingProps) {
                 onClick={() => handleStarClick(value)}
                 onMouseEnter={() => handleStarHover(value)}
                 onMouseLeave={handleStarLeave}
-                className="p-1 hover:scale-110 transition-transform"
+                className="p-1 transition-transform hover:scale-110"
                 disabled={isSubmitting}
               >
                 <Star
@@ -176,7 +176,7 @@ export function TripRating({ trip, onRatingSubmitted }: TripRatingProps) {
               </button>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {getRatingText(hoveredRating || rating)}
           </p>
         </div>
@@ -193,7 +193,7 @@ export function TripRating({ trip, onRatingSubmitted }: TripRatingProps) {
             maxLength={500}
             disabled={isSubmitting}
           />
-          <div className="text-right text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-right text-xs">
             {comment.length}/500
           </div>
         </div>

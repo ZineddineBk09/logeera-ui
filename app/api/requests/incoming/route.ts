@@ -9,6 +9,9 @@ async function handler(req: AuthenticatedRequest) {
         trip: {
           publisherId: req.user!.userId,
         },
+        status: {
+          not: 'CANCELLED', // Exclude cancelled requests from incoming view
+        },
       },
       include: {
         trip: true,

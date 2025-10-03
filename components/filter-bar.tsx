@@ -89,7 +89,7 @@ export function FilterBar({
       startLocation: origin,
       endLocation: destination,
       startPlace: null, // Will be populated if coordinates exist
-      endPlace: null,   // Will be populated if coordinates exist
+      endPlace: null, // Will be populated if coordinates exist
     });
   }, [searchParams]);
 

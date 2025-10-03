@@ -5,7 +5,7 @@ import { prisma } from '@/lib/database';
 async function getNotifications(req: AuthenticatedRequest) {
   try {
     const userId = req.user!.userId;
-    
+
     // Get notifications for the user
     const notifications = await prisma.notification.findMany({
       where: {
@@ -66,7 +66,7 @@ async function getNotifications(req: AuthenticatedRequest) {
 async function markAllAsRead(req: AuthenticatedRequest) {
   try {
     const userId = req.user!.userId;
-    
+
     await prisma.notification.updateMany({
       where: {
         userId: userId,

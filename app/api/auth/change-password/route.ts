@@ -13,7 +13,8 @@ const changePasswordSchema = z.object({
 async function handler(req: AuthenticatedRequest) {
   try {
     const body = await req.json();
-    const { currentPassword, newPassword, confirmPassword } = changePasswordSchema.parse(body);
+    const { currentPassword, newPassword, confirmPassword } =
+      changePasswordSchema.parse(body);
     console.log('currentPassword', currentPassword);
     console.log('newPassword', newPassword);
     console.log('confirmPassword', confirmPassword);

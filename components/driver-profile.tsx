@@ -221,8 +221,7 @@ export function DriverProfile({ driverId }: DriverProfileProps) {
               </div>
 
               <p className="text-muted-foreground mb-4">
-                {driver?.phoneNumber} •{' '}
-                {driver?.email}
+                {driver?.phoneNumber} • {driver?.email}
               </p>
 
               <div className="flex flex-col justify-center gap-3 sm:flex-row md:justify-start">

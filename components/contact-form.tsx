@@ -26,7 +26,10 @@ const contactSchema = z.object({
   category: z.enum(['general', 'technical', 'safety', 'billing', 'feedback'], {
     message: 'Please select a category',
   }),
-  message: z.string().min(5, 'Message must be at least 10 characters').max(1000, 'Message too long'),
+  message: z
+    .string()
+    .min(5, 'Message must be at least 10 characters')
+    .max(1000, 'Message too long'),
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
@@ -64,7 +67,7 @@ export function ContactForm() {
       });
 
       if (response.ok) {
-        toast.success('Message sent successfully! We\'ll get back to you soon.');
+        toast.success("Message sent successfully! We'll get back to you soon.");
         reset();
       } else {
         const errorData = await response.json();
@@ -166,7 +169,7 @@ export function ContactForm() {
         {errors.message && (
           <p className="text-destructive text-sm">{errors.message.message}</p>
         )}
-        <div className="text-right text-xs text-muted-foreground">
+        <div className="text-muted-foreground text-right text-xs">
           {watch('message')?.length || 0}/1000
         </div>
       </div>
@@ -186,7 +189,8 @@ export function ContactForm() {
       </Button>
 
       <p className="text-muted-foreground text-center text-xs">
-        We typically respond within 24 hours. For urgent safety issues, please call our emergency line.
+        We typically respond within 24 hours. For urgent safety issues, please
+        call our emergency line.
       </p>
     </form>
   );

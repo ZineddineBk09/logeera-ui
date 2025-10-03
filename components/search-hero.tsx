@@ -185,9 +185,14 @@ export function SearchHero() {
     } else if (searchData.origin) {
       // Try to get coordinates for text-based origin
       try {
-        const predictions = await GooglePlacesService.getAutocompleteSuggestions(searchData.origin);
+        const predictions =
+          await GooglePlacesService.getAutocompleteSuggestions(
+            searchData.origin,
+          );
         if (predictions.length > 0) {
-          const coords = await GooglePlacesService.getPlaceDetails(predictions[0].place_id);
+          const coords = await GooglePlacesService.getPlaceDetails(
+            predictions[0].place_id,
+          );
           if (coords) {
             params.set('originLat', coords.lat.toString());
             params.set('originLng', coords.lng.toString());
@@ -218,9 +223,14 @@ export function SearchHero() {
     } else if (searchData.destination) {
       // Try to get coordinates for text-based destination
       try {
-        const predictions = await GooglePlacesService.getAutocompleteSuggestions(searchData.destination);
+        const predictions =
+          await GooglePlacesService.getAutocompleteSuggestions(
+            searchData.destination,
+          );
         if (predictions.length > 0) {
-          const coords = await GooglePlacesService.getPlaceDetails(predictions[0].place_id);
+          const coords = await GooglePlacesService.getPlaceDetails(
+            predictions[0].place_id,
+          );
           if (coords) {
             params.set('destinationLat', coords.lat.toString());
             params.set('destinationLng', coords.lng.toString());
@@ -306,17 +316,17 @@ export function SearchHero() {
                   From
                 </label>
                 <AutocompleteInput
-                    placeholder="Origin city"
-                    value={searchData.origin}
+                  placeholder="Origin city"
+                  value={searchData.origin}
                   onChange={(value) =>
-                      setSearchData((prev) => ({
-                        ...prev,
+                    setSearchData((prev) => ({
+                      ...prev,
                       origin: value,
-                      }))
-                    }
+                    }))
+                  }
                   onPlaceSelect={handleOriginPlaceSelect}
                   className="h-10 rounded-full border-1 border-gray-200 dark:border-gray-700"
-                  />
+                />
               </div>
 
               {/* Destination */}
@@ -325,17 +335,17 @@ export function SearchHero() {
                   To
                 </label>
                 <AutocompleteInput
-                    placeholder="Destination city"
-                    value={searchData.destination}
+                  placeholder="Destination city"
+                  value={searchData.destination}
                   onChange={(value) =>
-                      setSearchData((prev) => ({
-                        ...prev,
+                    setSearchData((prev) => ({
+                      ...prev,
                       destination: value,
-                      }))
-                    }
+                    }))
+                  }
                   onPlaceSelect={handleDestinationPlaceSelect}
                   className="h-10 rounded-full border-1 border-gray-200 dark:border-gray-700"
-                  />
+                />
               </div>
 
               {/* Date */}
@@ -404,8 +414,8 @@ export function SearchHero() {
             <div className="mt-6 flex flex-col items-center justify-between border-t pt-6 sm:flex-row">
               <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
                 <p className="text-muted-foreground text-sm">
-                Can't find what you're looking for?
-              </p>
+                  Can't find what you're looking for?
+                </p>
                 <Button
                   variant="ghost"
                   size="sm"

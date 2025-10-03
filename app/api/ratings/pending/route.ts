@@ -62,11 +62,14 @@ async function getPendingRatings(req: AuthenticatedRequest) {
         pricePerSeat: trip.pricePerSeat,
         publisher: trip.publisher,
         canRate: true,
-      }))
+      })),
     );
   } catch (error) {
     console.error('Error fetching pending ratings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

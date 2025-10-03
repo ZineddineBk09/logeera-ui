@@ -97,14 +97,22 @@ export function ChatsInterface() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
-  const [userToBlock, setUserToBlock] = useState<{ id: string; name: string } | null>(null);
+  const [userToBlock, setUserToBlock] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isBlocking, setIsBlocking] = useState(false);
-  const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
+  const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(
+    null,
+  );
   const [isUpdatingRequest, setIsUpdatingRequest] = useState(false);
-  const [hasLocationAccess, setHasLocationAccess] = useState<boolean | null>(null);
+  const [hasLocationAccess, setHasLocationAccess] = useState<boolean | null>(
+    null,
+  );
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showCancelPendingDialog, setShowCancelPendingDialog] = useState(false);
-  const [showCancelAcceptedDialog, setShowCancelAcceptedDialog] = useState(false);
+  const [showCancelAcceptedDialog, setShowCancelAcceptedDialog] =
+    useState(false);
   const [showReceivedDialog, setShowReceivedDialog] = useState(false);
   const [showDeliveredDialog, setShowDeliveredDialog] = useState(false);
   const [showCompletedDialog, setShowCompletedDialog] = useState(false);
@@ -203,10 +211,13 @@ export function ChatsInterface() {
     (chat: Chat) =>
       chat.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.otherUser.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (chat.trip && (
-        chat.trip.originName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        chat.trip.destinationName.toLowerCase().includes(searchQuery.toLowerCase())
-      )),
+      (chat.trip &&
+        (chat.trip.originName
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+          chat.trip.destinationName
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()))),
   );
 
   // Auto-select first chat if none selected and no URL parameter
@@ -232,15 +243,20 @@ export function ChatsInterface() {
 
       try {
         // Fetch requests for this trip
-        const response = await api(`/api/requests?tripId=${selectedChat.trip.id}`);
+        const response = await api(
+          `/api/requests?tripId=${selectedChat.trip.id}`,
+        );
         if (response.ok) {
           const requests = await response.json();
           // Find the active request between current user and the other user
-          const activeReq = requests.find((req: any) => 
-            (req.applicantId === user.id && req.trip.publisherId === selectedChat.otherUser.id) ||
-            (req.applicantId === selectedChat.otherUser.id && req.trip.publisherId === user.id)
+          const activeReq = requests.find(
+            (req: any) =>
+              (req.applicantId === user.id &&
+                req.trip.publisherId === selectedChat.otherUser.id) ||
+              (req.applicantId === selectedChat.otherUser.id &&
+                req.trip.publisherId === user.id),
           );
-          
+
           if (activeReq) {
             setActiveRequest({
               id: activeReq.id,
@@ -269,18 +285,17 @@ export function ChatsInterface() {
 
       // If the message is for the currently selected chat, add it to messages
       if (selectedChat && payload.chatId === selectedChat.id) {
-        mutateMessages(
-          (currentMessages: Message[] = []) => {
-            // Check if message already exists to prevent duplicates
-            const messageExists = currentMessages.some(msg => msg.id === payload.id);
-            if (messageExists) {
-              console.log('Message already exists, skipping duplicate');
-              return currentMessages;
-            }
-            return [...currentMessages, payload];
-          },
-          false,
-        );
+        mutateMessages((currentMessages: Message[] = []) => {
+          // Check if message already exists to prevent duplicates
+          const messageExists = currentMessages.some(
+            (msg) => msg.id === payload.id,
+          );
+          if (messageExists) {
+            console.log('Message already exists, skipping duplicate');
+            return currentMessages;
+          }
+          return [...currentMessages, payload];
+        }, false);
       }
 
       // Update the chat list to show the new last message
@@ -320,7 +335,7 @@ export function ChatsInterface() {
   useEffect(() => {
     // Check if Socket.IO is enabled via environment variable
     const socketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true';
-    
+
     if (socketEnabled && socket && isConnected && !connectionError) {
       // Socket.IO is working, stop any long polling
       if (selectedChat) {
@@ -337,43 +352,41 @@ export function ChatsInterface() {
         onMessage: (newMessages: Message[]) => {
           // Use mutateMessages to get the current state and check for duplicates
           let actualNewMessages: Message[] = [];
-          
-          mutateMessages(
-            (currentMessages: Message[] = []) => {
-              // Check if there are new messages by comparing with current messages
-              const currentMessageIds = new Set(
-                currentMessages.map((m: Message) => m.id),
-              );
-              actualNewMessages = newMessages.filter(
-                (msg) => !currentMessageIds.has(msg.id),
-              );
 
-              if (actualNewMessages.length > 0) {
-                console.log(
-                  `Long polling: Found ${actualNewMessages.length} new messages`,
-                );
-                // Sort messages by createdAt and id to ensure proper ordering
-                const allMessages = [...currentMessages, ...actualNewMessages];
-                return allMessages.sort((a, b) => {
-                  const dateA = new Date(a.createdAt).getTime();
-                  const dateB = new Date(b.createdAt).getTime();
-                  if (dateA !== dateB) {
-                    return dateA - dateB;
-                  }
-                  // If timestamps are equal, sort by ID for consistency
-                  return a.id.localeCompare(b.id);
-                });
-              }
-              
-              // No new messages, return current messages unchanged
-              return currentMessages;
-            },
-            false,
-          );
+          mutateMessages((currentMessages: Message[] = []) => {
+            // Check if there are new messages by comparing with current messages
+            const currentMessageIds = new Set(
+              currentMessages.map((m: Message) => m.id),
+            );
+            actualNewMessages = newMessages.filter(
+              (msg) => !currentMessageIds.has(msg.id),
+            );
+
+            if (actualNewMessages.length > 0) {
+              console.log(
+                `Long polling: Found ${actualNewMessages.length} new messages`,
+              );
+              // Sort messages by createdAt and id to ensure proper ordering
+              const allMessages = [...currentMessages, ...actualNewMessages];
+              return allMessages.sort((a, b) => {
+                const dateA = new Date(a.createdAt).getTime();
+                const dateB = new Date(b.createdAt).getTime();
+                if (dateA !== dateB) {
+                  return dateA - dateB;
+                }
+                // If timestamps are equal, sort by ID for consistency
+                return a.id.localeCompare(b.id);
+              });
+            }
+
+            // No new messages, return current messages unchanged
+            return currentMessages;
+          }, false);
 
           // Update chat list with new last message if there were new messages
           if (actualNewMessages.length > 0) {
-            const latestMessage = actualNewMessages[actualNewMessages.length - 1];
+            const latestMessage =
+              actualNewMessages[actualNewMessages.length - 1];
             mutateChats((currentChats: Chat[] = []) => {
               return currentChats.map((chat: Chat) => {
                 if (chat.id === selectedChat.id) {
@@ -421,12 +434,15 @@ export function ChatsInterface() {
   // Check for location access permission
   useEffect(() => {
     if ('geolocation' in navigator) {
-      navigator.permissions?.query({ name: 'geolocation' as PermissionName }).then((result) => {
-        setHasLocationAccess(result.state === 'granted');
-      }).catch(() => {
-        // If permissions API is not supported, we'll check when user tries to use it
-        setHasLocationAccess(null);
-      });
+      navigator.permissions
+        ?.query({ name: 'geolocation' as PermissionName })
+        .then((result) => {
+          setHasLocationAccess(result.state === 'granted');
+        })
+        .catch(() => {
+          // If permissions API is not supported, we'll check when user tries to use it
+          setHasLocationAccess(null);
+        });
     } else {
       setHasLocationAccess(false);
     }
@@ -440,7 +456,7 @@ export function ChatsInterface() {
     if (content.length > 1000) {
       return 'Message cannot exceed 1000 characters';
     }
-    
+
     // Check for basic XSS patterns
     const xssPatterns = [
       /<script[^>]*>.*?<\/script>/gi,
@@ -455,11 +471,11 @@ export function ChatsInterface() {
       /<form[^>]*>/gi,
       /<input[^>]*>/gi,
     ];
-    
-    if (xssPatterns.some(pattern => pattern.test(content))) {
+
+    if (xssPatterns.some((pattern) => pattern.test(content))) {
       return 'Message contains potentially harmful content';
     }
-    
+
     return null;
   };
 
@@ -493,7 +509,10 @@ export function ChatsInterface() {
         // If Socket.IO is enabled, the message will be received via socket
         const socketEnabled = process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true';
         if (!socketEnabled || !socket || !isConnected) {
-          console.log('Adding message to UI via API response:', newMessageData.id);
+          console.log(
+            'Adding message to UI via API response:',
+            newMessageData.id,
+          );
           // Optimistically add the message to the UI
           mutateMessages(
             (currentMessages: Message[] = []) => [
@@ -503,7 +522,9 @@ export function ChatsInterface() {
             false,
           );
         } else {
-          console.log('Socket.IO enabled, not adding message to UI via API response');
+          console.log(
+            'Socket.IO enabled, not adding message to UI via API response',
+          );
         }
 
         // Update chat list with new last message
@@ -551,7 +572,7 @@ export function ChatsInterface() {
         async (position) => {
           const { latitude, longitude } = position.coords;
           const locationMessage = `📍 My location: https://www.google.com/maps/@${latitude},${longitude},14z`;
-          
+
           // Send location as a message
           const response = await ChatService.postMessage(selectedChat.id, {
             content: locationMessage,
@@ -560,7 +581,7 @@ export function ChatsInterface() {
 
           if (response.ok) {
             const newMessageData = await response.json();
-            
+
             // Add message to UI immediately for better UX
             mutateMessages((currentMessages: Message[] = []) => {
               return [...currentMessages, newMessageData];
@@ -594,10 +615,12 @@ export function ChatsInterface() {
         (error) => {
           console.error('Geolocation error:', error);
           setHasLocationAccess(false);
-          
+
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              toast.error('Location access denied. Please enable location permissions.');
+              toast.error(
+                'Location access denied. Please enable location permissions.',
+              );
               break;
             case error.POSITION_UNAVAILABLE:
               toast.error('Location information unavailable.');
@@ -606,7 +629,9 @@ export function ChatsInterface() {
               toast.error('Location request timed out.');
               break;
             default:
-              toast.error('An unknown error occurred while retrieving location.');
+              toast.error(
+                'An unknown error occurred while retrieving location.',
+              );
               break;
           }
         },
@@ -614,7 +639,7 @@ export function ChatsInterface() {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 300000, // 5 minutes
-        }
+        },
       );
     } catch (error) {
       console.error('Error sending location:', error);
@@ -629,22 +654,29 @@ export function ChatsInterface() {
 
     setIsUpdatingRequest(true);
     try {
-      const response = await RequestsService.setStatus(activeRequest.id, newStatus.toLowerCase() as any);
-      
+      const response = await RequestsService.setStatus(
+        activeRequest.id,
+        newStatus.toLowerCase() as any,
+      );
+
       if (response.ok) {
         const updatedRequest = await response.json();
         setActiveRequest({
           ...activeRequest,
           status: updatedRequest.status,
         });
-        
+
         const statusMessages = {
-          'cancelled': 'Request cancelled',
-          'in_transit': 'Request marked as in transit',
-          'delivered': 'Request marked as delivered',
-          'completed': 'Request completed',
+          cancelled: 'Request cancelled',
+          in_transit: 'Request marked as in transit',
+          delivered: 'Request marked as delivered',
+          completed: 'Request completed',
         };
-        toast.success(statusMessages[newStatus.toLowerCase() as keyof typeof statusMessages] || 'Status updated');
+        toast.success(
+          statusMessages[
+            newStatus.toLowerCase() as keyof typeof statusMessages
+          ] || 'Status updated',
+        );
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to update status');
@@ -725,13 +757,13 @@ export function ChatsInterface() {
         toast.success(`${userToBlock.name} has been blocked`);
         setShowBlockDialog(false);
         setUserToBlock(null);
-        
+
         // Remove the chat from the list or redirect to chat list
         if (selectedChat?.otherUser.id === userToBlock.id) {
           setSelectedChat(null);
           router.push('/chats');
         }
-        
+
         // Refresh chats list
         mutateChats();
       } else {
@@ -772,18 +804,18 @@ export function ChatsInterface() {
   const renderMessageContent = (content: string) => {
     // URL regex pattern to match http/https URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    
+
     const parts = content.split(urlRegex);
-    
+
     return parts.map((part, index) => {
       if (urlRegex.test(part)) {
-  return (
+        return (
           <a
             key={index}
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:no-underline text-blue-400 hover:text-blue-300"
+            className="text-blue-400 underline hover:text-blue-300 hover:no-underline"
           >
             {part}
           </a>
@@ -873,69 +905,76 @@ export function ChatsInterface() {
                 </div>
               ) : (
                 filteredChats.map((chat: Chat) => (
-                <div
-                  key={chat.id}
-                  onClick={() => setSelectedChat(chat)}
-                    className={`h-full hover:bg-muted/50 flex cursor-pointer items-start gap-3 border-b p-4 transition-colors ${
+                  <div
+                    key={chat.id}
+                    onClick={() => setSelectedChat(chat)}
+                    className={`hover:bg-muted/50 flex h-full cursor-pointer items-start gap-3 border-b p-4 transition-colors ${
                       selectedChat?.id === chat.id ? 'bg-muted/50' : ''
-                  }`}
-                >
-                  <div className="relative flex-shrink-0">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage
+                    }`}
+                  >
+                    <div className="relative flex-shrink-0">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage
                           src="/placeholder.svg"
                           alt={chat.otherUser.name}
-                      />
-                      <AvatarFallback>
+                        />
+                        <AvatarFallback>
                           {chat.otherUser.name
                             .split(' ')
-                          .map((n) => n[0])
+                            .map((n) => n[0])
                             .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                      {process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && isConnected && !connectionError && (
-                        <div className="border-background absolute -right-1 -bottom-1 h-4 w-4 rounded-full border-2 bg-green-500" />
-                    )}
-                  </div>
+                        </AvatarFallback>
+                      </Avatar>
+                      {process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' &&
+                        isConnected &&
+                        !connectionError && (
+                          <div className="border-background absolute -right-1 -bottom-1 h-4 w-4 rounded-full border-2 bg-green-500" />
+                        )}
+                    </div>
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <div className="mb-1 flex items-start justify-between gap-2">
-                        <h3 className="text-sm font-semibold leading-tight truncate flex-1 min-w-0">
+                        <h3 className="min-w-0 flex-1 truncate text-sm leading-tight font-semibold">
                           {chat.otherUser.name}
-                      </h3>
-                        <span className="text-muted-foreground text-xs flex-shrink-0">
+                        </h3>
+                        <span className="text-muted-foreground flex-shrink-0 text-xs">
                           {chat.lastMessage
                             ? formatTimestamp(chat.lastMessage.createdAt)
                             : formatTimestamp(chat.updatedAt)}
-                      </span>
-                    </div>
+                        </span>
+                      </div>
                       {chat.trip ? (
-                        <div className="mb-1 flex items-start gap-1 min-w-0">
-                      <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground text-xs leading-relaxed truncate flex-1 min-w-0">
+                        <div className="mb-1 flex min-w-0 items-start gap-1">
+                          <MapPin className="text-muted-foreground mt-0.5 h-3 w-3 flex-shrink-0" />
+                          <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs leading-relaxed">
                             {chat.trip.originName} → {chat.trip.destinationName}
-                      </span>
+                          </span>
                         </div>
                       ) : (
-                        <div className="mb-1 flex items-start gap-1 min-w-0">
-                          <span className="text-muted-foreground text-xs leading-relaxed truncate flex-1 min-w-0">
+                        <div className="mb-1 flex min-w-0 items-start gap-1">
+                          <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs leading-relaxed">
                             {chat.otherUser.email}
-                      </span>
-                    </div>
+                          </span>
+                        </div>
                       )}
-                    <div className="flex items-start justify-between gap-2 min-w-0">
-                        <p className="text-muted-foreground text-sm leading-relaxed flex-1 min-w-0 truncate">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm leading-relaxed">
                           {chat.lastMessage
                             ? chat.lastMessage.content
                             : 'No messages yet'}
                         </p>
                         {chat.trip && (
-                          <Badge variant="outline" className="ml-2 text-xs flex-shrink-0">
-                            {chat.trip.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
-                        </Badge>
-                      )}
+                          <Badge
+                            variant="outline"
+                            className="ml-2 flex-shrink-0 text-xs"
+                          >
+                            {chat.trip.payloadType === 'PARCEL'
+                              ? 'Delivery'
+                              : 'Trip'}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
                 ))
               )}
             </ScrollArea>
@@ -946,44 +985,46 @@ export function ChatsInterface() {
         <Card className="flex flex-col lg:col-span-2">
           {selectedChat ? (
             <>
-          {/* Chat Header */}
+              {/* Chat Header */}
               <CardHeader className="border-b pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
                           src="/placeholder.svg"
                           alt={selectedChat.otherUser.name}
-                    />
-                    <AvatarFallback>
+                        />
+                        <AvatarFallback>
                           {selectedChat.otherUser.name
                             .split(' ')
-                        .map((n) => n[0])
+                            .map((n) => n[0])
                             .join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                      {process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' && isConnected && !connectionError && (
-                        <div className="border-background absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 bg-green-500" />
-                  )}
-                </div>
-                <div>
+                        </AvatarFallback>
+                      </Avatar>
+                      {process.env.NEXT_PUBLIC_ENABLE_SOCKET === 'true' &&
+                        isConnected &&
+                        !connectionError && (
+                          <div className="border-background absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 bg-green-500" />
+                        )}
+                    </div>
+                    <div>
                       <h3 className="font-semibold">
                         {selectedChat.otherUser.name}
                       </h3>
                       <div className="text-muted-foreground flex items-center gap-1 text-sm">
                         <span>{selectedChat.otherUser.email}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <DropdownMenu>
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
                       <DropdownMenuTrigger>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() =>
                             router.push(`/drivers/${selectedChat.otherUser.id}`)
@@ -1009,173 +1050,191 @@ export function ChatsInterface() {
                             )}
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleBlockUser(selectedChat.otherUser.id, selectedChat.otherUser.name)}
+                          onClick={() =>
+                            handleBlockUser(
+                              selectedChat.otherUser.id,
+                              selectedChat.otherUser.name,
+                            )
+                          }
                         >
-                      Block User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </CardHeader>
-
-          {/* Trip Information Header */}
-          {selectedChat.trip && (
-            <div className="border-b bg-muted/30 px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {selectedChat.trip.originName} → {selectedChat.trip.destinationName}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>
-                        {new Date(selectedChat.trip.departureAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {new Date(selectedChat.trip.departureAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {selectedChat.trip.payloadType === 'PARCEL' ? (
-                        <Package className="h-3 w-3" />
-                      ) : (
-                        <Users className="h-3 w-3" />
-                      )}
-                      <span>
-                        {selectedChat.trip.payloadType === 'PARCEL' 
-                          ? `${selectedChat.trip.parcelWeight || 'N/A'}kg`
-                          : `${selectedChat.trip.passengerCount || 'N/A'} passengers`
-                        }
-                      </span>
-                    </div>
+                          Block User
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {selectedChat.trip.status}
-                </Badge>
-              </div>
-              
-              {/* Action Buttons */}
-              {activeRequest && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {activeRequest.status === 'PENDING' && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelPending}
-                        disabled={isUpdatingRequest}
-                      >
-                        {isUpdatingRequest ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        ) : (
-                          <X className="mr-2 h-3 w-3" />
-                        )}
-                        Cancel Request
-                      </Button>
-                    </>
-                  )}
+              </CardHeader>
 
-                  {activeRequest.status === 'ACCEPTED' && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelAccepted}
-                        disabled={isUpdatingRequest}
-                      >
-                        {isUpdatingRequest ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        ) : (
-                          <X className="mr-2 h-3 w-3" />
-                        )}
-                        Cancel Request
-                      </Button>
-                      {activeRequest.isPublisher && (
-                        <Button
-                          size="sm"
-                          onClick={handleReceived}
-                          disabled={isUpdatingRequest}
-                        >
-                          {isUpdatingRequest ? (
-                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              {/* Trip Information Header */}
+              {selectedChat.trip && (
+                <div className="bg-muted/30 border-b px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="text-muted-foreground h-4 w-4" />
+                        <span className="font-medium">
+                          {selectedChat.trip.originName} →{' '}
+                          {selectedChat.trip.destinationName}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            {new Date(
+                              selectedChat.trip.departureAt,
+                            ).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            {new Date(
+                              selectedChat.trip.departureAt,
+                            ).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {selectedChat.trip.payloadType === 'PARCEL' ? (
+                            <Package className="h-3 w-3" />
                           ) : (
-                            <Package className="mr-2 h-3 w-3" />
+                            <Users className="h-3 w-3" />
                           )}
-                          {selectedChat.trip?.payloadType === 'PARCEL' ? 'Received' : 'Passenger Onboard'}
-                        </Button>
-                      )}
-                    </>
-                  )}
+                          <span>
+                            {selectedChat.trip.payloadType === 'PARCEL'
+                              ? `${selectedChat.trip.parcelWeight || 'N/A'}kg`
+                              : `${selectedChat.trip.passengerCount || 'N/A'} passengers`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {selectedChat.trip.status}
+                    </Badge>
+                  </div>
 
-                  {activeRequest.status === 'IN_TRANSIT' && (
-                    <>
-                      {activeRequest.isPublisher && (
-                        <Button
-                          size="sm"
-                          onClick={handleDelivered}
-                          disabled={isUpdatingRequest}
-                        >
-                          {isUpdatingRequest ? (
-                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                          ) : selectedChat.trip?.payloadType === 'PARCEL' ? (
-                            <Truck className="mr-2 h-3 w-3" />
-                          ) : (
-                            <CheckCircle className="mr-2 h-3 w-3" />
+                  {/* Action Buttons */}
+                  {activeRequest && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {activeRequest.status === 'PENDING' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCancelPending}
+                            disabled={isUpdatingRequest}
+                          >
+                            {isUpdatingRequest ? (
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            ) : (
+                              <X className="mr-2 h-3 w-3" />
+                            )}
+                            Cancel Request
+                          </Button>
+                        </>
+                      )}
+
+                      {activeRequest.status === 'ACCEPTED' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCancelAccepted}
+                            disabled={isUpdatingRequest}
+                          >
+                            {isUpdatingRequest ? (
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            ) : (
+                              <X className="mr-2 h-3 w-3" />
+                            )}
+                            Cancel Request
+                          </Button>
+                          {activeRequest.isPublisher && (
+                            <Button
+                              size="sm"
+                              onClick={handleReceived}
+                              disabled={isUpdatingRequest}
+                            >
+                              {isUpdatingRequest ? (
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              ) : (
+                                <Package className="mr-2 h-3 w-3" />
+                              )}
+                              {selectedChat.trip?.payloadType === 'PARCEL'
+                                ? 'Received'
+                                : 'Passenger Onboard'}
+                            </Button>
                           )}
-                          {selectedChat.trip?.payloadType === 'PARCEL' ? 'Delivered' : 'Arrived at Destination'}
-                        </Button>
+                        </>
                       )}
-                    </>
-                  )}
 
-                  {activeRequest.status === 'DELIVERED' && activeRequest.isPublisher && (
-                    <Button
-                      size="sm"
-                      onClick={handleCompleted}
-                      disabled={isUpdatingRequest}
-                    >
-                      {isUpdatingRequest ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
-                        <CheckCircle className="mr-2 h-3 w-3" />
+                      {activeRequest.status === 'IN_TRANSIT' && (
+                        <>
+                          {activeRequest.isPublisher && (
+                            <Button
+                              size="sm"
+                              onClick={handleDelivered}
+                              disabled={isUpdatingRequest}
+                            >
+                              {isUpdatingRequest ? (
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              ) : selectedChat.trip?.payloadType ===
+                                'PARCEL' ? (
+                                <Truck className="mr-2 h-3 w-3" />
+                              ) : (
+                                <CheckCircle className="mr-2 h-3 w-3" />
+                              )}
+                              {selectedChat.trip?.payloadType === 'PARCEL'
+                                ? 'Delivered'
+                                : 'Arrived at Destination'}
+                            </Button>
+                          )}
+                        </>
                       )}
-                      Complete Trip
-                    </Button>
-                  )}
 
-                  {activeRequest.status === 'COMPLETED' && (
-                    <Badge variant="secondary" className="text-xs">
-                      Trip Completed
-                    </Badge>
-                  )}
+                      {activeRequest.status === 'DELIVERED' &&
+                        activeRequest.isPublisher && (
+                          <Button
+                            size="sm"
+                            onClick={handleCompleted}
+                            disabled={isUpdatingRequest}
+                          >
+                            {isUpdatingRequest ? (
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            ) : (
+                              <CheckCircle className="mr-2 h-3 w-3" />
+                            )}
+                            Complete Trip
+                          </Button>
+                        )}
 
-                  {(activeRequest.status === 'REJECTED' || activeRequest.status === 'CANCELLED') && (
-                    <Badge variant="destructive" className="text-xs">
-                      {activeRequest.status === 'REJECTED' ? 'Request Rejected' : 'Request Cancelled'}
-                    </Badge>
+                      {activeRequest.status === 'COMPLETED' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Trip Completed
+                        </Badge>
+                      )}
+
+                      {(activeRequest.status === 'REJECTED' ||
+                        activeRequest.status === 'CANCELLED') && (
+                        <Badge variant="destructive" className="text-xs">
+                          {activeRequest.status === 'REJECTED'
+                            ? 'Request Rejected'
+                            : 'Request Cancelled'}
+                        </Badge>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Messages */}
-          <CardContent className="flex-1 p-0">
-            <ScrollArea className="h-[400px] p-4">
+              {/* Messages */}
+              <CardContent className="flex-1 p-0">
+                <ScrollArea className="h-[400px] p-4">
                   {messagesLoading ? (
                     <div className="flex h-full items-center justify-center">
                       <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
@@ -1192,16 +1251,16 @@ export function ChatsInterface() {
                       </div>
                     </div>
                   ) : (
-              <div className="space-y-4">
+                    <div className="space-y-4">
                       {messages.map((message: Message) => {
                         const isMe = message.senderId === user?.id;
                         return (
-                  <div
-                    key={message.id}
+                          <div
+                            key={message.id}
                             className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                          >
+                            <div
+                              className={`max-w-[70%] rounded-lg px-4 py-2 ${
                                 isMe
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted text-foreground'
@@ -1210,7 +1269,7 @@ export function ChatsInterface() {
                               <p className="text-sm break-words whitespace-pre-wrap">
                                 {renderMessageContent(message.content)}
                               </p>
-                      <span
+                              <span
                                 className={`mt-1 block text-xs ${
                                   isMe
                                     ? 'text-primary-foreground/70'
@@ -1218,43 +1277,45 @@ export function ChatsInterface() {
                                 }`}
                               >
                                 {formatMessageTime(message.createdAt)}
-                      </span>
-                    </div>
-                  </div>
+                              </span>
+                            </div>
+                          </div>
                         );
                       })}
                       <div ref={messagesEndRef} />
-              </div>
+                    </div>
                   )}
-            </ScrollArea>
-          </CardContent>
+                </ScrollArea>
+              </CardContent>
 
-          {/* Message Input */}
+              {/* Message Input */}
               <div className="border-t p-4">
-            <div className="mb-2 flex justify-end">
-              <span className={`text-xs ${newMessage.length > 900 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                {newMessage.length}/1000
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => {
-                  // Limit input length and prevent XSS
-                  const value = e.target.value;
-                  if (value.length <= 1000) {
-                    setNewMessage(value);
-                  }
-                }}
-                onKeyPress={(e) =>
-                  e.key === 'Enter' && !isSending && handleSendMessage()
-                }
-                className="flex-1"
-                disabled={isSending}
-                maxLength={1000}
-              />
-              <Button
+                <div className="mb-2 flex justify-end">
+                  <span
+                    className={`text-xs ${newMessage.length > 900 ? 'text-red-500' : 'text-muted-foreground'}`}
+                  >
+                    {newMessage.length}/1000
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => {
+                      // Limit input length and prevent XSS
+                      const value = e.target.value;
+                      if (value.length <= 1000) {
+                        setNewMessage(value);
+                      }
+                    }}
+                    onKeyPress={(e) =>
+                      e.key === 'Enter' && !isSending && handleSendMessage()
+                    }
+                    className="flex-1"
+                    disabled={isSending}
+                    maxLength={1000}
+                  />
+                  <Button
                     onClick={handleSendMessage}
                     size="icon"
                     disabled={isSending || !newMessage.trim()}
@@ -1262,11 +1323,11 @@ export function ChatsInterface() {
                     {isSending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                <Send className="h-4 w-4" />
+                      <Send className="h-4 w-4" />
                     )}
-              </Button>
-            </div>
-          </div>
+                  </Button>
+                </div>
+              </div>
             </>
           ) : (
             <div className="flex h-full items-center justify-center">
@@ -1289,14 +1350,18 @@ export function ChatsInterface() {
           <AlertDialogHeader>
             <AlertDialogTitle>Block User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to block {userToBlock?.name}? This will prevent them from sending you messages and you won't see their messages anymore.
+              Are you sure you want to block {userToBlock?.name}? This will
+              prevent them from sending you messages and you won't see their
+              messages anymore.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowBlockDialog(false);
-              setUserToBlock(null);
-            }}>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowBlockDialog(false);
+                setUserToBlock(null);
+              }}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1318,16 +1383,22 @@ export function ChatsInterface() {
       </AlertDialog>
 
       {/* Cancel Pending Request Confirmation Dialog */}
-      <AlertDialog open={showCancelPendingDialog} onOpenChange={setShowCancelPendingDialog}>
+      <AlertDialog
+        open={showCancelPendingDialog}
+        onOpenChange={setShowCancelPendingDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Request</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this pending request? This action cannot be undone.
+              Are you sure you want to cancel this pending request? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowCancelPendingDialog(false)}>
+            <AlertDialogCancel
+              onClick={() => setShowCancelPendingDialog(false)}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1349,16 +1420,22 @@ export function ChatsInterface() {
       </AlertDialog>
 
       {/* Cancel Accepted Request Confirmation Dialog */}
-      <AlertDialog open={showCancelAcceptedDialog} onOpenChange={setShowCancelAcceptedDialog}>
+      <AlertDialog
+        open={showCancelAcceptedDialog}
+        onOpenChange={setShowCancelAcceptedDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Request</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this accepted request? This will notify the other party and cannot be undone.
+              Are you sure you want to cancel this accepted request? This will
+              notify the other party and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowCancelAcceptedDialog(false)}>
+            <AlertDialogCancel
+              onClick={() => setShowCancelAcceptedDialog(false)}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1380,12 +1457,19 @@ export function ChatsInterface() {
       </AlertDialog>
 
       {/* Received Confirmation Dialog */}
-      <AlertDialog open={showReceivedDialog} onOpenChange={setShowReceivedDialog}>
+      <AlertDialog
+        open={showReceivedDialog}
+        onOpenChange={setShowReceivedDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Mark as Received</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark this {selectedChat?.trip?.payloadType === 'PARCEL' ? 'parcel' : 'passenger'} as received? This will change the status to "In Transit".
+              Are you sure you want to mark this{' '}
+              {selectedChat?.trip?.payloadType === 'PARCEL'
+                ? 'parcel'
+                : 'passenger'}{' '}
+              as received? This will change the status to "In Transit".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1413,14 +1497,23 @@ export function ChatsInterface() {
       </AlertDialog>
 
       {/* Delivered Confirmation Dialog */}
-      <AlertDialog open={showDeliveredDialog} onOpenChange={setShowDeliveredDialog}>
+      <AlertDialog
+        open={showDeliveredDialog}
+        onOpenChange={setShowDeliveredDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {selectedChat?.trip?.payloadType === 'PARCEL' ? 'Mark as Delivered' : 'Mark as Arrived'}
+              {selectedChat?.trip?.payloadType === 'PARCEL'
+                ? 'Mark as Delivered'
+                : 'Mark as Arrived'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark this {selectedChat?.trip?.payloadType === 'PARCEL' ? 'parcel as delivered' : 'passenger as arrived at destination'}? This will change the status to "Delivered".
+              Are you sure you want to mark this{' '}
+              {selectedChat?.trip?.payloadType === 'PARCEL'
+                ? 'parcel as delivered'
+                : 'passenger as arrived at destination'}
+              ? This will change the status to "Delivered".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1453,12 +1546,20 @@ export function ChatsInterface() {
       </AlertDialog>
 
       {/* Completed Confirmation Dialog */}
-      <AlertDialog open={showCompletedDialog} onOpenChange={setShowCompletedDialog}>
+      <AlertDialog
+        open={showCompletedDialog}
+        onOpenChange={setShowCompletedDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Complete Trip</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to complete this trip? This will finalize the {selectedChat?.trip?.payloadType === 'PARCEL' ? 'delivery' : 'passenger transport'} and enable rating.
+              Are you sure you want to complete this trip? This will finalize
+              the{' '}
+              {selectedChat?.trip?.payloadType === 'PARCEL'
+                ? 'delivery'
+                : 'passenger transport'}{' '}
+              and enable rating.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

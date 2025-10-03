@@ -10,9 +10,9 @@ interface AuthRedirectHandlerProps {
   redirectTo?: string;
 }
 
-export function AuthRedirectHandler({ 
-  children, 
-  redirectTo = ROUTES.DASHBOARD 
+export function AuthRedirectHandler({
+  children,
+  redirectTo = ROUTES.DASHBOARD,
 }: AuthRedirectHandlerProps) {
   const { user, isLoading } = useAuth();
   const router = useRouter();

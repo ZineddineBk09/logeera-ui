@@ -17,13 +17,16 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
 
     // Handle multiple CORS origins
-    const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+    const corsOrigins = process.env.CORS_ORIGIN?.split(',') || [
+      'http://localhost:3000',
+    ];
     const requestOrigin = request.headers.get('origin');
-    
+
     // Check if the request origin is in our allowed list
-    const allowedOrigin = requestOrigin && corsOrigins.includes(requestOrigin) 
-      ? requestOrigin 
-      : corsOrigins[0]; // Default to first origin if not found
+    const allowedOrigin =
+      requestOrigin && corsOrigins.includes(requestOrigin)
+        ? requestOrigin
+        : corsOrigins[0]; // Default to first origin if not found
 
     response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
     response.headers.set(
@@ -75,13 +78,14 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (isAuthRedirectRoute && user) {
     console.log(`Redirecting authenticated user from ${pathname} to dashboard`);
-    
+
     // Check if there's a redirect parameter to honor
     const redirectParam = request.nextUrl.searchParams.get('redirect');
-    const redirectUrl = redirectParam && redirectParam !== pathname 
-      ? redirectParam 
-      : ROUTES.DASHBOARD;
-      
+    const redirectUrl =
+      redirectParam && redirectParam !== pathname
+        ? redirectParam
+        : ROUTES.DASHBOARD;
+
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 

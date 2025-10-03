@@ -33,13 +33,74 @@ function getRandomElement(array) {
 // Helper function to get random date in the future
 function getRandomFutureDate() {
   const now = new Date();
-  const futureDate = new Date(now.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000); // 30 days from now
+  const futureDate = new Date(
+    now.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000,
+  ); // 30 days from now
   return futureDate;
 }
 
 // Helper function to generate random phone number
 function generatePhoneNumber() {
-  const prefixes = ['+234', '+27', '+20', '+212', '+213', '+216', '+220', '+221', '+222', '+223', '+224', '+225', '+226', '+227', '+228', '+229', '+230', '+231', '+232', '+233', '+235', '+236', '+237', '+238', '+239', '+240', '+241', '+242', '+243', '+244', '+245', '+246', '+247', '+248', '+249', '+250', '+251', '+252', '+253', '+254', '+255', '+256', '+257', '+258', '+260', '+261', '+262', '+263', '+264', '+265', '+266', '+267', '+268', '+269', '+290', '+291', '+297', '+298'];
+  const prefixes = [
+    '+234',
+    '+27',
+    '+20',
+    '+212',
+    '+213',
+    '+216',
+    '+220',
+    '+221',
+    '+222',
+    '+223',
+    '+224',
+    '+225',
+    '+226',
+    '+227',
+    '+228',
+    '+229',
+    '+230',
+    '+231',
+    '+232',
+    '+233',
+    '+235',
+    '+236',
+    '+237',
+    '+238',
+    '+239',
+    '+240',
+    '+241',
+    '+242',
+    '+243',
+    '+244',
+    '+245',
+    '+246',
+    '+247',
+    '+248',
+    '+249',
+    '+250',
+    '+251',
+    '+252',
+    '+253',
+    '+254',
+    '+255',
+    '+256',
+    '+257',
+    '+258',
+    '+260',
+    '+261',
+    '+262',
+    '+263',
+    '+264',
+    '+265',
+    '+266',
+    '+267',
+    '+268',
+    '+269',
+    '+290',
+    '+291',
+    '+297',
+    '+298',
+  ];
   const prefix = getRandomElement(prefixes);
   const number = Math.floor(Math.random() * 900000000) + 100000000;
   return `${prefix}${number}`;
@@ -48,16 +109,34 @@ function generatePhoneNumber() {
 // Helper function to generate user data
 function generateUser(isAdmin = false) {
   const names = [
-    'Ahmed Hassan', 'Fatima Ali', 'Mohamed Ibrahim', 'Aisha Omar', 'Omar Hassan',
-    'Khadija Mohamed', 'Yusuf Ali', 'Zainab Ahmed', 'Hassan Mohamed', 'Amina Hassan',
-    'Ibrahim Ali', 'Mariam Omar', 'Ali Ahmed', 'Hawa Mohamed', 'Abdullah Hassan',
-    'Halima Ali', 'Omar Mohamed', 'Aisha Hassan', 'Mohamed Ali', 'Fatima Omar'
+    'Ahmed Hassan',
+    'Fatima Ali',
+    'Mohamed Ibrahim',
+    'Aisha Omar',
+    'Omar Hassan',
+    'Khadija Mohamed',
+    'Yusuf Ali',
+    'Zainab Ahmed',
+    'Hassan Mohamed',
+    'Amina Hassan',
+    'Ibrahim Ali',
+    'Mariam Omar',
+    'Ali Ahmed',
+    'Hawa Mohamed',
+    'Abdullah Hassan',
+    'Halima Ali',
+    'Omar Mohamed',
+    'Aisha Hassan',
+    'Mohamed Ali',
+    'Fatima Omar',
   ];
 
   const name = isAdmin ? 'Admin User' : getRandomElement(names);
-  const email = isAdmin ? 'admin@logeera.com' : `${name.toLowerCase().replace(/\s+/g, '.')}${Math.floor(Math.random() * 1000)}@logeera.com`;
+  const email = isAdmin
+    ? 'admin@logeera.com'
+    : `${name.toLowerCase().replace(/\s+/g, '.')}${Math.floor(Math.random() * 1000)}@logeera.com`;
   const userType = isAdmin ? 'PERSON' : getRandomElement(userTypes);
-  
+
   return {
     name,
     email,
@@ -72,11 +151,13 @@ function generateUser(isAdmin = false) {
 // Helper function to generate trip data
 function generateTrip(publisherId) {
   const origin = getRandomElement(africanCities);
-  const destination = getRandomElement(africanCities.filter(city => city.name !== origin.name));
+  const destination = getRandomElement(
+    africanCities.filter((city) => city.name !== origin.name),
+  );
   const departureAt = getRandomFutureDate();
   const capacity = Math.floor(Math.random() * 6) + 2; // 2-7 seats
   const pricePerSeat = Math.floor(Math.random() * 200) + 50; // $50-$250
-  
+
   return {
     publisherId,
     originName: origin.name,
@@ -111,7 +192,7 @@ async function seedDatabase() {
     console.log('👤 Creating admin user...');
     const adminData = generateUser(true);
     const adminHashedPassword = await bcrypt.hash(adminData.password, 12);
-    
+
     const { password, ...adminDataWithoutPassword } = adminData;
     const admin = await prisma.user.create({
       data: {
@@ -129,7 +210,7 @@ async function seedDatabase() {
     for (let i = 0; i < 10; i++) {
       const userData = generateUser(false);
       const hashedPassword = await bcrypt.hash(userData.password, 12);
-      
+
       const { password, ...userDataWithoutPassword } = userData;
       const user = await prisma.user.create({
         data: {
@@ -137,7 +218,7 @@ async function seedDatabase() {
           passwordHash: hashedPassword,
         },
       });
-      
+
       users.push(user);
       userPasswords.push(userData.password);
       console.log(`✅ User created: ${user.email}`);
@@ -153,7 +234,9 @@ async function seedDatabase() {
         data: tripData,
       });
       trips.push(trip);
-      console.log(`✅ Trip created: ${trip.originName} → ${trip.destinationName}`);
+      console.log(
+        `✅ Trip created: ${trip.originName} → ${trip.destinationName}`,
+      );
     }
 
     // Create requests (users booking seats in other trips)
@@ -163,13 +246,20 @@ async function seedDatabase() {
     for (const user of users) {
       // Each user makes 2-3 requests to other trips
       const numRequests = Math.floor(Math.random() * 2) + 2;
-      const availableTrips = trips.filter(trip => trip.publisherId !== user.id);
-      
+      const availableTrips = trips.filter(
+        (trip) => trip.publisherId !== user.id,
+      );
+
       for (let i = 0; i < numRequests && i < availableTrips.length; i++) {
-        const trip = getRandomElement(availableTrips.filter(t => 
-          !requests.some(r => r.tripId === t.id && r.applicantId === user.id)
-        ));
-        
+        const trip = getRandomElement(
+          availableTrips.filter(
+            (t) =>
+              !requests.some(
+                (r) => r.tripId === t.id && r.applicantId === user.id,
+              ),
+          ),
+        );
+
         if (trip) {
           const request = await prisma.request.create({
             data: {
@@ -179,15 +269,17 @@ async function seedDatabase() {
             },
           });
           requests.push(request);
-          console.log(`✅ Request created: ${user.name} → ${trip.originName} → ${trip.destinationName}`);
+          console.log(
+            `✅ Request created: ${user.name} → ${trip.originName} → ${trip.destinationName}`,
+          );
         }
       }
     }
 
     // Update trip booked seats for accepted requests
     console.log('📊 Updating trip booked seats...');
-    const acceptedRequests = requests.filter(r => r.status === 'ACCEPTED');
-    
+    const acceptedRequests = requests.filter((r) => r.status === 'ACCEPTED');
+
     for (const request of acceptedRequests) {
       // For simplicity, assume each accepted request adds 1 seat
       await prisma.trip.update({
@@ -203,17 +295,18 @@ async function seedDatabase() {
     // Create some chats between users
     console.log('💬 Creating chats...');
     const chatPairs = [];
-    
+
     for (let i = 0; i < 5; i++) {
       const user1 = getRandomElement(users);
-      const user2 = getRandomElement(users.filter(u => u.id !== user1.id));
-      
+      const user2 = getRandomElement(users.filter((u) => u.id !== user1.id));
+
       // Check if chat already exists
-      const existingChat = chatPairs.find(pair => 
-        (pair.userAId === user1.id && pair.userBId === user2.id) ||
-        (pair.userAId === user2.id && pair.userBId === user1.id)
+      const existingChat = chatPairs.find(
+        (pair) =>
+          (pair.userAId === user1.id && pair.userBId === user2.id) ||
+          (pair.userAId === user2.id && pair.userBId === user1.id),
       );
-      
+
       if (!existingChat) {
         const chat = await prisma.chat.create({
           data: {
@@ -221,7 +314,11 @@ async function seedDatabase() {
             userBId: user2.id,
           },
         });
-        chatPairs.push({ userAId: user1.id, userBId: user2.id, chatId: chat.id });
+        chatPairs.push({
+          userAId: user1.id,
+          userBId: user2.id,
+          chatId: chat.id,
+        });
         console.log(`✅ Chat created: ${user1.name} ↔ ${user2.name}`);
       }
     }
@@ -230,25 +327,25 @@ async function seedDatabase() {
     console.log('💌 Creating messages...');
     const messages = [
       "Hi! I'm interested in your trip. Is it still available?",
-      "Yes, it is! How many seats do you need?",
-      "I need 2 seats. What time do we leave?",
+      'Yes, it is! How many seats do you need?',
+      'I need 2 seats. What time do we leave?',
       "We leave at 8 AM sharp. I'll send you the exact location.",
-      "Perfect! Looking forward to the journey.",
+      'Perfect! Looking forward to the journey.',
       "Great! I'll confirm your booking.",
-      "Thank you so much! See you soon.",
-      "Safe travels! Let me know if you need anything.",
-      "Will do! Thanks again.",
-      "You're welcome! Have a great trip!"
+      'Thank you so much! See you soon.',
+      'Safe travels! Let me know if you need anything.',
+      'Will do! Thanks again.',
+      "You're welcome! Have a great trip!",
     ];
 
     for (const chatPair of chatPairs) {
       const numMessages = Math.floor(Math.random() * 5) + 3; // 3-7 messages
-      
+
       for (let i = 0; i < numMessages; i++) {
         const isUserA = i % 2 === 0;
         const senderId = isUserA ? chatPair.userAId : chatPair.userBId;
         const messageText = getRandomElement(messages);
-        
+
         await prisma.message.create({
           data: {
             chatId: chatPair.chatId,
@@ -263,10 +360,12 @@ async function seedDatabase() {
     // Create some ratings
     console.log('⭐ Creating ratings...');
     const completedTrips = trips.slice(0, 5); // Use first 5 trips as completed
-    
+
     for (const trip of completedTrips) {
-      const tripRequests = requests.filter(r => r.tripId === trip.id && r.status === 'ACCEPTED');
-      
+      const tripRequests = requests.filter(
+        (r) => r.tripId === trip.id && r.status === 'ACCEPTED',
+      );
+
       for (const request of tripRequests) {
         const rating = await prisma.rating.create({
           data: {
@@ -279,7 +378,7 @@ async function seedDatabase() {
               'Excellent driver, highly recommended!',
               'Smooth journey, will definitely book again.',
               'Professional service, on time departure.',
-              'Comfortable ride, friendly driver.'
+              'Comfortable ride, friendly driver.',
             ]),
           },
         });
@@ -301,8 +400,9 @@ async function seedDatabase() {
     console.log('\n🔑 Login Credentials:');
     console.log(`Admin: admin@logeera.com / password123`);
     console.log(`Regular users: [name]@logeera.com / password123`);
-    console.log(`\n🌐 You can view the data at: http://localhost:5555 (Prisma Studio)`);
-
+    console.log(
+      `\n🌐 You can view the data at: http://localhost:5555 (Prisma Studio)`,
+    );
   } catch (error) {
     console.error('❌ Seeding failed:', error);
     throw error;

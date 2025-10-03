@@ -13,11 +13,17 @@ async function blockUser(req: AuthenticatedRequest) {
     const currentUserId = req.user!.userId;
 
     if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 },
+      );
     }
 
     if (userId === currentUserId) {
-      return NextResponse.json({ error: 'Cannot block yourself' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot block yourself' },
+        { status: 400 },
+      );
     }
 
     const body = await req.json();
@@ -44,7 +50,10 @@ async function blockUser(req: AuthenticatedRequest) {
     });
 
     if (existingBlock) {
-      return NextResponse.json({ error: 'User is already blocked' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'User is already blocked' },
+        { status: 400 },
+      );
     }
 
     // Create block relationship
@@ -72,9 +81,15 @@ async function blockUser(req: AuthenticatedRequest) {
   } catch (error) {
     console.error('Error blocking user:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.issues },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

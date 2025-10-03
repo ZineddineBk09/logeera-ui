@@ -80,7 +80,9 @@ async function getUsers(req: AuthenticatedRequest) {
 const createUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
+  phoneNumber: z
+    .string()
+    .min(10, 'Phone number must be at least 10 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   type: z.enum(['PERSON', 'BUSINESS']).default('PERSON'),
   role: z.enum(['USER', 'MODERATOR', 'ADMIN']).default('USER'),
@@ -95,17 +97,18 @@ async function createUser(req: AuthenticatedRequest) {
     }
 
     const body = await req.json();
-    
+
     // Validate input
     const validationResult = createUserSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: validationResult.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { name, email, phoneNumber, password, type, role, status } = validationResult.data;
+    const { name, email, phoneNumber, password, type, role, status } =
+      validationResult.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -115,7 +118,7 @@ async function createUser(req: AuthenticatedRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -153,7 +156,7 @@ async function createUser(req: AuthenticatedRequest) {
     console.error('Error creating user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

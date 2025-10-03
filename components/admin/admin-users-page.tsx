@@ -203,9 +203,14 @@ export function AdminUsersPage() {
   const handleCreateUser = async () => {
     try {
       setIsLoading(true);
-      
+
       // Basic validation
-      if (!newUser.name || !newUser.email || !newUser.phoneNumber || !newUser.password) {
+      if (
+        !newUser.name ||
+        !newUser.email ||
+        !newUser.phoneNumber ||
+        !newUser.password
+      ) {
         toast.error('Please fill in all required fields');
         return;
       }
@@ -219,7 +224,7 @@ export function AdminUsersPage() {
       toast.success('User created successfully');
       mutate(); // Refresh the data
       setIsAddDialogOpen(false);
-      
+
       // Reset form
       setNewUser({
         name: '',
@@ -505,7 +510,9 @@ export function AdminUsersPage() {
               <Input
                 id="name"
                 value={newUser.name}
-                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, name: e.target.value })
+                }
                 className="col-span-3"
                 placeholder="Full name"
               />
@@ -518,7 +525,9 @@ export function AdminUsersPage() {
                 id="email"
                 type="email"
                 value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, email: e.target.value })
+                }
                 className="col-span-3"
                 placeholder="user@example.com"
               />
@@ -530,7 +539,9 @@ export function AdminUsersPage() {
               <Input
                 id="phone"
                 value={newUser.phoneNumber}
-                onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, phoneNumber: e.target.value })
+                }
                 className="col-span-3"
                 placeholder="+1234567890"
               />
@@ -543,7 +554,9 @@ export function AdminUsersPage() {
                 id="password"
                 type="password"
                 value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, password: e.target.value })
+                }
                 className="col-span-3"
                 placeholder="Minimum 6 characters"
               />
@@ -554,7 +567,7 @@ export function AdminUsersPage() {
               </Label>
               <Select
                 value={newUser.type}
-                onValueChange={(value: 'PERSON' | 'BUSINESS') => 
+                onValueChange={(value: 'PERSON' | 'BUSINESS') =>
                   setNewUser({ ...newUser, type: value })
                 }
               >
@@ -573,7 +586,7 @@ export function AdminUsersPage() {
               </Label>
               <Select
                 value={newUser.role}
-                onValueChange={(value: 'USER' | 'MODERATOR' | 'ADMIN') => 
+                onValueChange={(value: 'USER' | 'MODERATOR' | 'ADMIN') =>
                   setNewUser({ ...newUser, role: value })
                 }
               >
@@ -593,7 +606,7 @@ export function AdminUsersPage() {
               </Label>
               <Select
                 value={newUser.status}
-                onValueChange={(value: 'PENDING' | 'TRUSTED' | 'BLOCKED') => 
+                onValueChange={(value: 'PENDING' | 'TRUSTED' | 'BLOCKED') =>
                   setNewUser({ ...newUser, status: value })
                 }
               >

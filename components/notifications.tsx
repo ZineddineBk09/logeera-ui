@@ -94,12 +94,12 @@ export function Notifications() {
       if (response.ok) {
         const data = await response.json();
         const newUnreadCount = data.unreadCount || 0;
-        
+
         // Play sound if there are new notifications
         if (previousUnreadCount > 0 && newUnreadCount > previousUnreadCount) {
           playNotificationSound();
         }
-        
+
         setNotifications(data.notifications || []);
         setUnreadCount(newUnreadCount);
         setPreviousUnreadCount(newUnreadCount);
@@ -240,110 +240,110 @@ export function Notifications() {
 
   return (
     <>
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between border-b p-3">
-          <h3 className="font-semibold">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={markAllAsRead}
-              className="text-xs"
-            >
-              Mark all read
-            </Button>
-          )}
-        </div>
+        <DropdownMenuContent align="end" className="w-80">
+          <div className="flex items-center justify-between border-b p-3">
+            <h3 className="font-semibold">Notifications</h3>
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={markAllAsRead}
+                className="text-xs"
+              >
+                Mark all read
+              </Button>
+            )}
+          </div>
 
-        <ScrollArea className="h-96">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-4">
-              <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2"></div>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-6 text-center">
-              <Bell className="text-muted-foreground mb-2 h-8 w-8" />
-              <p className="text-muted-foreground text-sm">
-                No notifications yet
-              </p>
-            </div>
-          ) : (
-            <div className="p-1">
-              {notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className="flex cursor-pointer items-start gap-3 p-3 hover:!bg-gray-100"
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex-shrink-0">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={notification.userAvatar} />
-                        <AvatarFallback className="text-xs">
-                          {notification.userName
-                            .split(' ')
-                            .map((n) => n[0])
-                            .join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <p className="truncate text-sm font-medium hover:!text-gray-700">
-                        {notification.userName}
-                      </p>
-                      {!notification.isRead && (
-                        <div className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
-                      )}
+          <ScrollArea className="h-96">
+            {isLoading ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2"></div>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-6 text-center">
+                <Bell className="text-muted-foreground mb-2 h-8 w-8" />
+                <p className="text-muted-foreground text-sm">
+                  No notifications yet
+                </p>
+              </div>
+            ) : (
+              <div className="p-1">
+                {notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="flex cursor-pointer items-start gap-3 p-3 hover:!bg-gray-100"
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex-shrink-0">
+                      {getNotificationIcon(notification.type)}
                     </div>
 
-                    <p className="text-muted-foreground mb-1 text-sm">
-                      {notification.message}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={notification.userAvatar} />
+                          <AvatarFallback className="text-xs">
+                            {notification.userName
+                              .split(' ')
+                              .map((n) => n[0])
+                              .join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="truncate text-sm font-medium hover:!text-gray-700">
+                          {notification.userName}
+                        </p>
+                        {!notification.isRead && (
+                          <div className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
+                        )}
+                      </div>
 
-                    <p className="text-muted-foreground text-xs">
-                      {formatDistanceToNow(new Date(notification.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-                </DropdownMenuItem>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-      </DropdownMenuContent>
-    </DropdownMenu>
+                      <p className="text-muted-foreground mb-1 text-sm">
+                        {notification.message}
+                      </p>
 
-    {/* Rating Dialog */}
-    {ratingTripId && (
-      <RatingDialog
-        open={showRatingDialog}
-        onOpenChange={setShowRatingDialog}
-        tripId={ratingTripId}
-        onRatingSubmitted={() => {
-          setShowRatingDialog(false);
-          setRatingTripId(null);
-          fetchNotifications(); // Refresh notifications
-        }}
-      />
-    )}
+                      <p className="text-muted-foreground text-xs">
+                        {formatDistanceToNow(new Date(notification.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Rating Dialog */}
+      {ratingTripId && (
+        <RatingDialog
+          open={showRatingDialog}
+          onOpenChange={setShowRatingDialog}
+          tripId={ratingTripId}
+          onRatingSubmitted={() => {
+            setShowRatingDialog(false);
+            setRatingTripId(null);
+            fetchNotifications(); // Refresh notifications
+          }}
+        />
+      )}
     </>
   );
 }

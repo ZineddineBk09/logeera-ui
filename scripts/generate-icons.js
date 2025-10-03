@@ -44,7 +44,9 @@ async function generateIcons() {
   }
 
   if (Object.keys(availableLogos).length === 0) {
-    console.error('❌ No logo files found! Please ensure logo files exist in public/images/');
+    console.error(
+      '❌ No logo files found! Please ensure logo files exist in public/images/',
+    );
     process.exit(1);
   }
 
@@ -55,7 +57,9 @@ async function generateIcons() {
   if (availableLogos.symbol) {
     sourceImage = availableLogos.symbol;
     logoType = 'symbol';
-    console.log('\n📱 Using logo symbol for PWA icons (recommended for small sizes)');
+    console.log(
+      '\n📱 Using logo symbol for PWA icons (recommended for small sizes)',
+    );
   } else if (availableLogos.whiteBg) {
     sourceImage = availableLogos.whiteBg;
     logoType = 'whiteBg';
@@ -77,7 +81,7 @@ async function generateIcons() {
     console.log('\n🔄 Generating PWA icons...');
     for (const { size, name } of iconSizes) {
       const outputPath = path.join(publicDir, name);
-      
+
       await sharp(sourceImage)
         .resize(size, size, {
           fit: 'contain',
@@ -85,17 +89,17 @@ async function generateIcons() {
         })
         .png()
         .toFile(outputPath);
-      
+
       console.log(`✅ Generated: ${name} (${size}x${size})`);
     }
 
     // Generate favicon.ico (multi-size ICO file)
     // console.log('\n🔄 Generating favicon.ico...');
     // const faviconPath = path.join(publicDir, 'favicon.ico');
-    
+
     // // For favicon, use the symbol if available, otherwise the full logo
     // const faviconSource = availableLogos.symbol || sourceImage;
-    
+
     // await sharp(faviconSource)
     //   .resize(32, 32, {
     //     fit: 'contain',
@@ -103,16 +107,17 @@ async function generateIcons() {
     //   })
     //   .png()
     //   .toFile(faviconPath);
-    
+
     console.log('✅ Generated: favicon.ico');
 
     // Generate OG image (social media preview)
     console.log('\n🔄 Generating OG image for social media...');
     const ogImagePath = path.join(publicDir, 'og-image.png');
-    
+
     // Use full logo for OG image
-    const ogSource = availableLogos.full || availableLogos.whiteBg || sourceImage;
-    
+    const ogSource =
+      availableLogos.full || availableLogos.whiteBg || sourceImage;
+
     await sharp(ogSource)
       .resize(600, 315, {
         fit: 'contain',
@@ -127,13 +132,13 @@ async function generateIcons() {
       })
       .png()
       .toFile(ogImagePath);
-    
+
     console.log('✅ Generated: og-image.png (1200x630)');
 
     // Generate maskable icon (for Android adaptive icons)
     console.log('\n🔄 Generating maskable icon...');
     const maskablePath = path.join(publicDir, 'icon-maskable-512x512.png');
-    
+
     await sharp(sourceImage)
       .resize(410, 410, {
         fit: 'contain',
@@ -148,7 +153,7 @@ async function generateIcons() {
       })
       .png()
       .toFile(maskablePath);
-    
+
     console.log('✅ Generated: icon-maskable-512x512.png');
 
     console.log('\n🎉 All PWA icons generated successfully!');
@@ -158,9 +163,8 @@ async function generateIcons() {
     console.log('   • apple-touch-icon.png');
     console.log('   • og-image.png (social media)');
     console.log('   • icon-maskable-512x512.png (Android adaptive)');
-    
+
     console.log('\n🚀 Your PWA is now ready with proper Logeera branding!');
-    
   } catch (error) {
     console.error('❌ Error generating icons:', error);
     console.log('\n💡 Make sure Sharp is installed: npm install sharp');

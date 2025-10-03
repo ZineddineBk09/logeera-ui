@@ -1,19 +1,30 @@
 import type { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Heart, MessageCircle, Star, Shield, AlertTriangle, X } from 'lucide-react';
+import {
+  Users,
+  Heart,
+  MessageCircle,
+  Star,
+  Shield,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Community Guidelines',
-  description: 'Learn about Logeera\'s community guidelines and standards. Help us maintain a respectful, safe, and welcoming environment for all users.',
+  description:
+    "Learn about Logeera's community guidelines and standards. Help us maintain a respectful, safe, and welcoming environment for all users.",
   openGraph: {
     title: 'Community Guidelines - Logeera',
-    description: 'Learn about Logeera\'s community guidelines and standards for all users.',
+    description:
+      "Learn about Logeera's community guidelines and standards for all users.",
     url: '/community',
   },
   twitter: {
     title: 'Community Guidelines - Logeera',
-    description: 'Learn about Logeera\'s community guidelines and standards for all users.',
+    description:
+      "Learn about Logeera's community guidelines and standards for all users.",
   },
 };
 
@@ -22,7 +33,8 @@ const guidelines = [
     title: 'Be Respectful',
     icon: Heart,
     badge: 'Core Value',
-    description: 'Treat all community members with respect, kindness, and courtesy.',
+    description:
+      'Treat all community members with respect, kindness, and courtesy.',
     rules: [
       'Use polite and professional language',
       'Respect cultural and personal differences',
@@ -34,7 +46,8 @@ const guidelines = [
     title: 'Communicate Clearly',
     icon: MessageCircle,
     badge: 'Essential',
-    description: 'Clear communication helps ensure smooth and safe trips for everyone.',
+    description:
+      'Clear communication helps ensure smooth and safe trips for everyone.',
     rules: [
       'Respond to messages promptly',
       'Provide accurate trip information',
@@ -46,7 +59,8 @@ const guidelines = [
     title: 'Maintain Safety',
     icon: Shield,
     badge: 'Priority',
-    description: 'Safety is our top priority. Help us maintain a secure environment.',
+    description:
+      'Safety is our top priority. Help us maintain a secure environment.',
     rules: [
       'Verify identity before trips',
       'Follow traffic laws and regulations',
@@ -58,7 +72,8 @@ const guidelines = [
     title: 'Provide Quality Service',
     icon: Star,
     badge: 'Excellence',
-    description: 'Strive to provide the best possible experience for fellow community members.',
+    description:
+      'Strive to provide the best possible experience for fellow community members.',
     rules: [
       'Be punctual for pickups and trips',
       'Keep vehicles clean and comfortable',
@@ -87,12 +102,14 @@ const consequences = [
   },
   {
     level: 'Temporary Suspension',
-    description: 'Repeated violations may result in temporary account suspension',
+    description:
+      'Repeated violations may result in temporary account suspension',
     badge: 'Level 2',
   },
   {
     level: 'Permanent Ban',
-    description: 'Serious violations or repeated offenses result in permanent removal',
+    description:
+      'Serious violations or repeated offenses result in permanent removal',
     badge: 'Level 3',
   },
 ];
@@ -103,13 +120,14 @@ export default function CommunityPage() {
       {/* Header */}
       <div className="space-y-4 text-center">
         <div className="flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Users className="h-8 w-8 text-primary" />
+          <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
+            <Users className="text-primary h-8 w-8" />
           </div>
         </div>
         <h1 className="text-3xl font-bold">Community Guidelines</h1>
         <p className="text-muted-foreground text-lg">
-          Building a safe, respectful, and welcoming community for all travelers.
+          Building a safe, respectful, and welcoming community for all
+          travelers.
         </p>
       </div>
 
@@ -121,17 +139,19 @@ export default function CommunityPage() {
             <Card key={index}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Icon className="h-5 w-5 text-primary" />
+                  <Icon className="text-primary h-5 w-5" />
                   {guideline.title}
                 </CardTitle>
                 <Badge variant="secondary">{guideline.badge}</Badge>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground text-sm">{guideline.description}</p>
+                <p className="text-muted-foreground text-sm">
+                  {guideline.description}
+                </p>
                 <ul className="space-y-2">
                   {guideline.rules.map((rule, ruleIndex) => (
                     <li key={ruleIndex} className="flex items-start gap-2">
-                      <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                      <div className="bg-primary mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full" />
                       <span className="text-sm">{rule}</span>
                     </li>
                   ))}
@@ -157,7 +177,7 @@ export default function CommunityPage() {
           <div className="grid gap-2 md:grid-cols-2">
             {prohibitedBehaviors.map((behavior, index) => (
               <div key={index} className="flex items-start gap-2">
-                <X className="mt-0.5 h-4 w-4 text-red-500 flex-shrink-0" />
+                <X className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
                 <span className="text-sm">{behavior}</span>
               </div>
             ))}
@@ -172,7 +192,8 @@ export default function CommunityPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground mb-6">
-            We take community guidelines seriously and enforce them fairly and consistently.
+            We take community guidelines seriously and enforce them fairly and
+            consistently.
           </p>
           <div className="grid gap-4 md:grid-cols-3">
             {consequences.map((consequence, index) => (
@@ -181,7 +202,9 @@ export default function CommunityPage() {
                   <h3 className="font-semibold">{consequence.level}</h3>
                   <Badge variant="outline">{consequence.badge}</Badge>
                 </div>
-                <p className="text-muted-foreground text-sm">{consequence.description}</p>
+                <p className="text-muted-foreground text-sm">
+                  {consequence.description}
+                </p>
               </div>
             ))}
           </div>
@@ -195,12 +218,13 @@ export default function CommunityPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            Help us maintain a safe community by reporting violations of these guidelines.
+            Help us maintain a safe community by reporting violations of these
+            guidelines.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <h3 className="font-semibold">How to Report</h3>
-              <ul className="space-y-1 text-sm text-muted-foreground">
+              <ul className="text-muted-foreground space-y-1 text-sm">
                 <li>• Use the "Report" button in the app</li>
                 <li>• Email safety@logeera.com</li>
                 <li>• Contact support through our help center</li>
@@ -209,7 +233,7 @@ export default function CommunityPage() {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold">What to Include</h3>
-              <ul className="space-y-1 text-sm text-muted-foreground">
+              <ul className="text-muted-foreground space-y-1 text-sm">
                 <li>• Description of the incident</li>
                 <li>• Date and time of occurrence</li>
                 <li>• User ID or trip information</li>
@@ -223,13 +247,14 @@ export default function CommunityPage() {
       {/* Community Commitment */}
       <Card className="bg-primary/5">
         <CardContent className="pt-6">
-          <div className="text-center space-y-4">
+          <div className="space-y-4 text-center">
             <h2 className="text-xl font-semibold">Our Community Commitment</h2>
             <p className="text-muted-foreground">
-              Together, we can build a thriving community where everyone feels safe, 
-              respected, and welcome. Thank you for being part of the Logeera family.
+              Together, we can build a thriving community where everyone feels
+              safe, respected, and welcome. Thank you for being part of the
+              Logeera family.
             </p>
-            <div className="flex justify-center gap-4 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex justify-center gap-4 text-sm">
               <span>• Inclusive</span>
               <span>• Respectful</span>
               <span>• Safe</span>

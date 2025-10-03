@@ -46,7 +46,7 @@ interface RequestIncoming {
     averageRating: number;
     ratingCount: number;
   };
-      trip: {
+  trip: {
     id: string;
     originName: string;
     destinationName: string;
@@ -63,7 +63,7 @@ interface RequestIncoming {
 
 interface RequestOutgoing {
   id: string;
-      trip: {
+  trip: {
     id: string;
     originName: string;
     destinationName: string;
@@ -73,7 +73,7 @@ interface RequestOutgoing {
     payloadType: 'PARCEL' | 'PASSENGER';
     parcelWeight?: number;
     passengerCount?: number;
-      publisher: {
+    publisher: {
       id: string;
       name: string;
       email: string;
@@ -92,12 +92,20 @@ export function RequestsManagement() {
   const [incoming, setIncoming] = useState<RequestIncoming[]>([]);
   const [outgoing, setOutgoing] = useState<RequestOutgoing[]>([]);
   const [loading, setLoading] = useState(false);
-  const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
+  const [processingRequests, setProcessingRequests] = useState<Set<string>>(
+    new Set(),
+  );
   const [showAcceptDialog, setShowAcceptDialog] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [showReceivedDialog, setShowReceivedDialog] = useState(false);
-  const [showCancelAcceptedDialog, setShowCancelAcceptedDialog] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<RequestIncoming | null>(null);
+  const [showCancelAcceptedDialog, setShowCancelAcceptedDialog] =
+    useState(false);
+  const [showCancelOutgoingDialog, setShowCancelOutgoingDialog] =
+    useState(false);
+  const [selectedRequest, setSelectedRequest] =
+    useState<RequestIncoming | null>(null);
+  const [selectedOutgoingRequest, setSelectedOutgoingRequest] =
+    useState<RequestOutgoing | null>(null);
 
   // Fetch trips that can be rated
   const {
@@ -137,33 +145,42 @@ export function RequestsManagement() {
 
   const confirmAccept = async () => {
     if (!selectedRequest) return;
-    
+
     const requestId = selectedRequest.id;
     // Prevent multiple clicks
     if (processingRequests.has(requestId)) return;
-    
-    setProcessingRequests(prev => new Set(prev).add(requestId));
+
+    setProcessingRequests((prev) => new Set(prev).add(requestId));
     setShowAcceptDialog(false);
-    
+
     try {
       const response = await RequestsService.setStatus(requestId, 'accepted');
       if (response.ok) {
         const acceptedRequest = await response.json();
         toast.success('Request accepted');
-        
+
         // Update the local state to reflect the change
-        setIncoming(prev => prev.map(req => 
-          req.id === requestId ? { ...req, status: 'ACCEPTED' } : req
-        ));
+        setIncoming((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: 'ACCEPTED' } : req,
+          ),
+        );
 
         // Automatically open chat with the accepted user
         if (user?.id) {
           try {
-            const chatResponse = await ChatService.between(user.id, acceptedRequest.applicant.id, true, acceptedRequest.trip.id);
+            const chatResponse = await ChatService.between(
+              user.id,
+              acceptedRequest.applicant.id,
+              true,
+              acceptedRequest.trip.id,
+            );
             if (chatResponse.ok) {
               const chatData = await chatResponse.json();
               router.push(`/chats?chatId=${chatData.id}`);
-              toast.success(`Chat opened with ${acceptedRequest.applicant.name}`);
+              toast.success(
+                `Chat opened with ${acceptedRequest.applicant.name}`,
+              );
             }
           } catch (chatError) {
             console.error('Error opening chat:', chatError);
@@ -178,7 +195,7 @@ export function RequestsManagement() {
       console.error('Error accepting request:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setProcessingRequests(prev => {
+      setProcessingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
@@ -204,22 +221,24 @@ export function RequestsManagement() {
 
   const confirmDecline = async () => {
     if (!selectedRequest) return;
-    
+
     const requestId = selectedRequest.id;
     // Prevent multiple clicks
     if (processingRequests.has(requestId)) return;
-    
-    setProcessingRequests(prev => new Set(prev).add(requestId));
+
+    setProcessingRequests((prev) => new Set(prev).add(requestId));
     setShowDeclineDialog(false);
-    
+
     try {
       const response = await RequestsService.setStatus(requestId, 'rejected');
       if (response.ok) {
         toast.success('Request rejected');
         // Update the local state to reflect the change
-        setIncoming(prev => prev.map(req => 
-          req.id === requestId ? { ...req, status: 'REJECTED' } : req
-        ));
+        setIncoming((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: 'REJECTED' } : req,
+          ),
+        );
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to reject request');
@@ -228,7 +247,7 @@ export function RequestsManagement() {
       console.error('Error rejecting request:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setProcessingRequests(prev => {
+      setProcessingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
@@ -239,22 +258,24 @@ export function RequestsManagement() {
 
   const confirmReceived = async () => {
     if (!selectedRequest) return;
-    
+
     const requestId = selectedRequest.id;
     // Prevent multiple clicks
     if (processingRequests.has(requestId)) return;
-    
-    setProcessingRequests(prev => new Set(prev).add(requestId));
+
+    setProcessingRequests((prev) => new Set(prev).add(requestId));
     setShowReceivedDialog(false);
-    
+
     try {
       const response = await RequestsService.setStatus(requestId, 'in_transit');
       if (response.ok) {
         toast.success('Request marked as received');
         // Update the local state to reflect the change
-        setIncoming(prev => prev.map(req => 
-          req.id === requestId ? { ...req, status: 'IN_TRANSIT' } : req
-        ));
+        setIncoming((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: 'IN_TRANSIT' } : req,
+          ),
+        );
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to mark as received');
@@ -263,7 +284,7 @@ export function RequestsManagement() {
       console.error('Error marking as received:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setProcessingRequests(prev => {
+      setProcessingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
@@ -274,22 +295,24 @@ export function RequestsManagement() {
 
   const confirmCancelAccepted = async () => {
     if (!selectedRequest) return;
-    
+
     const requestId = selectedRequest.id;
     // Prevent multiple clicks
     if (processingRequests.has(requestId)) return;
-    
-    setProcessingRequests(prev => new Set(prev).add(requestId));
+
+    setProcessingRequests((prev) => new Set(prev).add(requestId));
     setShowCancelAcceptedDialog(false);
-    
+
     try {
       const response = await RequestsService.setStatus(requestId, 'cancelled');
       if (response.ok) {
         toast.success('Request cancelled');
         // Update the local state to reflect the change
-        setIncoming(prev => prev.map(req => 
-          req.id === requestId ? { ...req, status: 'CANCELLED' } : req
-        ));
+        setIncoming((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: 'CANCELLED' } : req,
+          ),
+        );
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to cancel request');
@@ -298,7 +321,7 @@ export function RequestsManagement() {
       console.error('Error cancelling request:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setProcessingRequests(prev => {
+      setProcessingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
@@ -307,7 +330,53 @@ export function RequestsManagement() {
     }
   };
 
-  const handleMessage = async (otherUserId: string, userName: string, tripId?: string) => {
+  const handleCancelOutgoing = (request: RequestOutgoing) => {
+    setSelectedOutgoingRequest(request);
+    setShowCancelOutgoingDialog(true);
+  };
+
+  const confirmCancelOutgoing = async () => {
+    if (!selectedOutgoingRequest) return;
+
+    const requestId = selectedOutgoingRequest.id;
+    // Prevent multiple clicks
+    if (processingRequests.has(requestId)) return;
+
+    setProcessingRequests((prev) => new Set(prev).add(requestId));
+    setShowCancelOutgoingDialog(false);
+
+    try {
+      const response = await RequestsService.setStatus(requestId, 'cancelled');
+      if (response.ok) {
+        toast.success('Request cancelled');
+        // Update the local state to reflect the change
+        setOutgoing((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: 'CANCELLED' } : req,
+          ),
+        );
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to cancel request');
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setProcessingRequests((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
+      setSelectedOutgoingRequest(null);
+    }
+  };
+
+  const handleMessage = async (
+    otherUserId: string,
+    userName: string,
+    tripId?: string,
+  ) => {
     if (!user?.id) {
       toast.error('Please log in to start a conversation');
       return;
@@ -315,8 +384,13 @@ export function RequestsManagement() {
 
     try {
       // Create or find the chat between current user and the other user
-      const response = await ChatService.between(user.id, otherUserId, true, tripId);
-      
+      const response = await ChatService.between(
+        user.id,
+        otherUserId,
+        true,
+        tripId,
+      );
+
       if (response.ok) {
         const chatData = await response.json();
         // Navigate to the specific chat
@@ -334,27 +408,44 @@ export function RequestsManagement() {
 
   const handleStatusUpdate = async (requestId: string, newStatus: string) => {
     if (processingRequests.has(requestId)) return;
-    
-    setProcessingRequests(prev => new Set(prev).add(requestId));
-    
+
+    setProcessingRequests((prev) => new Set(prev).add(requestId));
+
     try {
-      const response = await RequestsService.setStatus(requestId, newStatus.toLowerCase() as 'accepted' | 'rejected' | 'in_transit' | 'delivered' | 'completed' | 'cancelled');
+      const response = await RequestsService.setStatus(
+        requestId,
+        newStatus.toLowerCase() as
+          | 'accepted'
+          | 'rejected'
+          | 'in_transit'
+          | 'delivered'
+          | 'completed'
+          | 'cancelled',
+      );
       if (response.ok) {
         const statusMessages = {
-          'in_transit': 'Request marked as in transit',
-          'delivered': 'Request marked as delivered',
-          'completed': 'Request completed',
-          'cancelled': 'Request cancelled',
+          in_transit: 'Request marked as in transit',
+          delivered: 'Request marked as delivered',
+          completed: 'Request completed',
+          cancelled: 'Request cancelled',
         };
-        toast.success(statusMessages[newStatus.toLowerCase() as keyof typeof statusMessages] || 'Status updated');
-        
+        toast.success(
+          statusMessages[
+            newStatus.toLowerCase() as keyof typeof statusMessages
+          ] || 'Status updated',
+        );
+
         // Update the local state
-        setIncoming(prev => prev.map(req => 
-          req.id === requestId ? { ...req, status: newStatus } : req
-        ));
-        setOutgoing(prev => prev.map(req => 
-          req.id === requestId ? { ...req, status: newStatus } : req
-        ));
+        setIncoming((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: newStatus } : req,
+          ),
+        );
+        setOutgoing((prev) =>
+          prev.map((req) =>
+            req.id === requestId ? { ...req, status: newStatus } : req,
+          ),
+        );
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to update status');
@@ -363,7 +454,7 @@ export function RequestsManagement() {
       console.error('Error updating status:', error);
       toast.error('Network error. Please try again.');
     } finally {
-      setProcessingRequests(prev => {
+      setProcessingRequests((prev) => {
         const newSet = new Set(prev);
         newSet.delete(requestId);
         return newSet;
@@ -431,36 +522,36 @@ export function RequestsManagement() {
                 transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               >
                 <Card className="transition-shadow hover:shadow-md">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage
                             src="/placeholder.svg"
                             alt={request.applicant.name}
-                        />
-                        <AvatarFallback>
+                          />
+                          <AvatarFallback>
                             {request.applicant.name
                               .split(' ')
-                            .map((n) => n[0])
+                              .map((n) => n[0])
                               .join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
                           <h3 className="text-foreground font-semibold">
                             {request.applicant.name}
-                        </h3>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          </h3>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
                               {request.applicant.averageRating.toFixed(1)} (
                               {request.applicant.ratingCount} reviews)
-                          </span>
+                            </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs">
                           {new Date(request.createdAt).toLocaleDateString()}
                         </Badge>
                         <Badge
@@ -479,23 +570,25 @@ export function RequestsManagement() {
                           }
                           className="text-xs capitalize"
                         >
-                          {processingRequests.has(request.id) ? 'Processing...' : request.status.toLowerCase().replace('_', ' ')}
-                    </Badge>
+                          {processingRequests.has(request.id)
+                            ? 'Processing...'
+                            : request.status.toLowerCase().replace('_', ' ')}
+                        </Badge>
                       </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
-                      <span>
+                        <span>
                           {request.trip.originName} →{' '}
                           {request.trip.destinationName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
-                      <span>
+                        <span>
                           {new Date(
                             request.trip.departureAt,
                           ).toLocaleDateString()}{' '}
@@ -506,55 +599,57 @@ export function RequestsManagement() {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
-                      <span>
-                          {request.trip.payloadType === 'PARCEL' 
+                        <span>
+                          {request.trip.payloadType === 'PARCEL'
                             ? `${request.trip.parcelWeight || request.trip.capacity}kg capacity`
-                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`
-                          }
-                      </span>
+                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
-                        Request to {request.trip.payloadType === 'PARCEL' ? 'use this delivery service' : 'join this trip'}
+                        Request to{' '}
+                        {request.trip.payloadType === 'PARCEL'
+                          ? 'use this delivery service'
+                          : 'join this trip'}
                       </p>
-                  </div>
+                    </div>
 
                     {request.status === 'PENDING' && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => handleAccept(request)}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="mr-2 h-4 w-4" />
-                        )}
-                        Accept
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDecline(request)}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <X className="mr-2 h-4 w-4" />
-                        )}
-                        Decline
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => handleAccept(request)}
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="mr-2 h-4 w-4" />
+                          )}
+                          Accept
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDecline(request)}
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <X className="mr-2 h-4 w-4" />
+                          )}
+                          Decline
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() =>
                             handleMessage(
                               request.applicant.id,
@@ -562,43 +657,43 @@ export function RequestsManagement() {
                               request.trip.id,
                             )
                           }
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
 
-                  {request.status === 'ACCEPTED' && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => handleReceived(request)}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Package className="mr-2 h-4 w-4" />
-                        )}
-                        Received
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleCancelAccepted(request)}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <XCircle className="mr-2 h-4 w-4" />
-                        )}
-                        Cancel Request
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                    {request.status === 'ACCEPTED' && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() => handleReceived(request)}
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Package className="mr-2 h-4 w-4" />
+                          )}
+                          Received
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleCancelAccepted(request)}
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="mr-2 h-4 w-4" />
+                          )}
+                          Cancel Request
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() =>
                             handleMessage(
                               request.applicant.id,
@@ -606,30 +701,32 @@ export function RequestsManagement() {
                               request.trip.id,
                             )
                           }
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
 
-                  {request.status === 'IN_TRANSIT' && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => handleStatusUpdate(request.id, 'DELIVERED')}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Truck className="mr-2 h-4 w-4" />
-                        )}
-                        Delivered
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                    {request.status === 'IN_TRANSIT' && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() =>
+                            handleStatusUpdate(request.id, 'DELIVERED')
+                          }
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Truck className="mr-2 h-4 w-4" />
+                          )}
+                          Delivered
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() =>
                             handleMessage(
                               request.applicant.id,
@@ -637,30 +734,32 @@ export function RequestsManagement() {
                               request.trip.id,
                             )
                           }
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
 
-                  {request.status === 'DELIVERED' && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => handleStatusUpdate(request.id, 'COMPLETED')}
-                        className="flex-1"
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        {processingRequests.has(request.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                        )}
-                        Complete
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                    {request.status === 'DELIVERED' && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={() =>
+                            handleStatusUpdate(request.id, 'COMPLETED')
+                          }
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                          )}
+                          Complete
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() =>
                             handleMessage(
                               request.applicant.id,
@@ -668,18 +767,20 @@ export function RequestsManagement() {
                               request.trip.id,
                             )
                           }
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
 
-                  {(request.status === 'REJECTED' || request.status === 'CANCELLED' || request.status === 'COMPLETED') && (
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                    {(request.status === 'REJECTED' ||
+                      request.status === 'CANCELLED' ||
+                      request.status === 'COMPLETED') && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() =>
                             handleMessage(
                               request.applicant.id,
@@ -687,14 +788,14 @@ export function RequestsManagement() {
                               request.trip.id,
                             )
                           }
-                        disabled={processingRequests.has(request.id)}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </motion.div>
             ))
           )}
@@ -727,65 +828,65 @@ export function RequestsManagement() {
                 transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               >
                 <Card className="transition-shadow hover:shadow-md">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage
                             src="/placeholder.svg"
                             alt={request.trip.publisher.name}
-                        />
-                        <AvatarFallback>
+                          />
+                          <AvatarFallback>
                             {request.trip.publisher.name
                               .split(' ')
-                            .map((n) => n[0])
+                              .map((n) => n[0])
                               .join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
                           <h3 className="text-foreground font-semibold">
                             {request.trip.publisher.name}
-                        </h3>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          </h3>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
                               {request.trip.publisher.averageRating.toFixed(1)}{' '}
                               ({request.trip.publisher.ratingCount} reviews)
-                          </span>
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
                             request.status === 'ACCEPTED'
                               ? 'default'
                               : request.status === 'REJECTED'
                                 ? 'destructive'
                                 : 'secondary'
-                        }
-                        className="text-xs"
-                      >
-                        {request.status}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
+                          }
+                          className="text-xs"
+                        >
+                          {request.status}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
                           {new Date(request.createdAt).toLocaleDateString()}
-                      </Badge>
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
-                      <span>
+                        <span>
                           {request.trip.originName} →{' '}
                           {request.trip.destinationName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
-                      <span>
+                        <span>
                           {new Date(
                             request.trip.departureAt,
                           ).toLocaleDateString()}{' '}
@@ -796,29 +897,47 @@ export function RequestsManagement() {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
-                      <span>
-                          {request.trip.payloadType === 'PARCEL' 
+                        <span>
+                          {request.trip.payloadType === 'PARCEL'
                             ? `${request.trip.parcelWeight || request.trip.capacity}kg capacity`
-                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`
-                          }
-                      </span>
+                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
-                        Your request to {request.trip.payloadType === 'PARCEL' ? 'use this delivery service' : 'join this trip'}
+                        Your request to{' '}
+                        {request.trip.payloadType === 'PARCEL'
+                          ? 'use this delivery service'
+                          : 'join this trip'}
                       </p>
-                  </div>
+                    </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <div className="flex gap-2 pt-2">
+                      {request.status === 'PENDING' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelOutgoing(request)}
+                          className="flex-1"
+                          disabled={processingRequests.has(request.id)}
+                        >
+                          {processingRequests.has(request.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <X className="mr-2 h-4 w-4" />
+                          )}
+                          Cancel Request
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() =>
                           handleMessage(
                             request.trip.publisher.id,
@@ -826,14 +945,16 @@ export function RequestsManagement() {
                             request.trip.id,
                           )
                         }
-                      className="ml-auto"
-                    >
+                        className={
+                          request.status === 'PENDING' ? '' : 'ml-auto'
+                        }
+                      >
                         <MessageCircle className="mr-2 h-4 w-4" />
-                      Message
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                        Message
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))
           )}
@@ -860,7 +981,8 @@ export function RequestsManagement() {
                   No trips to rate
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  Complete some trips to be able to rate your experience with drivers
+                  Complete some trips to be able to rate your experience with
+                  drivers
                 </p>
               </CardContent>
             </Card>
@@ -893,10 +1015,11 @@ export function RequestsManagement() {
           <DialogHeader>
             <DialogTitle>Accept Request</DialogTitle>
             <DialogDescription>
-              Are you sure you want to accept this request from {selectedRequest?.applicant.name}?
+              Are you sure you want to accept this request from{' '}
+              {selectedRequest?.applicant.name}?
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRequest && (
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4">
@@ -914,19 +1037,24 @@ export function RequestsManagement() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    <h4 className="font-medium">
+                      {selectedRequest.applicant.name}
+                    </h4>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedRequest.trip.originName} →{' '}
+                      {selectedRequest.trip.destinationName}
                     </p>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                 <div className="flex items-center gap-2">
                   <Check className="h-5 w-5 text-blue-600" />
                   <p className="text-sm text-blue-800">
-                    This will automatically open a chat with {selectedRequest.applicant.name} and mark the request as accepted.
+                    This will automatically open a chat with{' '}
+                    {selectedRequest.applicant.name} and mark the request as
+                    accepted.
                   </p>
                 </div>
               </div>
@@ -970,10 +1098,11 @@ export function RequestsManagement() {
           <DialogHeader>
             <DialogTitle>Decline Request</DialogTitle>
             <DialogDescription>
-              Are you sure you want to decline this request from {selectedRequest?.applicant.name}?
+              Are you sure you want to decline this request from{' '}
+              {selectedRequest?.applicant.name}?
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRequest && (
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4">
@@ -991,19 +1120,23 @@ export function RequestsManagement() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    <h4 className="font-medium">
+                      {selectedRequest.applicant.name}
+                    </h4>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedRequest.trip.originName} →{' '}
+                      {selectedRequest.trip.destinationName}
                     </p>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+
+              <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
                 <div className="flex items-center gap-2">
                   <X className="h-5 w-5 text-orange-600" />
                   <p className="text-sm text-orange-800">
-                    This action cannot be undone. The applicant will be notified that their request was declined.
+                    This action cannot be undone. The applicant will be notified
+                    that their request was declined.
                   </p>
                 </div>
               </div>
@@ -1048,10 +1181,11 @@ export function RequestsManagement() {
           <DialogHeader>
             <DialogTitle>Mark as Received</DialogTitle>
             <DialogDescription>
-              Are you sure you want to mark this request as received from {selectedRequest?.applicant.name}?
+              Are you sure you want to mark this request as received from{' '}
+              {selectedRequest?.applicant.name}?
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRequest && (
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4">
@@ -1069,19 +1203,26 @@ export function RequestsManagement() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    <h4 className="font-medium">
+                      {selectedRequest.applicant.name}
+                    </h4>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedRequest.trip.originName} →{' '}
+                      {selectedRequest.trip.destinationName}
                     </p>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-green-600" />
                   <p className="text-sm text-green-800">
-                    This will mark the {selectedRequest.trip.payloadType === 'PARCEL' ? 'parcel' : 'passenger'} as received and change the status to "In Transit".
+                    This will mark the{' '}
+                    {selectedRequest.trip.payloadType === 'PARCEL'
+                      ? 'parcel'
+                      : 'passenger'}{' '}
+                    as received and change the status to "In Transit".
                   </p>
                 </div>
               </div>
@@ -1120,15 +1261,19 @@ export function RequestsManagement() {
       </Dialog>
 
       {/* Cancel Accepted Request Confirmation Dialog */}
-      <Dialog open={showCancelAcceptedDialog} onOpenChange={setShowCancelAcceptedDialog}>
+      <Dialog
+        open={showCancelAcceptedDialog}
+        onOpenChange={setShowCancelAcceptedDialog}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Cancel Request</DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel this accepted request from {selectedRequest?.applicant.name}?
+              Are you sure you want to cancel this accepted request from{' '}
+              {selectedRequest?.applicant.name}?
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedRequest && (
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4">
@@ -1146,19 +1291,23 @@ export function RequestsManagement() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="font-medium">{selectedRequest.applicant.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedRequest.trip.originName} → {selectedRequest.trip.destinationName}
+                    <h4 className="font-medium">
+                      {selectedRequest.applicant.name}
+                    </h4>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedRequest.trip.originName} →{' '}
+                      {selectedRequest.trip.destinationName}
                     </p>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
                 <div className="flex items-center gap-2">
                   <XCircle className="h-5 w-5 text-red-600" />
                   <p className="text-sm text-red-800">
-                    This action cannot be undone. The applicant will be notified that their accepted request was cancelled.
+                    This action cannot be undone. The applicant will be notified
+                    that their accepted request was cancelled.
                   </p>
                 </div>
               </div>
@@ -1189,6 +1338,99 @@ export function RequestsManagement() {
               ) : (
                 <>
                   <XCircle className="mr-2 h-4 w-4" />
+                  Cancel Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Outgoing Request Confirmation Dialog */}
+      <Dialog
+        open={showCancelOutgoingDialog}
+        onOpenChange={setShowCancelOutgoingDialog}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Request</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel your request to{' '}
+              {selectedOutgoingRequest?.trip.publisher.name}?
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOutgoingRequest && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={selectedOutgoingRequest.trip.publisher.name}
+                    />
+                    <AvatarFallback>
+                      {selectedOutgoingRequest.trip.publisher.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">
+                      {selectedOutgoingRequest.trip.publisher.name}
+                    </h4>
+                    <p className="text-muted-foreground text-sm">
+                      {selectedOutgoingRequest.trip.originName} →{' '}
+                      {selectedOutgoingRequest.trip.destinationName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+                <div className="flex items-center gap-2">
+                  <X className="h-5 w-5 text-orange-600" />
+                  <p className="text-sm text-orange-800">
+                    This action cannot be undone. The{' '}
+                    {selectedOutgoingRequest.trip.payloadType === 'PARCEL'
+                      ? 'delivery provider'
+                      : 'trip publisher'}{' '}
+                    will be notified.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelOutgoingDialog(false);
+                setSelectedOutgoingRequest(null);
+              }}
+              disabled={processingRequests.has(
+                selectedOutgoingRequest?.id || '',
+              )}
+            >
+              Keep Request
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancelOutgoing}
+              disabled={processingRequests.has(
+                selectedOutgoingRequest?.id || '',
+              )}
+            >
+              {processingRequests.has(selectedOutgoingRequest?.id || '') ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <X className="mr-2 h-4 w-4" />
                   Cancel Request
                 </>
               )}

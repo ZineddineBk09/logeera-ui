@@ -111,7 +111,7 @@ export function PublishWizard() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
+
     if (selectedDate < tomorrow) {
       toast.error('Please select a date from tomorrow onwards');
       return;
@@ -151,7 +151,10 @@ export function PublishWizard() {
           | 'TRUCK'
           | 'BIKE',
         payloadType: tripData.payloadType,
-        capacity: tripData.payloadType === 'PARCEL' ? Number(tripData.parcelWeight || 10) : Number(tripData.passengerCount || 4),
+        capacity:
+          tripData.payloadType === 'PARCEL'
+            ? Number(tripData.parcelWeight || 10)
+            : Number(tripData.passengerCount || 4),
         pricePerSeat: 1, // Set to 1 as minimum positive value, can be updated later
         // Only include parcelWeight for parcel trips
         ...(tripData.payloadType === 'PARCEL' && {
@@ -200,9 +203,9 @@ export function PublishWizard() {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0); // Reset time to start of day
-        
+
         const isDateValid = tripData.date && selectedDate >= tomorrow;
-        
+
         return (
           tripData.origin &&
           tripData.destination &&
@@ -214,7 +217,9 @@ export function PublishWizard() {
       case 2:
         return (
           tripData.vehicleType &&
-          (tripData.payloadType === 'PARCEL' ? tripData.parcelWeight : tripData.passengerCount)
+          (tripData.payloadType === 'PARCEL'
+            ? tripData.parcelWeight
+            : tripData.passengerCount)
         );
       case 3:
         return true;
@@ -279,8 +284,8 @@ export function PublishWizard() {
                   <div className="space-y-2">
                     <Label>From</Label>
                     <AutocompleteInput
-                        placeholder="Origin city"
-                        value={tripData.origin}
+                      placeholder="Origin city"
+                      value={tripData.origin}
                       onChange={(value) =>
                         setTripData((prev) => ({
                           ...prev,
@@ -328,21 +333,22 @@ export function PublishWizard() {
                         }
                       />
                     </div>
-                    {tripData.date && (() => {
-                      const selectedDate = new Date(tripData.date);
-                      const tomorrow = new Date();
-                      tomorrow.setDate(tomorrow.getDate() + 1);
-                      tomorrow.setHours(0, 0, 0, 0);
-                      
-                      if (selectedDate < tomorrow) {
-                        return (
-                          <p className="text-destructive text-sm">
-                            Please select a date from tomorrow onwards
-                          </p>
-                        );
-                      }
-                      return null;
-                    })()}
+                    {tripData.date &&
+                      (() => {
+                        const selectedDate = new Date(tripData.date);
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        tomorrow.setHours(0, 0, 0, 0);
+
+                        if (selectedDate < tomorrow) {
+                          return (
+                            <p className="text-destructive text-sm">
+                              Please select a date from tomorrow onwards
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                   </div>
                   <div className="space-y-2">
                     <Label>Departure time</Label>
@@ -585,8 +591,7 @@ export function PublishWizard() {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                    </div>
+                    <div className="space-y-3"></div>
                   </div>
 
                   {tripData.description && (
@@ -653,8 +658,8 @@ export function PublishWizard() {
                 </>
               ) : (
                 <>
-              <span>Publish Trip</span>
-              <Check className="h-4 w-4" />
+                  <span>Publish Trip</span>
+                  <Check className="h-4 w-4" />
                 </>
               )}
             </Button>

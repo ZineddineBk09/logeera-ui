@@ -8,7 +8,10 @@ async function unblockUser(req: AuthenticatedRequest) {
     const currentUserId = req.user!.userId;
 
     if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 },
+      );
     }
 
     // Find and delete the block relationship
@@ -31,7 +34,10 @@ async function unblockUser(req: AuthenticatedRequest) {
     });
 
     if (!blockRecord) {
-      return NextResponse.json({ error: 'User is not blocked' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'User is not blocked' },
+        { status: 400 },
+      );
     }
 
     await prisma.blockedUser.delete({
@@ -49,7 +55,10 @@ async function unblockUser(req: AuthenticatedRequest) {
     });
   } catch (error) {
     console.error('Error unblocking user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

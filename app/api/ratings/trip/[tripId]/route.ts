@@ -14,7 +14,10 @@ async function createRating(req: AuthenticatedRequest) {
     const reviewerUserId = req.user!.userId;
 
     if (!tripId) {
-      return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Trip ID is required' },
+        { status: 400 },
+      );
     }
 
     const body = await req.json();
@@ -42,7 +45,10 @@ async function createRating(req: AuthenticatedRequest) {
 
     // Check if trip is completed
     if (trip.status !== 'COMPLETED') {
-      return NextResponse.json({ error: 'Can only rate completed trips' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Can only rate completed trips' },
+        { status: 400 },
+      );
     }
 
     // Check if user was part of this trip (either as publisher or accepted passenger)
@@ -50,12 +56,18 @@ async function createRating(req: AuthenticatedRequest) {
     const wasPassenger = trip.requests.length > 0;
 
     if (!isPublisher && !wasPassenger) {
-      return NextResponse.json({ error: 'You can only rate trips you participated in' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'You can only rate trips you participated in' },
+        { status: 403 },
+      );
     }
 
     // Cannot rate yourself
     if (trip.publisherId === reviewerUserId) {
-      return NextResponse.json({ error: 'Cannot rate your own trip' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot rate your own trip' },
+        { status: 400 },
+      );
     }
 
     // Check if already rated this trip
@@ -69,7 +81,10 @@ async function createRating(req: AuthenticatedRequest) {
     });
 
     if (existingRating) {
-      return NextResponse.json({ error: 'You have already rated this trip' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'You have already rated this trip' },
+        { status: 400 },
+      );
     }
 
     // Create the rating
@@ -127,9 +142,15 @@ async function createRating(req: AuthenticatedRequest) {
   } catch (error) {
     console.error('Error creating rating:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.issues },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 
@@ -138,7 +159,10 @@ async function getRatingsForTrip(req: AuthenticatedRequest) {
     const tripId = req.url?.split('/')[6]; // Extract trip ID from URL
 
     if (!tripId) {
-      return NextResponse.json({ error: 'Trip ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Trip ID is required' },
+        { status: 400 },
+      );
     }
 
     const ratings = await prisma.rating.findMany({
@@ -157,7 +181,10 @@ async function getRatingsForTrip(req: AuthenticatedRequest) {
     return NextResponse.json(ratings);
   } catch (error) {
     console.error('Error fetching trip ratings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

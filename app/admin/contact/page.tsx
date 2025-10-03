@@ -33,12 +33,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { 
-  Mail, 
-  Search, 
-  Filter, 
-  Eye, 
-  MessageSquare, 
+import {
+  Mail,
+  Search,
+  Filter,
+  Eye,
+  MessageSquare,
   Clock,
   CheckCircle,
   AlertTriangle,
@@ -68,7 +68,8 @@ export default function AdminContactPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<ContactSubmission | null>(null);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [response, setResponse] = useState('');
   const [isResponding, setIsResponding] = useState(false);
@@ -82,7 +83,9 @@ export default function AdminContactPage() {
   } = useSWR(
     `/api/admin/contact?search=${searchQuery}&status=${statusFilter}&category=${categoryFilter}`,
     () =>
-      api(`/api/admin/contact?search=${searchQuery}&status=${statusFilter}&category=${categoryFilter}`).then(async (r) => {
+      api(
+        `/api/admin/contact?search=${searchQuery}&status=${statusFilter}&category=${categoryFilter}`,
+      ).then(async (r) => {
         if (r.ok) {
           return await r.json();
         }
@@ -130,13 +133,16 @@ export default function AdminContactPage() {
 
     setIsResponding(true);
     try {
-      const apiResponse = await api(`/api/admin/contact/${selectedSubmission.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          response: response.trim(),
-          status: 'RESOLVED',
-        }),
-      });
+      const apiResponse = await api(
+        `/api/admin/contact/${selectedSubmission.id}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            response: response.trim(),
+            status: 'RESOLVED',
+          }),
+        },
+      );
 
       if (apiResponse.ok) {
         toast.success('Response sent successfully');
@@ -176,7 +182,9 @@ export default function AdminContactPage() {
       case 'URGENT':
         return <Badge variant="destructive">Urgent</Badge>;
       case 'HIGH':
-        return <Badge className="bg-orange-500 hover:bg-orange-600">High</Badge>;
+        return (
+          <Badge className="bg-orange-500 hover:bg-orange-600">High</Badge>
+        );
       case 'MEDIUM':
         return <Badge variant="secondary">Medium</Badge>;
       case 'LOW':
@@ -223,7 +231,7 @@ export default function AdminContactPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Search</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     placeholder="Search by name, email, or subject..."
                     value={searchQuery}
@@ -249,7 +257,10 @@ export default function AdminContactPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category</label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -278,13 +289,17 @@ export default function AdminContactPage() {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : error ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Failed to load submissions</p>
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">
+                  Failed to load submissions
+                </p>
               </div>
             ) : submissions.length === 0 ? (
-              <div className="text-center py-8">
-                <Mail className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-muted-foreground">No contact submissions found</p>
+              <div className="py-8 text-center">
+                <Mail className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <p className="text-muted-foreground">
+                  No contact submissions found
+                </p>
               </div>
             ) : (
               <Table>
@@ -305,21 +320,30 @@ export default function AdminContactPage() {
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{submission.name}</div>
-                          <div className="text-muted-foreground text-sm">{submission.email}</div>
+                          <div className="text-muted-foreground text-sm">
+                            {submission.email}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="max-w-xs truncate" title={submission.subject}>
+                        <div
+                          className="max-w-xs truncate"
+                          title={submission.subject}
+                        >
                           {submission.subject}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {getCategoryIcon(submission.category)}
-                          <span className="capitalize">{submission.category.toLowerCase()}</span>
+                          <span className="capitalize">
+                            {submission.category.toLowerCase()}
+                          </span>
                         </div>
                       </TableCell>
-                      <TableCell>{getPriorityBadge(submission.priority)}</TableCell>
+                      <TableCell>
+                        {getPriorityBadge(submission.priority)}
+                      </TableCell>
                       <TableCell>{getStatusBadge(submission.status)}</TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -339,7 +363,9 @@ export default function AdminContactPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleUpdateStatus(submission.id, 'IN_PROGRESS')}
+                              onClick={() =>
+                                handleUpdateStatus(submission.id, 'IN_PROGRESS')
+                              }
                             >
                               <Clock className="h-4 w-4" />
                             </Button>
@@ -367,8 +393,12 @@ export default function AdminContactPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">From</label>
                     <div>
-                      <div className="font-medium">{selectedSubmission.name}</div>
-                      <div className="text-muted-foreground text-sm">{selectedSubmission.email}</div>
+                      <div className="font-medium">
+                        {selectedSubmission.name}
+                      </div>
+                      <div className="text-muted-foreground text-sm">
+                        {selectedSubmission.email}
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -393,20 +423,29 @@ export default function AdminContactPage() {
                 {/* Message */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Message</label>
-                  <div className="rounded-lg border p-4 bg-muted/50">
-                    <p className="text-sm whitespace-pre-wrap">{selectedSubmission.message}</p>
+                  <div className="bg-muted/50 rounded-lg border p-4">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {selectedSubmission.message}
+                    </p>
                   </div>
                 </div>
 
                 {/* Previous Response */}
                 {selectedSubmission.response && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Previous Response</label>
-                    <div className="rounded-lg border p-4 bg-green-50">
-                      <p className="text-sm whitespace-pre-wrap">{selectedSubmission.response}</p>
+                    <label className="text-sm font-medium">
+                      Previous Response
+                    </label>
+                    <div className="rounded-lg border bg-green-50 p-4">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {selectedSubmission.response}
+                      </p>
                       {selectedSubmission.respondedAt && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Responded on {new Date(selectedSubmission.respondedAt).toLocaleString()}
+                        <div className="text-muted-foreground mt-2 text-xs">
+                          Responded on{' '}
+                          {new Date(
+                            selectedSubmission.respondedAt,
+                          ).toLocaleString()}
                         </div>
                       )}
                     </div>
@@ -416,7 +455,9 @@ export default function AdminContactPage() {
                 {/* Response Form */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    {selectedSubmission.response ? 'Update Response' : 'Response'}
+                    {selectedSubmission.response
+                      ? 'Update Response'
+                      : 'Response'}
                   </label>
                   <Textarea
                     placeholder="Type your response here..."
@@ -425,7 +466,7 @@ export default function AdminContactPage() {
                     className="min-h-32 resize-none"
                     maxLength={2000}
                   />
-                  <div className="text-right text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-right text-xs">
                     {response.length}/2000
                   </div>
                 </div>

@@ -32,11 +32,14 @@ async function getBlockedUsers(req: AuthenticatedRequest) {
         blockedAt: block.createdAt,
         reason: block.reason,
         user: block.blocked,
-      }))
+      })),
     );
   } catch (error) {
     console.error('Error fetching blocked users:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
   }
 }
 

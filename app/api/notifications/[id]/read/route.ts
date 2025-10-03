@@ -6,7 +6,7 @@ async function markAsRead(req: AuthenticatedRequest) {
   try {
     const notificationId = req.nextUrl.pathname.split('/')[3];
     const userId = req.user!.userId;
-    
+
     // Verify the notification belongs to the user
     const notification = await prisma.notification.findFirst({
       where: {

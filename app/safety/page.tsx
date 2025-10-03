@@ -1,19 +1,29 @@
 import type { Metadata } from 'next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Users, Phone, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import {
+  Shield,
+  Users,
+  Phone,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+} from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Safety Guidelines',
-  description: 'Stay safe while using Logeera. Learn about our safety guidelines, tips for drivers and passengers, and emergency procedures.',
+  description:
+    'Stay safe while using Logeera. Learn about our safety guidelines, tips for drivers and passengers, and emergency procedures.',
   openGraph: {
     title: 'Safety Guidelines - Logeera',
-    description: 'Stay safe while using Logeera. Learn about our safety guidelines and emergency procedures.',
+    description:
+      'Stay safe while using Logeera. Learn about our safety guidelines and emergency procedures.',
     url: '/safety',
   },
   twitter: {
     title: 'Safety Guidelines - Logeera',
-    description: 'Stay safe while using Logeera. Learn about our safety guidelines and emergency procedures.',
+    description:
+      'Stay safe while using Logeera. Learn about our safety guidelines and emergency procedures.',
   },
 };
 
@@ -65,9 +75,21 @@ const safetyTips = [
 ];
 
 const emergencyContacts = [
-  { service: 'Emergency Services', number: '911', description: 'Police, Fire, Medical' },
-  { service: 'Logeera Safety', number: '+1-800-LOGEERA', description: '24/7 Safety Hotline' },
-  { service: 'Roadside Assistance', number: '+1-800-ROADHELP', description: 'Vehicle Breakdown' },
+  {
+    service: 'Emergency Services',
+    number: '911',
+    description: 'Police, Fire, Medical',
+  },
+  {
+    service: 'Logeera Safety',
+    number: '+1-800-LOGEERA',
+    description: '24/7 Safety Hotline',
+  },
+  {
+    service: 'Roadside Assistance',
+    number: '+1-800-ROADHELP',
+    description: 'Vehicle Breakdown',
+  },
 ];
 
 export default function SafetyPage() {
@@ -76,13 +98,14 @@ export default function SafetyPage() {
       {/* Header */}
       <div className="space-y-4 text-center">
         <div className="flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Shield className="h-8 w-8 text-primary" />
+          <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
+            <Shield className="text-primary h-8 w-8" />
           </div>
         </div>
         <h1 className="text-3xl font-bold">Safety Guidelines</h1>
         <p className="text-muted-foreground text-lg">
-          Your safety is our top priority. Follow these guidelines for a secure rideshare experience.
+          Your safety is our top priority. Follow these guidelines for a secure
+          rideshare experience.
         </p>
       </div>
 
@@ -94,7 +117,7 @@ export default function SafetyPage() {
             <Card key={index}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Icon className="h-5 w-5 text-primary" />
+                  <Icon className="text-primary h-5 w-5" />
                   {section.category}
                 </CardTitle>
               </CardHeader>
@@ -102,7 +125,7 @@ export default function SafetyPage() {
                 <ul className="space-y-2">
                   {section.tips.map((tip, tipIndex) => (
                     <li key={tipIndex} className="flex items-start gap-2">
-                      <CheckCircle className="mt-0.5 h-4 w-4 text-green-500 flex-shrink-0" />
+                      <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
                       <span className="text-sm">{tip}</span>
                     </li>
                   ))}
@@ -117,7 +140,7 @@ export default function SafetyPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-primary" />
+            <Phone className="text-primary h-5 w-5" />
             Emergency Contacts
           </CardTitle>
         </CardHeader>
@@ -126,8 +149,12 @@ export default function SafetyPage() {
             {emergencyContacts.map((contact, index) => (
               <div key={index} className="space-y-2 rounded-lg border p-4">
                 <div className="font-semibold">{contact.service}</div>
-                <div className="text-2xl font-bold text-primary">{contact.number}</div>
-                <div className="text-muted-foreground text-sm">{contact.description}</div>
+                <div className="text-primary text-2xl font-bold">
+                  {contact.number}
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  {contact.description}
+                </div>
               </div>
             ))}
           </div>
@@ -138,7 +165,7 @@ export default function SafetyPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5 text-primary" />
+            <Info className="text-primary h-5 w-5" />
             Logeera Safety Features
           </CardTitle>
         </CardHeader>
@@ -146,25 +173,25 @@ export default function SafetyPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Badge variant="secondary">Driver Verification</Badge>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 All drivers undergo background checks and vehicle inspections.
               </p>
             </div>
             <div className="space-y-2">
               <Badge variant="secondary">Real-time Tracking</Badge>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Share your trip progress with trusted contacts in real-time.
               </p>
             </div>
             <div className="space-y-2">
               <Badge variant="secondary">Rating System</Badge>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Rate and review drivers to help maintain quality standards.
               </p>
             </div>
             <div className="space-y-2">
               <Badge variant="secondary">24/7 Support</Badge>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Our safety team is available around the clock for assistance.
               </p>
             </div>
@@ -175,14 +202,15 @@ export default function SafetyPage() {
       {/* Safety Commitment */}
       <Card className="bg-primary/5">
         <CardContent className="pt-6">
-          <div className="text-center space-y-4">
+          <div className="space-y-4 text-center">
             <h2 className="text-xl font-semibold">Our Safety Commitment</h2>
             <p className="text-muted-foreground">
-              Logeera is committed to providing a safe, reliable, and secure rideshare experience. 
-              We continuously improve our safety measures and work with local authorities to ensure 
-              the wellbeing of our community.
+              Logeera is committed to providing a safe, reliable, and secure
+              rideshare experience. We continuously improve our safety measures
+              and work with local authorities to ensure the wellbeing of our
+              community.
             </p>
-            <div className="flex justify-center gap-4 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex justify-center gap-4 text-sm">
               <span>• Trusted by thousands</span>
               <span>• Verified drivers</span>
               <span>• 24/7 monitoring</span>

@@ -46,7 +46,7 @@ export function RequestJoinDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  
+
   // Determine if this is a parcel or passenger trip
   const isParcelTrip = trip.payloadType === 'PARCEL';
 
@@ -61,14 +61,22 @@ export function RequestJoinDialog({
 
     // Check if trip date has passed
     if (trip.departureAt && new Date(trip.departureAt) < new Date()) {
-      toast.error(isParcelTrip ? 'This delivery service has already departed' : 'This trip has already departed');
+      toast.error(
+        isParcelTrip
+          ? 'This delivery service has already departed'
+          : 'This trip has already departed',
+      );
       onOpenChange(false);
       return;
     }
 
     // Check if trip is full
     if (trip.availableSeats === 0) {
-      toast.error(isParcelTrip ? 'This delivery service is at capacity' : 'This trip is full');
+      toast.error(
+        isParcelTrip
+          ? 'This delivery service is at capacity'
+          : 'This trip is full',
+      );
       onOpenChange(false);
       return;
     }
@@ -77,7 +85,11 @@ export function RequestJoinDialog({
     try {
       const response = await RequestsService.create(trip.id);
       if (response.ok) {
-        toast.success(isParcelTrip ? 'Delivery request sent successfully!' : 'Request sent successfully!');
+        toast.success(
+          isParcelTrip
+            ? 'Delivery request sent successfully!'
+            : 'Request sent successfully!',
+        );
         onOpenChange(false);
         // Reset form
         setMessage('');
@@ -93,7 +105,6 @@ export function RequestJoinDialog({
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,7 +122,8 @@ export function RequestJoinDialog({
               {trip.originName} → {trip.destinationName}
             </div>
             <div className="text-muted-foreground text-sm">
-              {isParcelTrip ? 'Delivery service by' : 'with'} {trip.publisher.name}
+              {isParcelTrip ? 'Delivery service by' : 'with'}{' '}
+              {trip.publisher.name}
             </div>
             {isParcelTrip && trip.parcelWeight && (
               <div className="text-muted-foreground text-xs">
@@ -120,17 +132,17 @@ export function RequestJoinDialog({
             )}
           </div>
 
-
           {/* Message */}
           <div className="space-y-2">
             <Label>
-              Message to {isParcelTrip ? 'delivery service provider' : 'driver'} (optional)
+              Message to {isParcelTrip ? 'delivery service provider' : 'driver'}{' '}
+              (optional)
             </Label>
             <Textarea
               placeholder={
-                isParcelTrip 
-                  ? "Describe your parcel and any special delivery instructions..."
-                  : "Introduce yourself and let the driver know any important details..."
+                isParcelTrip
+                  ? 'Describe your parcel and any special delivery instructions...'
+                  : 'Introduce yourself and let the driver know any important details...'
               }
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -139,16 +151,15 @@ export function RequestJoinDialog({
             <div className="text-muted-foreground flex items-center space-x-1 text-xs">
               <MessageCircle className="h-3 w-3" />
               <span>
-                {isParcelTrip 
+                {isParcelTrip
                   ? 'This helps the provider understand your delivery needs'
-                  : 'This helps drivers get to know you better'
-                }
+                  : 'This helps drivers get to know you better'}
               </span>
             </div>
           </div>
 
           {/* Pricing Note */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-center gap-2">
               {isParcelTrip ? (
                 <Package className="h-5 w-5 text-blue-600" />
@@ -156,10 +167,9 @@ export function RequestJoinDialog({
                 <MessageCircle className="h-5 w-5 text-blue-600" />
               )}
               <p className="text-sm text-blue-800">
-                {isParcelTrip 
+                {isParcelTrip
                   ? 'You can discuss pricing and delivery details directly with the service provider once your request is accepted.'
-                  : 'You can discuss pricing and trip details directly with the driver once your request is accepted.'
-                }
+                  : 'You can discuss pricing and trip details directly with the driver once your request is accepted.'}
               </p>
             </div>
           </div>
@@ -178,12 +188,11 @@ export function RequestJoinDialog({
               disabled={isSubmitting}
               className="flex-1"
             >
-              {isSubmitting 
-                ? 'Sending...' 
-                : isParcelTrip 
-                  ? 'Request Delivery' 
-                  : 'Send Request'
-              }
+              {isSubmitting
+                ? 'Sending...'
+                : isParcelTrip
+                  ? 'Request Delivery'
+                  : 'Send Request'}
             </Button>
           </div>
         </div>

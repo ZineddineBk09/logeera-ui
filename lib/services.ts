@@ -19,7 +19,16 @@ export const TripsService = {
 export const RequestsService = {
   create: (tripId: string) =>
     api('/api/requests', { method: 'POST', body: JSON.stringify({ tripId }) }),
-  setStatus: (id: string, status: 'accepted' | 'rejected' | 'in_transit' | 'delivered' | 'completed' | 'cancelled') =>
+  setStatus: (
+    id: string,
+    status:
+      | 'accepted'
+      | 'rejected'
+      | 'in_transit'
+      | 'delivered'
+      | 'completed'
+      | 'cancelled',
+  ) =>
     api(`/api/requests/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status: status.toUpperCase() }),
@@ -45,7 +54,12 @@ export const RatingsService = {
 
 export const ChatService = {
   list: () => api('/api/chat'),
-  between: (userAId: string, userBId: string, create = true, tripId?: string) => {
+  between: (
+    userAId: string,
+    userBId: string,
+    create = true,
+    tripId?: string,
+  ) => {
     const params = new URLSearchParams({
       userAId,
       userBId,

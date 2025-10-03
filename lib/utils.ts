@@ -5,7 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const extractCoordinates = (originGeom = ''): { lat: number; lng: number } => {
+export const extractCoordinates = (
+  originGeom = '',
+): { lat: number; lng: number } => {
   const [lng, lat] = originGeom
     .split('POINT(')[1]
     .split(')')[0]

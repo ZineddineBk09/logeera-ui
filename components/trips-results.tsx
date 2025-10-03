@@ -677,17 +677,21 @@ export function TripsResults() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Cancel {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+              Cancel{' '}
+              {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel this {tripToCancel?.payloadType === 'PARCEL' ? 'delivery' : 'trip'}? This action will cancel all pending and accepted requests and cannot be undone.
+              Are you sure you want to cancel this{' '}
+              {tripToCancel?.payloadType === 'PARCEL' ? 'delivery' : 'trip'}?
+              This action will cancel all pending and accepted requests and
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
               <div className="flex items-center gap-2">
-                <X className="h-5 w-5 text-destructive" />
+                <X className="text-destructive h-5 w-5" />
                 <p className="text-destructive font-medium">
                   This will cancel all active requests
                 </p>
@@ -697,7 +701,7 @@ export function TripsResults() {
             {tripToCancel && (
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <MapPin className="text-muted-foreground h-4 w-4" />
                   <span className="font-medium">
                     {tripToCancel.originName} → {tripToCancel.destinationName}
                   </span>
@@ -706,7 +710,13 @@ export function TripsResults() {
             )}
 
             <p className="text-muted-foreground text-sm">
-              All {tripToCancel?.payloadType === 'PARCEL' ? 'clients' : 'passengers'} with pending or accepted requests will be notified that the {tripToCancel?.payloadType === 'PARCEL' ? 'delivery' : 'trip'} has been cancelled.
+              All{' '}
+              {tripToCancel?.payloadType === 'PARCEL'
+                ? 'clients'
+                : 'passengers'}{' '}
+              with pending or accepted requests will be notified that the{' '}
+              {tripToCancel?.payloadType === 'PARCEL' ? 'delivery' : 'trip'} has
+              been cancelled.
             </p>
           </div>
 
@@ -719,7 +729,8 @@ export function TripsResults() {
               }}
               disabled={isCancelling}
             >
-              Keep {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+              Keep{' '}
+              {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
             </Button>
             <Button
               variant="destructive"
@@ -734,7 +745,8 @@ export function TripsResults() {
               ) : (
                 <>
                   <X className="mr-2 h-4 w-4" />
-                  Cancel {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
+                  Cancel{' '}
+                  {tripToCancel?.payloadType === 'PARCEL' ? 'Delivery' : 'Trip'}
                 </>
               )}
             </Button>

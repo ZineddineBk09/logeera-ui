@@ -1,6 +1,7 @@
 # 🚀 Vercel Deployment Guide for Logeera
 
 ## Prerequisites
+
 - Vercel account
 - PostgreSQL database (Vercel Postgres, Supabase, Neon, etc.)
 - Google Maps API key
@@ -8,11 +9,13 @@
 ## 1. Database Setup
 
 ### Option A: Vercel Postgres (Recommended)
+
 1. Go to your Vercel dashboard
 2. Navigate to "Storage" → "Create Database" → "Postgres"
 3. Copy the connection string
 
 ### Option B: External Database
+
 1. Set up PostgreSQL on Supabase, Neon, or Railway
 2. Copy the connection string
 
@@ -42,9 +45,11 @@ NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your_analytics_id
 ## 3. Database Migration
 
 ### Automatic Migration (Recommended)
+
 The app will automatically run Prisma migrations on deployment if you have the build script configured.
 
 ### Manual Migration
+
 If you need to run migrations manually:
 
 ```bash
@@ -62,6 +67,7 @@ npx prisma generate
 ## 4. Deployment
 
 ### Deploy via Vercel CLI
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -74,16 +80,20 @@ vercel --prod
 ```
 
 ### Deploy via GitHub
+
 1. Connect your GitHub repository to Vercel
 2. Vercel will automatically deploy on every push to main branch
 
 ## 5. Socket.IO Setup
 
 ### Current Setup (Serverless)
+
 The app now uses Vercel-compatible Socket.IO implementation via API routes.
 
 ### For Production Socket.IO
+
 Consider using external services:
+
 - **Pusher** (recommended)
 - **Ably**
 - **Socket.IO Cloud**
@@ -165,6 +175,7 @@ npm run db:seed-api
 ## Support
 
 For deployment issues:
+
 - Check Vercel documentation
 - Review build logs
 - Test locally with production environment variables

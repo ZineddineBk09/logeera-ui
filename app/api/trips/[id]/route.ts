@@ -24,7 +24,7 @@ const updateTripSchema = z.object({
 async function updateTrip(req: AuthenticatedRequest) {
   try {
     const body = await req.json();
-    console.log('=========================')
+    console.log('=========================');
     console.log('body', body);
     const { status } = updateTripSchema.parse(body);
     const tripId = req.nextUrl.pathname.split('/')[3];
@@ -35,11 +35,11 @@ async function updateTrip(req: AuthenticatedRequest) {
         requests: {
           where: {
             status: {
-              in: ['PENDING', 'ACCEPTED', 'IN_TRANSIT', 'DELIVERED']
-            }
-          }
-        }
-      }
+              in: ['PENDING', 'ACCEPTED', 'IN_TRANSIT', 'DELIVERED'],
+            },
+          },
+        },
+      },
     });
 
     if (!trip) {
@@ -59,19 +59,19 @@ async function updateTrip(req: AuthenticatedRequest) {
           where: {
             tripId: tripId,
             status: {
-              in: ['PENDING', 'ACCEPTED', 'IN_TRANSIT', 'DELIVERED']
-            }
+              in: ['PENDING', 'ACCEPTED', 'IN_TRANSIT', 'DELIVERED'],
+            },
           },
           data: {
             status: 'CANCELLED',
-            cancelledAt: new Date()
-          }
+            cancelledAt: new Date(),
+          },
         });
 
         // Update trip status
         const updatedTrip = await tx.trip.update({
           where: { id: tripId },
-          data: { status: 'CANCELLED' }
+          data: { status: 'CANCELLED' },
         });
 
         return updatedTrip;
@@ -82,7 +82,7 @@ async function updateTrip(req: AuthenticatedRequest) {
       // For other status updates
       const updatedTrip = await prisma.trip.update({
         where: { id: tripId },
-        data: { status }
+        data: { status },
       });
 
       return NextResponse.json(updatedTrip);
@@ -91,13 +91,13 @@ async function updateTrip(req: AuthenticatedRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation error', details: error.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
     console.error('Error updating trip:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

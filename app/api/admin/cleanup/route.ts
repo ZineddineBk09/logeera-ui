@@ -10,22 +10,22 @@ async function cleanupExpiredRequests(req: AuthenticatedRequest) {
     }
 
     const now = new Date();
-    
+
     // Find expired requests (requests for trips that have already departed)
     const expiredRequests = await prisma.request.findMany({
       where: {
         status: {
-          in: ['PENDING', 'ACCEPTED']
+          in: ['PENDING', 'ACCEPTED'],
         },
         trip: {
           departureAt: {
-            lt: now
-          }
-        }
+            lt: now,
+          },
+        },
       },
       include: {
-        trip: true
-      }
+        trip: true,
+      },
     });
 
     let deletedCount = 0;
@@ -38,26 +38,26 @@ async function cleanupExpiredRequests(req: AuthenticatedRequest) {
         await prisma.$transaction(async (tx) => {
           await tx.request.update({
             where: { id: request.id },
-            data: { 
+            data: {
               status: 'CANCELLED',
-              cancelledAt: now
-            }
+              cancelledAt: now,
+            },
           });
 
           await tx.trip.update({
             where: { id: request.tripId },
             data: {
               bookedSeats: {
-                decrement: 1
-              }
-            }
+                decrement: 1,
+              },
+            },
           });
         });
         updatedCount++;
       } else {
         // If pending, just delete the request
         await prisma.request.delete({
-          where: { id: request.id }
+          where: { id: request.id },
         });
         deletedCount++;
       }
@@ -67,32 +67,30 @@ async function cleanupExpiredRequests(req: AuthenticatedRequest) {
     const oldRequests = await prisma.request.deleteMany({
       where: {
         status: {
-          in: ['COMPLETED', 'CANCELLED', 'REJECTED']
+          in: ['COMPLETED', 'CANCELLED', 'REJECTED'],
         },
         updatedAt: {
-          lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
-        }
-      }
+          lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+        },
+      },
     });
 
     return NextResponse.json({
       message: 'Cleanup completed successfully',
       expiredRequests: {
         deleted: deletedCount,
-        cancelled: updatedCount
+        cancelled: updatedCount,
       },
       oldRequestsDeleted: oldRequests.count,
-      totalProcessed: expiredRequests.length + oldRequests.count
+      totalProcessed: expiredRequests.length + oldRequests.count,
     });
-
   } catch (error) {
     console.error('Cleanup error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export const POST = withAuth(cleanupExpiredRequests);
-

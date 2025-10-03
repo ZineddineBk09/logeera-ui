@@ -135,18 +135,20 @@ export function RatingDialog({
         <DialogHeader>
           <DialogTitle>Rate Your Experience</DialogTitle>
           <DialogDescription>
-            How was your {tripData?.payloadType === 'PARCEL' ? 'delivery' : 'trip'} experience?
+            How was your{' '}
+            {tripData?.payloadType === 'PARCEL' ? 'delivery' : 'trip'}{' '}
+            experience?
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
           </div>
         ) : tripData ? (
           <div className="space-y-6">
             {/* Trip Information */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="bg-muted/50 space-y-2 rounded-lg p-4">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">
                   {tripData.originName} → {tripData.destinationName}
@@ -162,7 +164,7 @@ export function RatingDialog({
 
             {/* Driver Information */}
             {tripData.publisher && (
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="bg-muted/30 flex items-center gap-3 rounded-lg p-3">
                 <Avatar className="h-12 w-12">
                   <AvatarImage
                     src="/placeholder.svg"
@@ -177,13 +179,15 @@ export function RatingDialog({
                 </Avatar>
                 <div>
                   <p className="font-medium">{tripData.publisher.name}</p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     {tripData.publisher.averageRating &&
                     tripData.publisher.ratingCount ? (
                       <>
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{tripData.publisher.averageRating.toFixed(1)}</span>
+                          <span>
+                            {tripData.publisher.averageRating.toFixed(1)}
+                          </span>
                         </div>
                         <span>({tripData.publisher.ratingCount} reviews)</span>
                       </>
@@ -206,7 +210,7 @@ export function RatingDialog({
                     onClick={() => handleStarClick(value)}
                     onMouseEnter={() => handleStarHover(value)}
                     onMouseLeave={handleStarLeave}
-                    className="p-1 hover:scale-125 transition-transform"
+                    className="p-1 transition-transform hover:scale-125"
                     disabled={isSubmitting}
                   >
                     <Star
@@ -219,7 +223,7 @@ export function RatingDialog({
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground text-center font-medium">
+              <p className="text-muted-foreground text-center text-sm font-medium">
                 {getRatingText(hoveredRating || rating)}
               </p>
             </div>
@@ -236,7 +240,7 @@ export function RatingDialog({
                 maxLength={500}
                 disabled={isSubmitting}
               />
-              <div className="text-right text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-right text-xs">
                 {comment.length}/500
               </div>
             </div>
@@ -268,7 +272,7 @@ export function RatingDialog({
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center">
             Failed to load trip details
           </div>
         )}
@@ -276,4 +280,3 @@ export function RatingDialog({
     </Dialog>
   );
 }
-

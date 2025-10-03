@@ -274,24 +274,28 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
               <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             </div>
           ) : blockedUsersError ? (
-            <div className="text-center py-8">
+            <div className="py-8 text-center">
               <p className="text-muted-foreground text-sm">
                 Failed to load blocked users
               </p>
             </div>
           ) : blockedUsers.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground text-sm">
-                No blocked users
-              </p>
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground text-sm">No blocked users</p>
             </div>
           ) : (
             <div className="space-y-4">
               {blockedUsers.map((blockedUser: any) => (
-                <div key={blockedUser.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={blockedUser.id}
+                  className="flex items-center justify-between rounded-lg border p-4"
+                >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder.svg" alt={blockedUser.user.name} />
+                      <AvatarImage
+                        src="/placeholder.svg"
+                        alt={blockedUser.user.name}
+                      />
                       <AvatarFallback>
                         {blockedUser.user.name
                           .split(' ')
@@ -301,14 +305,18 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
                     </Avatar>
                     <div>
                       <p className="font-medium">{blockedUser.user.name}</p>
-                      <p className="text-muted-foreground text-sm">{blockedUser.user.email}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <p className="text-muted-foreground text-sm">
+                        {blockedUser.user.email}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
                         <Badge variant="secondary">
-                          Blocked {new Date(blockedUser.blockedAt).toLocaleDateString()}
+                          Blocked{' '}
+                          {new Date(blockedUser.blockedAt).toLocaleDateString()}
                         </Badge>
                         {blockedUser.user.averageRating > 0 && (
                           <Badge variant="outline">
-                            ★ {blockedUser.user.averageRating.toFixed(1)} ({blockedUser.user.ratingCount})
+                            ★ {blockedUser.user.averageRating.toFixed(1)} (
+                            {blockedUser.user.ratingCount})
                           </Badge>
                         )}
                       </div>
@@ -317,7 +325,12 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleUnblockUser(blockedUser.user.id, blockedUser.user.name)}
+                    onClick={() =>
+                      handleUnblockUser(
+                        blockedUser.user.id,
+                        blockedUser.user.name,
+                      )
+                    }
                     disabled={isUnblocking === blockedUser.user.id}
                   >
                     {isUnblocking === blockedUser.user.id ? (

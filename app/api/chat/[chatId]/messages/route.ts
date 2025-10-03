@@ -7,39 +7,37 @@ import { NotificationService } from '@/lib/services/notifications';
 // Simple HTML sanitization function
 function sanitizeMessage(content: string): string {
   return content
-    .replace(/&/g, '&amp;')  // Must be first to avoid double encoding
+    .replace(/&/g, '&amp;') // Must be first to avoid double encoding
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
-    // Removed the forward slash encoding to preserve URLs
+  // Removed the forward slash encoding to preserve URLs
 }
 
 const createMessageSchema = z.object({
   senderId: z.string().uuid(),
-  content: z.string()
+  content: z
+    .string()
     .min(1, 'Message cannot be empty')
     .max(1000, 'Message cannot exceed 1000 characters')
-    .refine(
-      (content) => {
-        // Check for basic XSS patterns
-        const xssPatterns = [
-          /<script[^>]*>.*?<\/script>/gi,
-          /javascript:/gi,
-          /on\w+\s*=/gi,
-          /<iframe[^>]*>/gi,
-          /<object[^>]*>/gi,
-          /<embed[^>]*>/gi,
-          /<link[^>]*>/gi,
-          /<meta[^>]*>/gi,
-          /<style[^>]*>.*?<\/style>/gi,
-          /<form[^>]*>/gi,
-          /<input[^>]*>/gi,
-        ];
-        return !xssPatterns.some(pattern => pattern.test(content));
-      },
-      'Message contains potentially harmful content'
-    ),
+    .refine((content) => {
+      // Check for basic XSS patterns
+      const xssPatterns = [
+        /<script[^>]*>.*?<\/script>/gi,
+        /javascript:/gi,
+        /on\w+\s*=/gi,
+        /<iframe[^>]*>/gi,
+        /<object[^>]*>/gi,
+        /<embed[^>]*>/gi,
+        /<link[^>]*>/gi,
+        /<meta[^>]*>/gi,
+        /<style[^>]*>.*?<\/style>/gi,
+        /<form[^>]*>/gi,
+        /<input[^>]*>/gi,
+      ];
+      return !xssPatterns.some((pattern) => pattern.test(content));
+    }, 'Message contains potentially harmful content'),
 });
 
 async function getMessages(req: AuthenticatedRequest) {
@@ -99,7 +97,7 @@ async function createMessage(req: AuthenticatedRequest) {
     if (!sanitizedContent.trim()) {
       return NextResponse.json(
         { error: 'Message content is invalid after sanitization' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,7 +116,7 @@ async function createMessage(req: AuthenticatedRequest) {
         chatId,
         senderId,
         receiverId,
-        sanitizedContent.trim()
+        sanitizedContent.trim(),
       );
     } catch (error) {
       console.error('Error creating chat notification:', error);

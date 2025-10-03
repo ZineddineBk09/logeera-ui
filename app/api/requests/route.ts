@@ -75,7 +75,7 @@ async function createRequest(req: AuthenticatedRequest) {
         'REQUEST_SENT',
         savedRequest.id,
         trip.publisherId,
-        req.user!.userId
+        req.user!.userId,
       );
     } catch (error) {
       console.error('Error creating request notification:', error);
@@ -104,7 +104,7 @@ async function getRequests(req: AuthenticatedRequest) {
     const userId = req.user!.userId;
 
     let whereClause: any = {};
-    
+
     if (tripId) {
       whereClause.tripId = tripId;
     }
@@ -141,8 +141,9 @@ async function getRequests(req: AuthenticatedRequest) {
     });
 
     // Filter to only show requests where user is either the applicant or trip publisher
-    const filteredRequests = requests.filter((request) => 
-      request.applicantId === userId || request.trip.publisherId === userId
+    const filteredRequests = requests.filter(
+      (request) =>
+        request.applicantId === userId || request.trip.publisherId === userId,
     );
 
     return NextResponse.json(filteredRequests);

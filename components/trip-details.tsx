@@ -163,7 +163,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
   const pendingSeats = trip.pendingRequests || 0;
   const acceptedProgress = (acceptedSeats / trip.capacity) * 100;
   const pendingProgress = (pendingSeats / trip.capacity) * 100;
-  
+
   // Determine if this is a parcel or passenger trip
   const isParcelTrip = trip.payloadType === 'PARCEL';
 
@@ -176,32 +176,36 @@ export function TripDetails({ tripId }: TripDetailsProps) {
     price: trip.pricePerSeat, // Real price from database
     duration: distanceData?.duration || 'Calculating...', // Real duration from Google
     distance: distanceData?.distance || 'Calculating...', // Real distance from Google
-    description: isParcelTrip 
+    description: isParcelTrip
       ? `Secure parcel delivery service in a clean, well-maintained ${trip.vehicleType.toLowerCase()}. Professional driver with experience in package handling.`
       : `Comfortable ride in a clean, well-maintained ${trip.vehicleType.toLowerCase()}. Safe driver with experience. Non-smoking vehicle.`,
-    rules: isParcelTrip ? [
-      'Fragile items must be properly packaged',
-      'No hazardous materials',
-      'Maximum weight per parcel: 20kg',
-      'Please be on time for pickup',
-    ] : [
-      'No smoking',
-      'No pets (allergies)',
-      'Maximum 1 bag per person',
-      'Please be on time',
-    ],
-    amenities: isParcelTrip ? [
-      'Secure storage',
-      'Temperature controlled',
-      'Package tracking',
-      'Insurance coverage',
-    ] : [
-      'Air conditioning',
-      'Phone chargers',
-      'Water bottles',
-      'Music requests welcome',
-    ],
-    pickupNotes: isParcelTrip 
+    rules: isParcelTrip
+      ? [
+          'Fragile items must be properly packaged',
+          'No hazardous materials',
+          'Maximum weight per parcel: 20kg',
+          'Please be on time for pickup',
+        ]
+      : [
+          'No smoking',
+          'No pets (allergies)',
+          'Maximum 1 bag per person',
+          'Please be on time',
+        ],
+    amenities: isParcelTrip
+      ? [
+          'Secure storage',
+          'Temperature controlled',
+          'Package tracking',
+          'Insurance coverage',
+        ]
+      : [
+          'Air conditioning',
+          'Phone chargers',
+          'Water bottles',
+          'Music requests welcome',
+        ],
+    pickupNotes: isParcelTrip
       ? "I'll wait up to 10 minutes at the pickup location. Please have your parcel ready and properly packaged!"
       : "I'll wait up to 10 minutes at the pickup location. Please be ready!",
     // Use real coordinates from the database
@@ -289,7 +293,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
 
   const handleCancelTrip = async () => {
     if (!trip) return;
-    
+
     setIsCancelling(true);
     try {
       const response = await api(`/api/trips/${trip.id}`, {
@@ -482,36 +486,35 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   <div>
                     <div className="text-muted-foreground">Capacity</div>
                     <div className="font-medium">
-                      {isParcelTrip 
+                      {isParcelTrip
                         ? `${trip.parcelWeight || trip.capacity}kg capacity`
-                        : `${trip.capacity} seats`
-                      }
+                        : `${trip.capacity} seats`}
                     </div>
                   </div>
                 </div>
 
                 {/* Only show message and call buttons if user is not the trip publisher */}
                 {user?.id !== trip.publisher.id && (
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-transparent"
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent"
                       onClick={handleMessage}
-                  >
+                    >
                       <MessageCircle className="mr-2 h-4 w-4" />
-                    Message
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-transparent"
+                      Message
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent"
                       onClick={handleCall}
-                  >
+                    >
                       <Phone className="mr-2 h-4 w-4" />
-                    Call
-                  </Button>
-                </div>
+                      Call
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -601,7 +604,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                   (() => {
                     const isPastTrip = new Date(trip.departureAt) < new Date();
                     const isFullTrip = tripData.availableSeats === 0;
-                    
+
                     if (isPastTrip) {
                       return (
                         <Button className="w-full" size="lg" disabled>
@@ -609,7 +612,7 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                         </Button>
                       );
                     }
-                    
+
                     if (isFullTrip) {
                       return (
                         <Button className="w-full" size="lg" disabled>
@@ -617,19 +620,19 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                         </Button>
                       );
                     }
-                    
+
                     return (
-                <Button
-                  className="w-full"
-                  size="lg"
+                      <Button
+                        className="w-full"
+                        size="lg"
                         onClick={handleRequestToJoin}
-                >
+                      >
                         {isParcelTrip ? 'Request Delivery' : 'Request to Join'}
-                </Button>
+                      </Button>
                     );
                   })()
                 ) : (
-                  <div className="py-4 space-y-3">
+                  <div className="space-y-3 py-4">
                     <p className="text-muted-foreground text-center text-sm">
                       This is your {isParcelTrip ? 'delivery service' : 'trip'}
                     </p>
@@ -648,7 +651,8 @@ export function TripDetails({ tripId }: TripDetailsProps) {
                 )}
 
                 <p className="text-muted-foreground text-center text-xs">
-                  You won't be charged until your {isParcelTrip ? 'delivery' : 'booking'} request is accepted
+                  You won't be charged until your{' '}
+                  {isParcelTrip ? 'delivery' : 'booking'} request is accepted
                 </p>
               </CardContent>
             </Card>
@@ -735,14 +739,15 @@ export function TripDetails({ tripId }: TripDetailsProps) {
           <DialogHeader>
             <DialogTitle>Cancel Trip</DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel this trip? This action will cancel all pending and accepted requests and cannot be undone.
+              Are you sure you want to cancel this trip? This action will cancel
+              all pending and accepted requests and cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
               <div className="flex items-center gap-2">
-                <X className="h-5 w-5 text-destructive" />
+                <X className="text-destructive h-5 w-5" />
                 <p className="text-destructive font-medium">
                   This will cancel all active requests
                 </p>
@@ -750,20 +755,21 @@ export function TripDetails({ tripId }: TripDetailsProps) {
             </div>
 
             <p className="text-muted-foreground text-sm">
-              All passengers with pending or accepted requests will be notified that the trip has been cancelled.
+              All passengers with pending or accepted requests will be notified
+              that the trip has been cancelled.
             </p>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowCancelDialog(false)}
               disabled={isCancelling}
             >
               Keep Trip
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleCancelTrip}
               disabled={isCancelling}
             >

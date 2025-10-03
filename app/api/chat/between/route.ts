@@ -23,41 +23,45 @@ async function handler(req: AuthenticatedRequest) {
         ],
       },
       include: {
-        trip: tripId ? {
-          select: {
-            id: true,
-            originName: true,
-            destinationName: true,
-            departureAt: true,
-            payloadType: true,
-            parcelWeight: true,
-            passengerCount: true,
-            status: true,
-          }
-        } : false,
+        trip: tripId
+          ? {
+              select: {
+                id: true,
+                originName: true,
+                destinationName: true,
+                departureAt: true,
+                payloadType: true,
+                parcelWeight: true,
+                passengerCount: true,
+                status: true,
+              },
+            }
+          : false,
       },
     });
 
     if (!chat && create) {
       chat = await prisma.chat.create({
-        data: { 
-          userAId, 
+        data: {
+          userAId,
           userBId,
           tripId: tripId || null,
         },
         include: {
-          trip: tripId ? {
-            select: {
-              id: true,
-              originName: true,
-              destinationName: true,
-              departureAt: true,
-              payloadType: true,
-              parcelWeight: true,
-              passengerCount: true,
-              status: true,
-            }
-          } : false,
+          trip: tripId
+            ? {
+                select: {
+                  id: true,
+                  originName: true,
+                  destinationName: true,
+                  departureAt: true,
+                  payloadType: true,
+                  parcelWeight: true,
+                  passengerCount: true,
+                  status: true,
+                },
+              }
+            : false,
         },
       });
     }
