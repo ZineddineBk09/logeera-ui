@@ -233,7 +233,7 @@ export function PublishWizard() {
       <div className="container mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
         <div className="mb-8 space-y-4 text-center">
-          <h1 className="text-3xl font-bold">Publish Your Trip</h1>
+          <h1 className="text-3xl font-bold">Add Your Trip</h1>
           <p className="text-muted-foreground">
             Share your journey and help others travel sustainably
           </p>
@@ -654,11 +654,11 @@ export function PublishWizard() {
               {isPublishing ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Publishing...</span>
+                  <span>Adding...</span>
                 </>
               ) : (
                 <>
-                  <span>Publish Trip</span>
+                  <span>Add Trip</span>
                   <Check className="h-4 w-4" />
                 </>
               )}

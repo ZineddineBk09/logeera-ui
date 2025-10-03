@@ -86,7 +86,7 @@ const faqCategories = [
       {
         question: 'How do I publish a trip?',
         answer:
-          'Click "Publish Trip" and fill in your departure/arrival locations, date, time, available seats, and price per seat. Add any additional details and publish.',
+          'Click "Add Trip" and fill in your departure/arrival locations, date, time, available seats, and price per seat. Add any additional details and publish.',
       },
       {
         question: 'How do I get paid?',

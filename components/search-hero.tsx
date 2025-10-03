@@ -436,7 +436,7 @@ export function SearchHero() {
                 }}
               >
                 <Car className="mr-2 h-4 w-4" />
-                Publish Your Trip
+                Add Your Trip
               </Button>
             </div>
           </CardContent>

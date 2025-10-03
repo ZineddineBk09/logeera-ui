@@ -260,7 +260,7 @@ export default function DashboardPage() {
                 <Button asChild className="h-20 flex-col">
                   <Link href={ROUTES.PUBLISH}>
                     <Car className="mb-2 h-6 w-6" />
-                    Publish Trip
+                    Add Trip
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="h-20 flex-col">
@@ -358,7 +358,7 @@ export default function DashboardPage() {
                     No upcoming trips
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    Publish a trip to get started
+                    Add a trip to get started
                   </p>
                 </div>
               ) : (

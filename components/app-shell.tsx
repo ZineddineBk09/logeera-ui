@@ -88,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     href="/publish"
                     className="hover:text-foreground transition-colors"
                   >
-                    Publish a Trip
+                    Add a Trip
                   </Link>
                 </li>
                 <li>
