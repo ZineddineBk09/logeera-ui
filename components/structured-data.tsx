@@ -100,10 +100,69 @@ export const serviceStructuredData = {
         '@type': 'Offer',
         itemOffered: {
           '@type': 'Service',
-          name: 'Private Rides',
-          description: 'Book entire vehicle for private travel',
+          name: 'Parcel Delivery',
+          description: 'Send parcels with trusted drivers',
         },
       },
     ],
   },
 };
+
+// FAQ structured data generator
+export function generateFAQStructuredData(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+// Trip structured data generator
+export function generateTripStructuredData(trip: {
+  originName: string;
+  destinationName: string;
+  departureAt: Date;
+  pricePerSeat: number;
+  capacity: number;
+  payloadType: 'PARCEL' | 'PASSENGER';
+  publisher: { name: string; averageRating: number };
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TripAction',
+    name: `${trip.originName} to ${trip.destinationName}`,
+    description: `${trip.payloadType === 'PARCEL' ? 'Parcel delivery' : 'Rideshare trip'} from ${trip.originName} to ${trip.destinationName}`,
+    fromLocation: {
+      '@type': 'Place',
+      name: trip.originName,
+    },
+    toLocation: {
+      '@type': 'Place',
+      name: trip.destinationName,
+    },
+    startTime: trip.departureAt.toISOString(),
+    agent: {
+      '@type': 'Person',
+      name: trip.publisher.name,
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: trip.publisher.averageRating,
+        bestRating: 5,
+      },
+    },
+    offers: {
+      '@type': 'Offer',
+      price: trip.pricePerSeat,
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      validFrom: new Date().toISOString(),
+    },
+  };
+}

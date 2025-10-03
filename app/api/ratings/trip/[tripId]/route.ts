@@ -23,7 +23,7 @@ async function createRating(req: AuthenticatedRequest) {
     const body = await req.json();
     const { value, comment } = createRatingSchema.parse(body);
 
-    // Check if trip exists and is completed
+    // Check if trip exists and get user's request
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
@@ -33,7 +33,6 @@ async function createRating(req: AuthenticatedRequest) {
         requests: {
           where: {
             applicantId: reviewerUserId,
-            status: 'ACCEPTED',
           },
         },
       },
@@ -43,19 +42,11 @@ async function createRating(req: AuthenticatedRequest) {
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
     }
 
-    // Check if trip is completed
-    if (trip.status !== 'COMPLETED') {
-      return NextResponse.json(
-        { error: 'Can only rate completed trips' },
-        { status: 400 },
-      );
-    }
-
     // Check if user was part of this trip (either as publisher or accepted passenger)
     const isPublisher = trip.publisherId === reviewerUserId;
-    const wasPassenger = trip.requests.length > 0;
+    const userRequest = trip.requests.length > 0 ? trip.requests[0] : null;
 
-    if (!isPublisher && !wasPassenger) {
+    if (!isPublisher && !userRequest) {
       return NextResponse.json(
         { error: 'You can only rate trips you participated in' },
         { status: 403 },
@@ -66,6 +57,15 @@ async function createRating(req: AuthenticatedRequest) {
     if (trip.publisherId === reviewerUserId) {
       return NextResponse.json(
         { error: 'Cannot rate your own trip' },
+        { status: 400 },
+      );
+    }
+
+    // Check if the user's request is completed
+    // (User can rate once their individual request journey is complete)
+    if (userRequest && userRequest.status !== 'COMPLETED') {
+      return NextResponse.json(
+        { error: 'Can only rate after your request is completed' },
         { status: 400 },
       );
     }

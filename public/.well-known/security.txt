@@ -1,0 +1,6 @@
+# Security Contact Information
+Contact: mailto:security@logeera.com
+Expires: 2025-12-31T23:59:59.000Z
+Preferred-Languages: en, fr, ar
+Canonical: https://logeera.com/.well-known/security.txt
+
