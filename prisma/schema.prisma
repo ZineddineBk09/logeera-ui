@@ -250,6 +250,7 @@ enum NotificationType {
   REQUEST_IN_TRANSIT
   REQUEST_DELIVERED
   REQUEST_COMPLETED
+  RATING_REQUIRED
 }
 
 model Notification {

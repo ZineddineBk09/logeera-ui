@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Bell,
   MessageCircle,
@@ -10,6 +10,7 @@ import {
   Truck,
   CheckCircle,
   X,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +28,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-import { NotificationType } from '@prisma/client';
+import { RatingDialog } from '@/components/rating-dialog';
 
 interface Notification {
   id: string;
@@ -39,7 +40,8 @@ interface Notification {
     | 'REQUEST_CANCELLED'
     | 'REQUEST_IN_TRANSIT'
     | 'REQUEST_DELIVERED'
-    | 'REQUEST_COMPLETED';
+    | 'REQUEST_COMPLETED'
+    | 'RATING_REQUIRED';
   title: string;
   message: string;
   userId: string;
@@ -57,8 +59,30 @@ export function Notifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ratingTripId, setRatingTripId] = useState<string | null>(null);
+  const [previousUnreadCount, setPreviousUnreadCount] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { user } = useAuth();
   const router = useRouter();
+
+  // Initialize audio element
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio('/notification-sound.mp3');
+      audioRef.current.volume = 1; // Set volume to 100%
+    }
+  }, []);
+
+  // Play notification sound when new notifications arrive
+  const playNotificationSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch((error) => {
+        console.log('Could not play notification sound:', error);
+        // Browser might block autoplay, this is fine
+      });
+    }
+  };
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -69,8 +93,16 @@ export function Notifications() {
       const response = await api('/api/notifications');
       if (response.ok) {
         const data = await response.json();
+        const newUnreadCount = data.unreadCount || 0;
+        
+        // Play sound if there are new notifications
+        if (previousUnreadCount > 0 && newUnreadCount > previousUnreadCount) {
+          playNotificationSound();
+        }
+        
         setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
+        setUnreadCount(newUnreadCount);
+        setPreviousUnreadCount(newUnreadCount);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -153,6 +185,15 @@ export function Notifications() {
       case 'REQUEST_COMPLETED':
         router.push(`/requests?requestId=${notification.requestId}`);
         break;
+      case 'RATING_REQUIRED':
+        // Open rating dialog instead of navigating
+        if (notification.tripId) {
+          setRatingTripId(notification.tripId);
+          setShowRatingDialog(true);
+        } else {
+          router.push('/requests?tab=ratings');
+        }
+        break;
     }
 
     setIsOpen(false);
@@ -175,6 +216,8 @@ export function Notifications() {
         return <Package className="h-4 w-4 text-blue-500" />;
       case 'REQUEST_DELIVERED':
         return <Truck className="h-4 w-4 text-purple-500" />;
+      case 'RATING_REQUIRED':
+        return <Star className="h-4 w-4 text-yellow-500" />;
       case 'REQUEST_COMPLETED':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
@@ -196,6 +239,7 @@ export function Notifications() {
   if (!user) return null;
 
   return (
+    <>
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger>
         <Button variant="ghost" size="icon" className="relative">
@@ -286,5 +330,20 @@ export function Notifications() {
         </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    {/* Rating Dialog */}
+    {ratingTripId && (
+      <RatingDialog
+        open={showRatingDialog}
+        onOpenChange={setShowRatingDialog}
+        tripId={ratingTripId}
+        onRatingSubmitted={() => {
+          setShowRatingDialog(false);
+          setRatingTripId(null);
+          fetchNotifications(); // Refresh notifications
+        }}
+      />
+    )}
+    </>
   );
 }

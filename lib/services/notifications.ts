@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/database';
 
 export interface CreateNotificationData {
-  type: 'CHAT_MESSAGE' | 'REQUEST_SENT' | 'REQUEST_ACCEPTED' | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_IN_TRANSIT' | 'REQUEST_DELIVERED' | 'REQUEST_COMPLETED';
+  type: 'CHAT_MESSAGE' | 'REQUEST_SENT' | 'REQUEST_ACCEPTED' | 'REQUEST_REJECTED' | 'REQUEST_CANCELLED' | 'REQUEST_IN_TRANSIT' | 'REQUEST_DELIVERED' | 'REQUEST_COMPLETED' | 'RATING_REQUIRED';
   title: string;
   message: string;
   userId: string; // User who receives the notification
@@ -128,6 +128,42 @@ export class NotificationService {
       fromUserId: senderId,
       requestId: requestId,
       tripId: request.tripId,
+    });
+  }
+
+  static async createRatingNotification(
+    tripId: string,
+    requestId: string,
+    applicantId: string,
+    publisherId: string
+  ) {
+    // Get trip and request details
+    const request = await prisma.request.findUnique({
+      where: { id: requestId },
+      include: {
+        trip: { 
+          select: { 
+            originName: true, 
+            destinationName: true, 
+            payloadType: true,
+          } 
+        },
+      },
+    });
+
+    if (!request) return;
+
+    const tripInfo = `${request.trip.originName} → ${request.trip.destinationName}`;
+    const isParcel = request.trip.payloadType === 'PARCEL';
+
+    return this.createNotification({
+      type: 'RATING_REQUIRED',
+      title: 'Rate Your Experience',
+      message: `Please rate your ${isParcel ? 'delivery experience' : 'trip'} for ${tripInfo}`,
+      userId: applicantId,
+      fromUserId: publisherId,
+      requestId: requestId,
+      tripId: tripId,
     });
   }
 }

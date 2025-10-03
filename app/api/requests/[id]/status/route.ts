@@ -205,8 +205,16 @@ async function handler(req: AuthenticatedRequest) {
           request.applicantId,
           req.user!.userId
         );
+
+        // Also send a rating notification to the applicant
+        await NotificationService.createRatingNotification(
+          request.tripId,
+          requestId,
+          request.applicantId,
+          req.user!.userId
+        );
       } catch (error) {
-        console.error('Error creating request notification:', error);
+        console.error('Error creating notifications:', error);
         // Don't fail the request update if notification fails
       }
 

@@ -16,7 +16,7 @@ async function getPendingRatings(req: AuthenticatedRequest) {
         requests: {
           some: {
             applicantId: userId,
-            status: 'ACCEPTED',
+            status: 'COMPLETED',
           },
         },
         NOT: {
@@ -39,7 +39,7 @@ async function getPendingRatings(req: AuthenticatedRequest) {
         requests: {
           where: {
             applicantId: userId,
-            status: 'ACCEPTED',
+            status: 'COMPLETED',
           },
           select: {
             id: true,
