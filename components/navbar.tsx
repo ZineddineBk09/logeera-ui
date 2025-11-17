@@ -53,7 +53,7 @@ import { Notifications } from '@/components/notifications';
 const baseNavigation = [
   { name: 'Home', href: '/', icon: Search },
   { name: 'Trips', href: '/trips', icon: MapPin },
-  { name: 'Publish', href: '/publish', icon: Car },
+  { name: 'Add Trip', href: '/publish', icon: Car },
   { name: 'Requests', href: '/requests', icon: FileText },
   { name: 'Chats', href: '/chats', icon: MessageCircle },
 ];
