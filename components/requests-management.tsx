@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion } from 'framer-motion';
 import {
@@ -21,6 +20,7 @@ import {
   Truck,
   CheckCircle,
   XCircle,
+  Circle,
 } from 'lucide-react';
 import { RequestsService, ChatService } from '@/lib/services';
 import { toast } from 'sonner';
@@ -85,8 +85,90 @@ interface RequestOutgoing {
   createdAt: string;
 }
 
+// Helper function to get progress steps for a request
+function getProgressSteps(status: string, payloadType: 'PARCEL' | 'PASSENGER') {
+  // Special handling for rejected/cancelled requests
+  if (status === 'REJECTED' || status === 'CANCELLED') {
+    const steps = [
+      {
+        key: 'pending',
+        icon: Circle,
+        label: 'Pending',
+        completed: true,
+        isRejected: true,
+      },
+      {
+        key: 'accepted',
+        icon: CheckCircle,
+        label: 'Accepted',
+        completed: true,
+        isRejected: true,
+      },
+      {
+        key: 'in_transit',
+        icon: payloadType === 'PARCEL' ? Package : Truck,
+        label: payloadType === 'PARCEL' ? 'Parcel Received' : 'In Transit',
+        completed: true,
+        isRejected: true,
+      },
+      {
+        key: 'delivered',
+        icon: CheckCircle,
+        label: payloadType === 'PARCEL' ? 'Delivered' : 'Arrived',
+        completed: true,
+        isRejected: true,
+      },
+      {
+        key: 'rejected',
+        icon: XCircle,
+        label: status === 'REJECTED' ? 'Rejected' : 'Cancelled',
+        completed: true,
+        isRejected: true,
+        isFinal: true,
+      },
+    ];
+    return steps;
+  }
+
+  // Normal progress steps for active requests
+  const steps = [
+    { key: 'pending', icon: Circle, label: 'Pending', completed: false },
+    { key: 'accepted', icon: CheckCircle, label: 'Accepted', completed: false },
+    {
+      key: 'in_transit',
+      icon: payloadType === 'PARCEL' ? Package : Truck,
+      label: payloadType === 'PARCEL' ? 'Parcel Received' : 'In Transit',
+      completed: false,
+    },
+    {
+      key: 'delivered',
+      icon: CheckCircle,
+      label: payloadType === 'PARCEL' ? 'Delivered' : 'Arrived',
+      completed: false,
+    },
+    { key: 'completed', icon: Star, label: 'Completed', completed: false },
+  ];
+
+  const statusMap: Record<string, number> = {
+    PENDING: 0,
+    ACCEPTED: 1,
+    IN_TRANSIT: 2,
+    DELIVERED: 3,
+    COMPLETED: 4,
+  };
+
+  const currentStep = statusMap[status] ?? -1;
+
+  return steps.map((step, index) => ({
+    ...step,
+    completed: index <= currentStep && currentStep >= 0,
+    current: index === currentStep,
+    isRejected: false,
+    isFinal: false,
+  }));
+}
+
 export function RequestsManagement() {
-  const [activeTab, setActiveTab] = useState('incoming');
   const router = useRouter();
   const { user } = useAuth();
   const [incoming, setIncoming] = useState<RequestIncoming[]>([]);
@@ -462,60 +544,90 @@ export function RequestsManagement() {
     }
   };
 
+  // Combine all requests into a single list
+  const allRequests = [
+    ...incoming.map((req) => ({ ...req, type: 'incoming' as const })),
+    ...outgoing.map((req) => ({ ...req, type: 'outgoing' as const })),
+  ].sort((a, b) => {
+    // Sort by creation date, newest first
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  const totalRequests = useMemo(() => allRequests.length, [allRequests]);
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-foreground mb-2 text-3xl font-bold">
-          Trip Requests
-        </h1>
-        <p className="text-muted-foreground">
+        <div className="flex items-center gap-3">
+          <h1 className="text-foreground text-xl font-bold md:text-2xl lg:text-3xl">
+            Requests
+          </h1>
+          {totalRequests > 0 && (
+            <Badge variant="secondary" className="text-lg">
+              {totalRequests}
+            </Badge>
+          )}
+        </div>
+        <p className="text-muted-foreground mt-2">
           Manage your incoming and outgoing trip requests
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="incoming" className="flex items-center gap-2">
-            Incoming
-            <Badge variant="secondary" className="ml-1">
-              {incoming.filter((r) => r.status === 'PENDING').length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="outgoing" className="flex items-center gap-2">
-            Outgoing
-            <Badge variant="secondary" className="ml-1">
-              {outgoing.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="ratings" className="flex items-center gap-2">
-            Rate Trips
-            <Badge variant="secondary" className="ml-1">
-              {pendingRatings.length}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+      <div className="mt-6 space-y-4">
+        {loading ? (
+          <Card>
+            <CardContent className="text-muted-foreground py-12 text-center text-sm">
+              Loading...
+            </CardContent>
+          </Card>
+        ) : allRequests.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Users className="text-muted-foreground mb-4 h-12 w-12" />
+              <h3 className="mb-2 text-lg font-semibold">No requests</h3>
+              <p className="text-muted-foreground text-center">
+                Your incoming and outgoing requests will appear here.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          allRequests.map((request) => {
+            const isIncoming = request.type === 'incoming';
+            let requestData: RequestIncoming | RequestOutgoing;
+            let otherUser: {
+              id: string;
+              name: string;
+              email: string;
+              averageRating: number;
+              ratingCount: number;
+            };
+            let trip: {
+              id: string;
+              originName: string;
+              destinationName: string;
+              departureAt: string;
+              capacity: number;
+              vehicleType: string;
+              payloadType: 'PARCEL' | 'PASSENGER';
+              parcelWeight?: number;
+              passengerCount?: number;
+            };
 
-        <TabsContent value="incoming" className="mt-6 space-y-4">
-          {loading ? (
-            <Card>
-              <CardContent className="text-muted-foreground py-12 text-center text-sm">
-                Loading...
-              </CardContent>
-            </Card>
-          ) : incoming.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Users className="text-muted-foreground mb-4 h-12 w-12" />
-                <h3 className="mb-2 text-lg font-semibold">
-                  No incoming requests
-                </h3>
-                <p className="text-muted-foreground text-center">
-                  When people request to join your trips, they'll appear here.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            incoming.map((request) => (
+            if (isIncoming) {
+              requestData = request as RequestIncoming & { type: 'incoming' };
+              otherUser = requestData.applicant;
+              trip = requestData.trip;
+            } else {
+              requestData = request as RequestOutgoing & { type: 'outgoing' };
+              otherUser = requestData.trip.publisher;
+              trip = requestData.trip;
+            }
+            const progressSteps = getProgressSteps(
+              requestData.status,
+              trip.payloadType,
+            );
+
+            return (
               <motion.div
                 key={request.id}
                 whileHover={{ y: -2 }}
@@ -528,74 +640,180 @@ export function RequestsManagement() {
                         <Avatar className="h-12 w-12">
                           <AvatarImage
                             src="/placeholder.svg"
-                            alt={request.applicant.name}
+                            alt={otherUser.name}
                           />
                           <AvatarFallback>
-                            {request.applicant.name
+                            {otherUser.name
                               .split(' ')
-                              .map((n) => n[0])
+                              .map((n: string) => n[0])
                               .join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h3 className="text-foreground font-semibold">
-                            {request.applicant.name}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-foreground font-semibold">
+                              {otherUser.name}
+                            </h3>
+                            {isIncoming && (
+                              <Badge variant="outline" className="text-xs">
+                                Incoming
+                              </Badge>
+                            )}
+                            {!isIncoming && (
+                              <Badge variant="secondary" className="text-xs">
+                                Outgoing
+                              </Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-muted-foreground text-sm">
-                              {request.applicant.averageRating.toFixed(1)} (
-                              {request.applicant.ratingCount} reviews)
+                              {otherUser.averageRating.toFixed(1)} (
+                              {otherUser.ratingCount} reviews)
                             </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-xs">
-                          {new Date(request.createdAt).toLocaleDateString()}
+                          {new Date(requestData.createdAt).toLocaleDateString()}
                         </Badge>
                         <Badge
                           variant={
-                            request.status === 'PENDING'
+                            requestData.status === 'PENDING'
                               ? 'secondary'
-                              : request.status === 'ACCEPTED'
+                              : requestData.status === 'ACCEPTED'
                                 ? 'default'
-                                : request.status === 'IN_TRANSIT'
+                                : requestData.status === 'IN_TRANSIT'
                                   ? 'default'
-                                  : request.status === 'DELIVERED'
+                                  : requestData.status === 'DELIVERED'
                                     ? 'default'
-                                    : request.status === 'COMPLETED'
+                                    : requestData.status === 'COMPLETED'
                                       ? 'default'
                                       : 'destructive'
                           }
                           className="text-xs capitalize"
                         >
-                          {processingRequests.has(request.id)
+                          {processingRequests.has(requestData.id)
                             ? 'Processing...'
-                            : request.status.toLowerCase().replace('_', ' ')}
+                            : requestData.status
+                                .toLowerCase()
+                                .replace('_', ' ')}
                         </Badge>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm">
+                    {/* Progress Indicator */}
+                    {requestData.status === 'REJECTED' ||
+                    requestData.status === 'CANCELLED' ? (
+                      <div className="p-2">
+                        <div className="flex items-center justify-between">
+                          {progressSteps.map((step, index) => {
+                            const Icon = step.icon;
+                            const isLast = index === progressSteps.length - 1;
+                            return (
+                              <div
+                                key={step.key}
+                                className="flex flex-1 items-center"
+                              >
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                                      step.isRejected
+                                        ? (step as any).isFinal
+                                          ? 'bg-red-600 text-white'
+                                          : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                                        : 'bg-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <span
+                                    className={`mt-1 text-xs ${
+                                      step.isRejected
+                                        ? (step as any).isFinal
+                                          ? 'font-semibold text-red-600 dark:text-red-400'
+                                          : 'font-medium text-red-600 dark:text-red-400'
+                                        : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    {step.label}
+                                  </span>
+                                </div>
+                                {!isLast && (
+                                  <div
+                                    className={`mx-2 -mt-3 h-0.5 flex-1 ${
+                                      step.isRejected
+                                        ? 'bg-red-300 dark:bg-red-800'
+                                        : 'bg-muted'
+                                    }`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-muted/30 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          {progressSteps.map((step, index) => {
+                            const Icon = step.icon;
+                            const isLast = index === progressSteps.length - 1;
+                            return (
+                              <div
+                                key={step.key}
+                                className="flex flex-1 items-center"
+                              >
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                                      step.completed
+                                        ? 'bg-primary text-primary-foreground'
+                                        : (step as any).current
+                                          ? 'border-primary bg-background text-primary border-2'
+                                          : 'bg-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <span
+                                    className={`mt-1 text-xs ${
+                                      step.completed || (step as any).current
+                                        ? 'text-foreground font-medium'
+                                        : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    {step.label}
+                                  </span>
+                                </div>
+                                {!isLast && (
+                                  <div
+                                    className={`mx-2 -mt-3 h-0.5 flex-1 ${
+                                      step.completed ? 'bg-primary' : 'bg-muted'
+                                    }`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-4 text-sm lg:flex-row lg:items-center">
                       <div className="flex items-center gap-1">
                         <MapPin className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {request.trip.originName} →{' '}
-                          {request.trip.destinationName}
+                          {trip.originName} → {trip.destinationName}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {new Date(
-                            request.trip.departureAt,
-                          ).toLocaleDateString()}{' '}
-                          at{' '}
-                          {new Date(
-                            request.trip.departureAt,
-                          ).toLocaleTimeString([], {
+                          {new Date(trip.departureAt).toLocaleDateString()} at{' '}
+                          {new Date(trip.departureAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
@@ -604,30 +822,32 @@ export function RequestsManagement() {
                       <div className="flex items-center gap-1">
                         <Users className="text-muted-foreground h-4 w-4" />
                         <span>
-                          {request.trip.payloadType === 'PARCEL'
-                            ? `${request.trip.parcelWeight || request.trip.capacity}kg capacity`
-                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`}
+                          {trip.payloadType === 'PARCEL'
+                            ? `${trip.parcelWeight || trip.capacity}kg capacity`
+                            : `${trip.capacity} seat${trip.capacity > 1 ? 's' : ''}`}
                         </span>
                       </div>
                     </div>
 
                     <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-foreground text-sm">
-                        Request to{' '}
-                        {request.trip.payloadType === 'PARCEL'
-                          ? 'use this delivery service'
-                          : 'join this trip'}
+                        {isIncoming
+                          ? `Request to ${trip.payloadType === 'PARCEL' ? 'use this delivery service' : 'join this trip'}`
+                          : `Your request to ${trip.payloadType === 'PARCEL' ? 'use this delivery service' : 'join this trip'}`}
                       </p>
                     </div>
 
-                    {request.status === 'PENDING' && (
+                    {/* Action Buttons - Incoming Requests */}
+                    {isIncoming && requestData.status === 'PENDING' && (
                       <div className="flex gap-2 pt-2">
                         <Button
-                          onClick={() => handleAccept(request)}
+                          onClick={() =>
+                            handleAccept(requestData as RequestIncoming)
+                          }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <Check className="mr-2 h-4 w-4" />
@@ -636,11 +856,13 @@ export function RequestsManagement() {
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => handleDecline(request)}
+                          onClick={() =>
+                            handleDecline(requestData as RequestIncoming)
+                          }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <X className="mr-2 h-4 w-4" />
@@ -651,27 +873,25 @@ export function RequestsManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            handleMessage(
-                              request.applicant.id,
-                              request.applicant.name,
-                              request.trip.id,
-                            )
+                            handleMessage(otherUser.id, otherUser.name, trip.id)
                           }
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
 
-                    {request.status === 'ACCEPTED' && (
+                    {isIncoming && requestData.status === 'ACCEPTED' && (
                       <div className="flex gap-2 pt-2">
                         <Button
-                          onClick={() => handleReceived(request)}
+                          onClick={() =>
+                            handleReceived(requestData as RequestIncoming)
+                          }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <Package className="mr-2 h-4 w-4" />
@@ -680,11 +900,13 @@ export function RequestsManagement() {
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => handleCancelAccepted(request)}
+                          onClick={() =>
+                            handleCancelAccepted(requestData as RequestIncoming)
+                          }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <XCircle className="mr-2 h-4 w-4" />
@@ -695,29 +917,25 @@ export function RequestsManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            handleMessage(
-                              request.applicant.id,
-                              request.applicant.name,
-                              request.trip.id,
-                            )
+                            handleMessage(otherUser.id, otherUser.name, trip.id)
                           }
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
 
-                    {request.status === 'IN_TRANSIT' && (
+                    {isIncoming && requestData.status === 'IN_TRANSIT' && (
                       <div className="flex gap-2 pt-2">
                         <Button
                           onClick={() =>
-                            handleStatusUpdate(request.id, 'DELIVERED')
+                            handleStatusUpdate(requestData.id, 'DELIVERED')
                           }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <Truck className="mr-2 h-4 w-4" />
@@ -728,29 +946,25 @@ export function RequestsManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            handleMessage(
-                              request.applicant.id,
-                              request.applicant.name,
-                              request.trip.id,
-                            )
+                            handleMessage(otherUser.id, otherUser.name, trip.id)
                           }
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
 
-                    {request.status === 'DELIVERED' && (
+                    {isIncoming && requestData.status === 'DELIVERED' && (
                       <div className="flex gap-2 pt-2">
                         <Button
                           onClick={() =>
-                            handleStatusUpdate(request.id, 'COMPLETED')
+                            handleStatusUpdate(requestData.id, 'COMPLETED')
                           }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <CheckCircle className="mr-2 h-4 w-4" />
@@ -761,253 +975,73 @@ export function RequestsManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() =>
-                            handleMessage(
-                              request.applicant.id,
-                              request.applicant.name,
-                              request.trip.id,
-                            )
+                            handleMessage(otherUser.id, otherUser.name, trip.id)
                           }
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
 
-                    {(request.status === 'REJECTED' ||
-                      request.status === 'CANCELLED' ||
-                      request.status === 'COMPLETED') && (
+                    {/* Action Buttons - Outgoing Requests */}
+                    {!isIncoming && requestData.status === 'PENDING' && (
                       <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            handleMessage(
-                              request.applicant.id,
-                              request.applicant.name,
-                              request.trip.id,
-                            )
-                          }
-                          disabled={processingRequests.has(request.id)}
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="outgoing" className="mt-6 space-y-4">
-          {loading ? (
-            <Card>
-              <CardContent className="text-muted-foreground py-12 text-center text-sm">
-                Loading...
-              </CardContent>
-            </Card>
-          ) : outgoing.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <MapPin className="text-muted-foreground mb-4 h-12 w-12" />
-                <h3 className="mb-2 text-lg font-semibold">
-                  No outgoing requests
-                </h3>
-                <p className="text-muted-foreground text-center">
-                  Requests you send to join trips will appear here.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            outgoing.map((request) => (
-              <motion.div
-                key={request.id}
-                whileHover={{ y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-              >
-                <Card className="transition-shadow hover:shadow-md">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage
-                            src="/placeholder.svg"
-                            alt={request.trip.publisher.name}
-                          />
-                          <AvatarFallback>
-                            {request.trip.publisher.name
-                              .split(' ')
-                              .map((n) => n[0])
-                              .join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="text-foreground font-semibold">
-                            {request.trip.publisher.name}
-                          </h3>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="text-muted-foreground text-sm">
-                              {request.trip.publisher.averageRating.toFixed(1)}{' '}
-                              ({request.trip.publisher.ratingCount} reviews)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
-                            request.status === 'ACCEPTED'
-                              ? 'default'
-                              : request.status === 'REJECTED'
-                                ? 'destructive'
-                                : 'secondary'
-                          }
-                          className="text-xs"
-                        >
-                          {request.status}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {new Date(request.createdAt).toLocaleDateString()}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="text-muted-foreground h-4 w-4" />
-                        <span>
-                          {request.trip.originName} →{' '}
-                          {request.trip.destinationName}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="text-muted-foreground h-4 w-4" />
-                        <span>
-                          {new Date(
-                            request.trip.departureAt,
-                          ).toLocaleDateString()}{' '}
-                          at{' '}
-                          {new Date(
-                            request.trip.departureAt,
-                          ).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="text-muted-foreground h-4 w-4" />
-                        <span>
-                          {request.trip.payloadType === 'PARCEL'
-                            ? `${request.trip.parcelWeight || request.trip.capacity}kg capacity`
-                            : `${request.trip.capacity} seat${request.trip.capacity > 1 ? 's' : ''}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <p className="text-foreground text-sm">
-                        Your request to{' '}
-                        {request.trip.payloadType === 'PARCEL'
-                          ? 'use this delivery service'
-                          : 'join this trip'}
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                      {request.status === 'PENDING' && (
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleCancelOutgoing(request)}
+                          onClick={() =>
+                            handleCancelOutgoing(requestData as RequestOutgoing)
+                          }
                           className="flex-1"
-                          disabled={processingRequests.has(request.id)}
+                          disabled={processingRequests.has(requestData.id)}
                         >
-                          {processingRequests.has(request.id) ? (
+                          {processingRequests.has(requestData.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
                             <X className="mr-2 h-4 w-4" />
                           )}
                           Cancel Request
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleMessage(
-                            request.trip.publisher.id,
-                            request.trip.publisher.name,
-                            request.trip.id,
-                          )
-                        }
-                        className={
-                          request.status === 'PENDING' ? '' : 'ml-auto'
-                        }
-                      >
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Message
-                      </Button>
-                    </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleMessage(otherUser.id, otherUser.name, trip.id)
+                          }
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Message
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Message button for other statuses */}
+                    {(requestData.status === 'REJECTED' ||
+                      requestData.status === 'CANCELLED' ||
+                      requestData.status === 'COMPLETED' ||
+                      (!isIncoming && requestData.status !== 'PENDING')) && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleMessage(otherUser.id, otherUser.name, trip.id)
+                          }
+                          disabled={processingRequests.has(requestData.id)}
+                          className="ml-auto"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="ratings" className="mt-6 space-y-4">
-          {ratingsLoading ? (
-            <Card>
-              <CardContent className="text-muted-foreground py-12 text-center text-sm">
-                Loading trips to rate...
-              </CardContent>
-            </Card>
-          ) : ratingsError ? (
-            <Card>
-              <CardContent className="text-muted-foreground py-12 text-center text-sm">
-                Failed to load trips. Please try again.
-              </CardContent>
-            </Card>
-          ) : pendingRatings.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Star className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                <h3 className="text-muted-foreground mb-2 text-lg font-semibold">
-                  No trips to rate
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Complete some trips to be able to rate your experience with
-                  drivers
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-              {pendingRatings.map((trip: any) => (
-                <motion.div
-                  key={trip.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <TripRating
-                    trip={trip}
-                    onRatingSubmitted={() => {
-                      mutatePendingRatings(); // Refresh the list
-                      toast.success('Thank you for your feedback!');
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            );
+          })
+        )}
+      </div>
 
       {/* Accept Confirmation Dialog */}
       <Dialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>

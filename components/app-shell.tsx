@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Navbar } from './navbar';
 import { PWAInstallPrompt } from './pwa-install-prompt';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useRequestsCount } from '@/lib/hooks/use-requests-count';
 import {
   Search,
   MapPin,
@@ -16,6 +17,7 @@ import {
   MessageCircle,
   Settings,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { ROUTES } from '@/constants';
 
 const baseNavigation = [
@@ -36,6 +38,7 @@ const publicNavigation = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { totalRequests } = useRequestsCount();
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'ADMIN';
 
@@ -202,17 +205,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-around py-2">
             {currentNavigation.slice(0, 5).map((item) => {
               const Icon = item.icon;
+              const showBadge = item.name === 'Requests' && totalRequests > 0;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex flex-col items-center space-y-1 p-2 transition-colors ${
+                  className={`relative flex flex-col items-center space-y-1 p-2 transition-colors ${
                     pathname === item.href
                       ? 'text-primary'
                       : 'text-muted-foreground'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <div className="relative">
+                    <Icon className="h-5 w-5" />
+                    {showBadge && (
+                      <Badge
+                        variant="secondary"
+                        className="absolute -right-2 -top-2 h-4 min-w-4 px-1 text-[10px]"
+                      >
+                        {totalRequests > 99 ? '99+' : totalRequests}
+                      </Badge>
+                    )}
+                  </div>
                   <span className="text-xs">{item.name}</span>
                 </Link>
               );

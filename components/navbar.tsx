@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useRequestsCount } from '@/lib/hooks/use-requests-count';
 import { ROUTES } from '@/constants';
 import { Notifications } from '@/components/notifications';
 
@@ -68,6 +69,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { totalRequests } = useRequestsCount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openQuickSearch, setOpenQuickSearch] = useState(false);
 
@@ -107,11 +109,12 @@ export function Navbar() {
           <nav className="hidden items-center space-x-6 md:flex">
             {currentNavigation.map((item) => {
               const Icon = item.icon;
+              const showBadge = item.name === 'Requests' && totalRequests > 0;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`hover:text-primary flex items-center space-x-2 text-sm font-medium transition-colors ${
+                  className={`hover:text-primary relative flex items-center space-x-2 text-sm font-medium transition-colors ${
                     pathname === item.href
                       ? 'text-primary'
                       : 'text-muted-foreground'
@@ -119,6 +122,14 @@ export function Navbar() {
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.name}</span>
+                  {showBadge && (
+                    <Badge
+                      variant="secondary"
+                      className="h-5 min-w-5 px-1.5 text-[10px] absolute -right-1 -top-2 rounded-full"
+                    >
+                      {totalRequests}
+                    </Badge>
+                  )}
                 </Link>
               );
             })}
@@ -215,12 +226,13 @@ export function Navbar() {
                 <div className="mt-8 flex flex-col space-y-4">
                   {currentNavigation.map((item) => {
                     const Icon = item.icon;
+                    const showBadge = item.name === 'Requests' && totalRequests > 0;
                     return (
                       <Link
                         key={item.name}
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`hover:text-primary flex items-center space-x-3 rounded-lg p-2 text-sm font-medium transition-colors ${
+                        className={`hover:text-primary relative flex items-center space-x-3 rounded-lg p-2 text-sm font-medium transition-colors ${
                           pathname === item.href
                             ? 'text-primary bg-primary/10'
                             : 'text-muted-foreground'
@@ -228,6 +240,14 @@ export function Navbar() {
                       >
                         <Icon className="h-5 w-5" />
                         <span>{item.name}</span>
+                        {showBadge && (
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto h-5 min-w-5 px-1.5 text-xs"
+                          >
+                            {totalRequests}
+                          </Badge>
+                        )}
                       </Link>
                     );
                   })}
